@@ -602,7 +602,7 @@ export function ReportesModule({ operador }: { operador: Operador }) {
 
         {/* Tabs de Reportes */}
         <Tabs defaultValue="busqueda" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-13 h-auto">
+          <TabsList className="flex flex-wrap w-full h-auto gap-1">
             <TabsTrigger value="busqueda" className="py-2">
               <Search className="w-4 h-4 mr-2" />
               Búsqueda
