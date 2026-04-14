@@ -74,6 +74,9 @@ model Camara {
   registrosEmpaque    RegistroEmpaque[]
   ingresosOrigen      IngresoDespostada[]  @relation("IngresoOrigen")
   ingresosDestino     IngresoDespostada[]  @relation("IngresoDestino")
+  cuartos             Cuarto[]
+  pallets             Pallet[]
+  stockProductos      StockProducto[]
 }
 
 enum TipoCamara {
@@ -130,6 +133,9 @@ model Producto {
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
   
+  cajas               CajaEmpaque[]
+  stockProductos      StockProducto[]
+
   @@unique([codigo, especie])
   @@index([especie])
 }
@@ -213,6 +219,9 @@ model Operador {
   ingresosDespostada  IngresoDespostada[]
   reportesSenasa       ReporteSenasa[]
   pagosFactura        PagoFactura[]
+  decomisos            Decomiso[]
+  grasasDressing       GrasaDressing[]
+  pallets              Pallet[]
 }
 
 enum RolOperador {
@@ -263,6 +272,8 @@ model Cliente {
   reclamos               ReclamoCliente[]
   mediasRes              MediaRes[]
   preciosServicio   PrecioServicio[]
+  cuartos                Cuarto[]             @relation("CuartoPropietario")
+  cajas                  CajaEmpaque[]        @relation("CajaPropietario")
 }
 
 // ==================== TRANSPORTISTAS ====================
@@ -750,6 +761,7 @@ model Romaneo {
   updatedAt         DateTime      @updatedAt
   
   mediasRes         MediaRes[]
+  decomisos         Decomiso[]
   
   @@index([fecha])
   @@index([garron])
@@ -796,6 +808,7 @@ model MediaRes {
   // Facturación
   facturado        Boolean        @default(false)  // Si ya fue facturada
   facturaId        String?                         // ID de la factura donde se facturó
+  cuartos          Cuarto[]
   
   @@unique([romaneoId, lado, sigla])
   @@index([estado])
@@ -1855,6 +1868,7 @@ model LoteDespostada {
   movimientos     MovimientoDespostada[]
   empaques        RegistroEmpaque[]
   ingresos        IngresoDespostada[]
+  cajas           CajaEmpaque[]
   
   @@index([fecha])
   @@index([estado])
@@ -2518,4 +2532,261 @@ enum EstadoBorrador {
   RECUPERADO   // Borrador recuperado por el operador
   DESCARTADO   // Borrador descartado manualmente
   EXPIRADO     // Borrador que expiró (más de 24hs)
+}
+
+// ==================== CUARTOS (CUARTEO) ====================
+
+model Cuarto {
+  id              String        @id @default(cuid())
+  mediaResId      String        // Origin media res
+  mediaRes        MediaRes      @relation(fields: [mediaResId], references: [id])
+  tipo            TipoCuarto    // DELANTERO, TRASERO
+  peso            Float
+  codigo          String        @unique  // Barcode
+  
+  // Trazabilidad
+  tropaCodigo     String?
+  garron          Int?
+  sigla           SiglaMedia    @default(A)
+  
+  // Ubicación
+  camaraId        String?
+  camara          Camara?       @relation(fields: [camaraId], references: [id])
+  
+  // Propietario
+  propietarioId   String?
+  propietario     Cliente?      @relation("CuartoPropietario", fields: [propietarioId], references: [id])
+  
+  // Estado
+  estado          EstadoCuarto  @default(EN_CAMARA)
+  
+  // Registro cuarteo
+  registroCuarteoId String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  cajas           CajaEmpaque[]
+  
+  @@index([estado])
+  @@index([camaraId])
+  @@index([propietarioId])
+}
+
+enum TipoCuarto {
+  DELANTERO
+  TRASERO
+}
+
+enum EstadoCuarto {
+  EN_CAMARA
+  EN_DESPOSTADA
+  DESPACHADO
+}
+
+// ==================== DECOMISOS ====================
+
+model Decomiso {
+  id              String        @id @default(cuid())
+  garron          Int
+  tipo            TipoDecomiso
+  
+  // Datos del animal
+  tropaCodigo     String?
+  motivo          String
+  pesoKg          Float?
+  observaciones   String?
+  
+  // Relación con romaneo
+  romaneoId       String?
+  romaneo         Romaneo?      @relation(fields: [romaneoId], references: [id])
+  
+  // Operador
+  operadorId      String?
+  operador        Operador?     @relation(fields: [operadorId], references: [id])
+  
+  fecha           DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([garron])
+  @@index([tipo])
+  @@index([fecha])
+}
+
+enum TipoDecomiso {
+  TOTAL
+  PARCIAL
+}
+
+// ==================== GRASA DRESSING ====================
+
+model GrasaDressing {
+  id              String        @id @default(cuid())
+  tropaCodigo     String?
+  garron          Int?
+  
+  // Tipo
+  tipo            TipoGrasa     @default(RENDERING)
+  
+  // Peso
+  pesoTotal       Float         @default(0)
+  
+  // Estado
+  enStock         Boolean       @default(true)
+  
+  // Fechas
+  fechaFaena      DateTime      @default(now())
+  
+  // Destino
+  destino         String?
+  
+  // Operador
+  operadorId      String?
+  operador        Operador?     @relation(fields: [operadorId], references: [id])
+  
+  observaciones   String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([tropaCodigo])
+  @@index([fechaFaena])
+  @@index([enStock])
+}
+
+enum TipoGrasa {
+  RENDERING
+  GRASA_DRESSING
+  GRASA_COMESTIBLE
+}
+
+// ==================== PALLETS Y CAJAS DE EMPAQUE ====================
+
+model Pallet {
+  id              String        @id @default(cuid())
+  numero          String        @unique
+  
+  // Expedición
+  expedicionId    String?
+  
+  // Contenido
+  cajas           CajaEmpaque[]
+  
+  // Estado
+  estado          EstadoPallet  @default(ARMADO)
+  
+  // Peso total
+  pesoTotal       Float         @default(0)
+  cantidadCajas   Int           @default(0)
+  
+  // Ubicación
+  camaraId        String?
+  camara          Camara?       @relation(fields: [camaraId], references: [id])
+  
+  observaciones   String?
+  
+  operadorId      String?
+  operador        Operador?     @relation(fields: [operadorId], references: [id])
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([estado])
+  @@index([expedicionId])
+}
+
+model CajaEmpaque {
+  id              String        @id @default(cuid())
+  numero          String        @unique
+  
+  // Pallet
+  palletId        String?
+  pallet          Pallet?       @relation(fields: [palletId], references: [id])
+  
+  // Producto
+  productoId      String?
+  producto        Producto?     @relation(fields: [productoId], references: [id])
+  
+  // Cuarto de origen
+  cuartoId        String?
+  cuarto          Cuarto?         @relation(fields: [cuartoId], references: [id])
+
+  // Lote
+  loteId          String?
+  lote            LoteDespostada? @relation(fields: [loteId], references: [id])
+  
+  // Propietario
+  propietarioId   String?
+  propietario     Cliente?      @relation("CajaPropietario", fields: [propietarioId], references: [id])
+  
+  // Peso
+  pesoBruto       Float         @default(0)
+  pesoNeto        Float         @default(0)
+  tara            Float         @default(0)
+  
+  // Trazabilidad
+  tropaCodigo     String?
+  
+  // Estado
+  estado          EstadoCaja    @default(ARMADA)
+  
+  // Código de barras
+  codigoBarras    String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([palletId])
+  @@index([productoId])
+  @@index([estado])
+}
+
+enum EstadoPallet {
+  ARMADO
+  EN_CAMARA
+  DESPACHADO
+}
+
+enum EstadoCaja {
+  ARMADA
+  EN_PALLET
+  EN_CAMARA
+  DESPACHADA
+}
+
+// ==================== STOCK PRODUCTOS ====================
+
+model StockProducto {
+  id              String        @id @default(cuid())
+  
+  // Producto
+  productoNombre  String
+  productoId      String?
+  producto        Producto?     @relation(fields: [productoId], references: [id])
+  
+  // Lote/Tropa
+  lote            String?
+  tropaCodigo     String?
+  
+  // Cámara
+  camaraId        String?
+  camara          Camara?       @relation(fields: [camaraId], references: [id])
+  
+  // Cantidades
+  cantidad        Int           @default(0)
+  pesoTotal       Float         @default(0)
+  
+  // Tipo y estado
+  tipo            String?       // CORTE, MENUDENCIA, SUBPRODUCTO
+  estado          String        @default("DISPONIBLE")
+  
+  fechaIngreso    DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([productoId])
+  @@index([camaraId])
+  @@index([estado])
+  @@index([tropaCodigo])
 }

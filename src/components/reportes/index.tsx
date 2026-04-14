@@ -25,6 +25,9 @@ import { ReporteConciliacionFaenaFactura } from '@/components/reportes/ReporteCo
 import { ReporteFaenaPendienteFacturar } from '@/components/reportes/ReporteFaenaPendienteFacturar'
 import { ReporteResumenClienteFaena } from '@/components/reportes/ReporteResumenClienteFaena'
 import { ReporteLiquidacionProductor } from '@/components/reportes/ReporteLiquidacionProductor'
+import { ReporteBalanceFaena } from '@/components/reportes/ReporteBalanceFaena'
+import { ReporteRindeTropa } from '@/components/reportes/ReporteRindeTropa'
+import { ReporteStockProductos } from '@/components/reportes/ReporteStockProductos'
 
 interface Operador {
   id: string
@@ -599,7 +602,7 @@ export function ReportesModule({ operador }: { operador: Operador }) {
 
         {/* Tabs de Reportes */}
         <Tabs defaultValue="busqueda" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-10 h-auto">
+          <TabsList className="grid w-full grid-cols-13 h-auto">
             <TabsTrigger value="busqueda" className="py-2">
               <Search className="w-4 h-4 mr-2" />
               Búsqueda
@@ -639,6 +642,18 @@ export function ReportesModule({ operador }: { operador: Operador }) {
             <TabsTrigger value="liquidacion" className="py-2">
               <FileSpreadsheet className="w-4 h-4 mr-2" />
               Liquidación
+            </TabsTrigger>
+            <TabsTrigger value="balanceFaena" className="py-2">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Balance Faena
+            </TabsTrigger>
+            <TabsTrigger value="rindeTropa" className="py-2">
+              <Beef className="w-4 h-4 mr-2" />
+              Rinde Tropa
+            </TabsTrigger>
+            <TabsTrigger value="stockProductos" className="py-2">
+              <Package className="w-4 h-4 mr-2" />
+              Stock Productos
             </TabsTrigger>
           </TabsList>
 
@@ -1121,6 +1136,21 @@ export function ReportesModule({ operador }: { operador: Operador }) {
           {/* TAB: LIQUIDACIÓN PRODUCTOR */}
           <TabsContent value="liquidacion">
             <ReporteLiquidacionProductor operador={operador} />
+          </TabsContent>
+
+          {/* TAB: BALANCE FAENA */}
+          <TabsContent value="balanceFaena">
+            <ReporteBalanceFaena />
+          </TabsContent>
+
+          {/* TAB: RINDE POR TROPA */}
+          <TabsContent value="rindeTropa">
+            <ReporteRindeTropa />
+          </TabsContent>
+
+          {/* TAB: STOCK PRODUCTOS */}
+          <TabsContent value="stockProductos">
+            <ReporteStockProductos />
           </TabsContent>
         </Tabs>
       </div>
