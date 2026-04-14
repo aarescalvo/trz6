@@ -1,5 +1,16 @@
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+
+// Helper para descargar blobs sin file-saver
+function saveAs(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 // ==================== TIPOS ====================
 
