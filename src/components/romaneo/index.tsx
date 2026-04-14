@@ -114,6 +114,11 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   const [camaras, setCamaras] = useState<Camara[]>([])
   const [garronesAsignados, setGarronesAsignados] = useState<AsignacionGarron[]>([])
   
+  // Configuración de impresora
+  const [configImpresoraOpen, setConfigImpresoraOpen] = useState(false)
+  const [impresoraIp, setImpresoraIp] = useState('')
+  const [usarPredeterminada, setUsarPredeterminada] = useState(false)
+
   // UI
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -121,6 +126,14 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   // Ref para auto-scroll
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastGarronRef = useRef<number | null>(null)
+
+  // Cargar configuración de impresora guardada
+  useEffect(() => {
+    const savedIp = localStorage.getItem('impresoraRomaneoIp') || ''
+    const savedPredeterminada = localStorage.getItem('impresoraRomaneoPredeterminada') === 'true'
+    setImpresoraIp(savedIp)
+    setUsarPredeterminada(savedPredeterminada)
+  }, [])
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -366,6 +379,20 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
         return
       }
 
+      // Verificar si hay configuración de impresora
+      if (!impresoraIp && !usarPredeterminada) {
+        // Si no hay configuración, usar impresora predeterminada automáticamente
+        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+        return
+      }
+
+      // Si está configurado para usar predeterminada, imprimir HTML
+      if (usarPredeterminada) {
+        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+        return
+      }
+
+      // Enviar a imprimir por TCP/IP
       for (const sigla of SIGLAS) {
         const datosConSigla = {
           ...datosRotulo,
@@ -374,19 +401,34 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
           codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
         }
         
-        await fetch('/api/rotulos/imprimir', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            rotuloId: rotulo.id,
-            datos: datosConSigla,
-            cantidad: 1
+        try {
+          const printRes = await fetch('/api/rotulos/imprimir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rotuloId: rotulo.id,
+              datos: datosConSigla,
+              cantidad: 1,
+              impresoraIp: impresoraIp,
+              impresoraPuerto: 9100
+            })
           })
-        })
+          
+          const printData = await printRes.json()
+          if (!printData.success) {
+            // Fallback a HTML si falla la impresión TCP
+            imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+            return
+          }
+        } catch (printError) {
+          console.error('Error al imprimir por TCP:', printError)
+          imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+          return
+        }
       }
       
-      toast.success(`3 rÃ³tulos impresos para garrÃ³n #${garron}`, {
-        description: `Plantilla: ${rotulo.nombre}`
+      toast.success(`3 rótulos enviados a impresora para garrón #${garron}`, {
+        description: `Impresora TCP: ${impresoraIp} - Plantilla: ${rotulo.nombre}`
       })
       
     } catch (error) {
@@ -686,41 +728,70 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
     }
   }
 
-  // Reimprimir rÃ³tulo de un garrÃ³n especÃ­fico
+  // Reimprimir rótulo de un garrón específico
   const handleReimprimirGarron = async (media: MediaPesada) => {
     try {
-      // Buscar el rÃ³tulo configurado
+      // Buscar el rótulo configurado
       const rotulosRes = await fetch('/api/rotulos?tipo=MEDIA_RES&activo=true')
       const rotulosResponse = await rotulosRes.json()
       const rotulosData = rotulosResponse.data || []
       const rotulo = rotulosData.find((r: any) => r.esDefault) || rotulosData[0]
       
       if (!rotulo) {
-        toast.error('No hay rÃ³tulo configurado')
+        // Sin rótulo configurado, usar HTML
+        imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
         return
       }
 
-      // Imprimir las 3 siglas
+      // Verificar si hay configuración de impresora
+      if (!impresoraIp && !usarPredeterminada) {
+        imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
+        return
+      }
+
+      // Si está configurado para usar predeterminada, imprimir HTML
+      if (usarPredeterminada) {
+        imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
+        return
+      }
+
+      // Enviar a imprimir por TCP/IP
       for (const sigla of SIGLAS) {
-        await fetch('/api/rotulos/imprimir', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            rotuloId: rotulo.id,
-            datos: {
-              garron: String(media.garron).padStart(3, '0'),
-              lado: media.lado === 'DERECHA' ? 'D' : 'I',
-              peso: media.peso.toFixed(1),
-              tropa: media.tropaCodigo || '-',
-              sigla: sigla,
-              fecha: fechaReimpresion
-            },
-            cantidad: 1
+        try {
+          const printRes = await fetch('/api/rotulos/imprimir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rotuloId: rotulo.id,
+              datos: {
+                garron: String(media.garron).padStart(3, '0'),
+                lado: media.lado === 'DERECHA' ? 'D' : 'I',
+                peso: media.peso.toFixed(1),
+                tropa: media.tropaCodigo || '-',
+                sigla: sigla,
+                fecha: fechaReimpresion
+              },
+              cantidad: 1,
+              impresoraIp: impresoraIp,
+              impresoraPuerto: 9100
+            })
           })
-        })
+          
+          const printData = await printRes.json()
+          if (!printData.success) {
+            imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
+            return
+          }
+        } catch (printError) {
+          console.error('Error al reimprimir por TCP:', printError)
+          imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
+          return
+        }
       }
       
-      toast.success(`RÃ³tulos impresos para garrÃ³n #${media.garron}`)
+      toast.success(`Rótulos enviados a impresora para garrón #${media.garron}`, {
+        description: `Impresora TCP: ${impresoraIp}`
+      })
     } catch (error) {
       console.error('Error al reimprimir:', error)
       toast.error('Error al reimprimir')
@@ -807,6 +878,16 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
                 Terminar EdiciÃ³n
               </Button>
             )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setConfigImpresoraOpen(true)} 
+              className={`shadow-sm ${(impresoraIp || usarPredeterminada) ? 'bg-green-50 border-green-300 text-green-600' : 'bg-red-50 border-red-300 text-red-600'}`}
+              title={usarPredeterminada ? 'Impresora predeterminada de Windows' : impresoraIp ? `Impresora TCP: ${impresoraIp}` : 'Configurar impresora'}
+            >
+              <Printer className="w-4 h-4 mr-1" />
+              {(impresoraIp || usarPredeterminada) ? 'Impresora' : 'Sin Impresora'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
               <User className="w-4 h-4 mr-1" />
               Configurar
@@ -1244,6 +1325,90 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
             >
               <Printer className="w-4 h-4 mr-1" />
               Reimprimir Seleccionado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de configuración de impresora */}
+      <Dialog open={configImpresoraOpen} onOpenChange={setConfigImpresoraOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="w-5 h-5 text-amber-600" />
+              Configurar Impresora de Rótulos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Opción: Impresora predeterminada de Windows */}
+            <div 
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${usarPredeterminada ? 'border-green-500 bg-green-50' : 'border-stone-200 hover:border-stone-300'}`}
+              onClick={() => { setUsarPredeterminada(true); setImpresoraIp('') }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-4 h-4 rounded-full border-2 ${usarPredeterminada ? 'border-green-500 bg-green-500' : 'border-stone-300'}`}>
+                  {usarPredeterminada && <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5" />}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Impresora Predeterminada de Windows</p>
+                  <p className="text-xs text-stone-500">Usa la impresora configurada en el sistema</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Opción: Impresora TCP/IP */}
+            <div 
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${!usarPredeterminada ? 'border-green-500 bg-green-50' : 'border-stone-200 hover:border-stone-300'}`}
+              onClick={() => setUsarPredeterminada(false)}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-4 h-4 rounded-full border-2 ${!usarPredeterminada ? 'border-green-500 bg-green-500' : 'border-stone-300'}`}>
+                  {!usarPredeterminada && <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5" />}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Impresora TCP/IP (Datamax)</p>
+                  <p className="text-xs text-stone-500">Conexión directa por red - Puerto 9100</p>
+                </div>
+              </div>
+              {!usarPredeterminada && (
+                <div className="ml-7">
+                  <Label className="text-xs">IP de la impresora</Label>
+                  <Input 
+                    value={impresoraIp} 
+                    onChange={(e) => setImpresoraIp(e.target.value)} 
+                    placeholder="192.168.1.100"
+                    className="mt-1"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="bg-amber-50 p-3 rounded-lg text-xs text-amber-700">
+              <p className="font-medium mb-1">Información del rótulo:</p>
+              <p>• Tamaño etiqueta: 100 x 150 mm</p>
+              <p>• Datos: Tropa, Garrón, Lado, Peso, Sigla</p>
+              <p>• Código de barras incluido</p>
+              <p>• Se imprimen 3 rótulos por media (A, T, D)</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfigImpresoraOpen(false)} size="sm">Cancelar</Button>
+            <Button 
+              onClick={() => {
+                localStorage.setItem('impresoraRomaneoIp', impresoraIp)
+                localStorage.setItem('impresoraRomaneoPredeterminada', String(usarPredeterminada))
+                setConfigImpresoraOpen(false)
+                if (usarPredeterminada) {
+                  toast.success('Usando impresora predeterminada de Windows')
+                } else {
+                  toast.success('IP de impresora guardada: ' + impresoraIp)
+                }
+              }} 
+              size="sm"
+              disabled={!usarPredeterminada && !impresoraIp}
+            >
+              Guardar
             </Button>
           </DialogFooter>
         </DialogContent>
