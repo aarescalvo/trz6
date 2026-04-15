@@ -1,519 +1,999 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
-  RefreshCw,
-  History,
-  Package,
-  Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-  Search
+import { useState, useEffect, useCallback } from 'react'
+import {
+  History, DollarSign, Plus, Search, Loader2, RefreshCw,
+  Pencil, Trash2, TrendingUp, Calendar, User, Package,
+  ArrowUpRight, ArrowDownRight, Minus, AlertTriangle
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 
-interface Producto {
+// Interfaces for API data
+interface TipoServicio {
   id: string
   codigo: string
   nombre: string
-  categoria: string
-  unidadMedida: string
-  precioActual: number
-  precioAnterior: number
-  variacion: number
-  variacionPorcentaje: string
-  totalCambios: number
+  unidad: string
+  porcentajeIva: number
+  activo: boolean
 }
 
-interface HistorialItem {
+interface Cliente {
   id: string
-  productoVendibleId: string
-  precioAnterior: number | null
-  precioNuevo: number
-  moneda: string
-  motivo: string | null
-  fechaVigencia: string
-  createdAt: string
-  productoVendible: {
+  nombre: string
+  cuit?: string
+  razonSocial?: string
+  esUsuarioFaena: boolean
+}
+
+interface PrecioServicio {
+  id: string
+  tipoServicioId: string
+  clienteId: string
+  precio: number
+  fechaDesde: string
+  fechaHasta?: string | null
+  observaciones?: string | null
+  createdBy?: string | null
+  tipoServicio: TipoServicio
+  cliente: {
     id: string
-    codigo: string
     nombre: string
-    categoria: string
-    unidadMedida: string
+    cuit?: string
+    razonSocial?: string
   }
 }
 
-interface Resumen {
-  totalProductos: number
-  productosConCambios: number
-  productosSinCambios: number
-  variacionPromedio: string
+interface Props {
+  operador?: { id: string; nombre: string; rol: string }
 }
 
-const CATEGORIAS_LABELS: Record<string, string> = {
-  'PRODUCTO_CARNICO': 'Producto Cárnico',
-  'MENUDENCIA': 'Menudencia',
-  'SERVICIO_FAENA': 'Servicio Faena',
-  'SERVICIO_ALMACENAMIENTO': 'Almacenamiento',
-  'SERVICIO_PROCESO': 'Proceso',
-  'TRANSPORTE': 'Transporte',
-  'SUBPRODUCTO': 'Subproducto',
-  'OTRO': 'Otro'
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(amount)
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
 }
 
-export function HistorialPreciosModule() {
-  const [productos, setProductos] = useState<Producto[]>([])
-  const [historial, setHistorial] = useState<HistorialItem[]>([])
-  const [resumen, setResumen] = useState<Resumen | null>(null)
+export function HistorialPreciosModule({ operador }: Props) {
+  // Data state
+  const [precios, setPrecios] = useState<PrecioServicio[]>([])
+  const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
-  const [busqueda, setBusqueda] = useState('')
-  const [filtroCategoria, setFiltroCategoria] = useState('')
-  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null)
-  const [modalHistorial, setModalHistorial] = useState(false)
-  const [modalNuevoPrecio, setModalNuevoPrecio] = useState(false)
-  const [nuevoPrecio, setNuevoPrecio] = useState('')
-  const [motivoCambio, setMotivoCambio] = useState('')
-  const [guardando, setGuardando] = useState(false)
-  const [historialProducto, setHistorialProducto] = useState<HistorialItem[]>([])
+  const [saving, setSaving] = useState(false)
 
-  const cargarDatos = async () => {
+  // Filter state
+  const [filtroCliente, setFiltroCliente] = useState<string>('')
+  const [filtroTipoServicio, setFiltroTipoServicio] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Tab state
+  const [tabActivo, setTabActivo] = useState('vigentes')
+
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [selectedPrecio, setSelectedPrecio] = useState<PrecioServicio | null>(null)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    tipoServicioId: '',
+    clienteId: '',
+    precio: '',
+    fechaDesde: new Date().toISOString().split('T')[0],
+    observaciones: ''
+  })
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState({
+    precio: '',
+    fechaDesde: new Date().toISOString().split('T')[0],
+    observaciones: ''
+  })
+
+  // ─── Data Fetching ───────────────────────────────────────────────
+
+  const fetchTiposServicio = useCallback(async () => {
+    try {
+      const res = await fetch('/api/tipos-servicio?activo=true')
+      const data = await res.json()
+      if (data.success) setTiposServicio(data.data)
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Error al cargar tipos de servicio')
+    }
+  }, [])
+
+  const fetchClientes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/clientes?esUsuarioFaena=true')
+      const data = await res.json()
+      if (data.success) setClientes(data.data)
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Error al cargar clientes')
+    }
+  }, [])
+
+  const fetchPrecios = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/historial-precios')
-      const result = await res.json()
-      
-      if (result.success) {
-        setProductos(result.productos || [])
-        setHistorial(result.data || [])
-        setResumen(result.resumen)
-      }
+      const params = new URLSearchParams()
+      if (filtroCliente) params.set('clienteId', filtroCliente)
+      if (filtroTipoServicio) params.set('tipoServicioId', filtroTipoServicio)
+
+      const res = await fetch(`/api/precios-servicio?${params.toString()}`)
+      const data = await res.json()
+      if (data.success) setPrecios(data.data)
     } catch (error) {
-      console.error('Error al cargar datos:', error)
-      toast.error('Error al cargar datos')
+      console.error('Error:', error)
+      toast.error('Error al cargar precios')
     } finally {
       setLoading(false)
     }
-  }
+  }, [filtroCliente, filtroTipoServicio])
 
   useEffect(() => {
-    cargarDatos()
-  }, [])
+    fetchTiposServicio()
+    fetchClientes()
+  }, [fetchTiposServicio, fetchClientes])
 
-  const verHistorialProducto = async (producto: Producto) => {
-    setProductoSeleccionado(producto)
-    try {
-      const res = await fetch(`/api/historial-precios?productoId=${producto.id}`)
-      const result = await res.json()
-      if (result.success) {
-        setHistorialProducto(result.data)
-      }
-    } catch (error) {
-      console.error('Error al cargar historial:', error)
+  useEffect(() => {
+    fetchPrecios()
+  }, [fetchPrecios])
+
+  // ─── Computed Values ──────────────────────────────────────────────
+
+  const preciosVigentes = precios.filter(p => !p.fechaHasta)
+  const preciosHistoricos = precios.filter(p => p.fechaHasta)
+
+  const preciosFiltrados = (tabActivo === 'vigentes' ? preciosVigentes : preciosHistoricos).filter(p => {
+    const matchSearch = !searchTerm ||
+      p.tipoServicio?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.tipoServicio?.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.cliente?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.cliente?.razonSocial?.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchSearch
+  })
+
+  const clientesConPrecio = new Set(preciosVigentes.map(p => p.clienteId)).size
+
+  // ─── Price variation calculation ──────────────────────────────────
+
+  const getPriceVariation = (precio: PrecioServicio) => {
+    // Find the previous price for same client/service
+    const historicosMismaCombinacion = preciosHistoricos
+      .filter(p => p.clienteId === precio.clienteId && p.tipoServicioId === precio.tipoServicioId)
+      .sort((a, b) => new Date(b.fechaDesde).getTime() - new Date(a.fechaDesde).getTime())
+
+    const anterior = historicosMismaCombinacion[0]
+    if (!anterior) return null
+
+    const variacion = ((precio.precio - anterior.precio) / anterior.precio) * 100
+    return {
+      anterior: anterior.precio,
+      variacion,
+      esAumento: variacion > 0
     }
-    setModalHistorial(true)
   }
 
-  const abrirNuevoPrecio = (producto: Producto) => {
-    setProductoSeleccionado(producto)
-    setNuevoPrecio(producto.precioActual.toString())
-    setMotivoCambio('')
-    setModalNuevoPrecio(true)
+  // ─── Handlers ─────────────────────────────────────────────────────
+
+  const handleNuevoPrecio = () => {
+    setFormData({
+      tipoServicioId: filtroTipoServicio || '',
+      clienteId: filtroCliente || '',
+      precio: '',
+      fechaDesde: new Date().toISOString().split('T')[0],
+      observaciones: ''
+    })
+    setDialogOpen(true)
   }
 
-  const guardarNuevoPrecio = async () => {
-    if (!productoSeleccionado || !nuevoPrecio) return
-    
-    const precio = parseFloat(nuevoPrecio)
-    if (isNaN(precio) || precio < 0) {
-      toast.error('Ingrese un precio válido')
+  const handleGuardarNuevo = async () => {
+    if (!formData.tipoServicioId) {
+      toast.error('Seleccione un tipo de servicio')
+      return
+    }
+    if (!formData.clienteId) {
+      toast.error('Seleccione un cliente')
+      return
+    }
+    if (!formData.precio || isNaN(parseFloat(formData.precio)) || parseFloat(formData.precio) <= 0) {
+      toast.error('Ingrese un precio válido mayor a 0')
       return
     }
 
-    setGuardando(true)
+    setSaving(true)
     try {
-      const res = await fetch('/api/historial-precios', {
+      const res = await fetch('/api/precios-servicio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productoVendibleId: productoSeleccionado.id,
-          precioNuevo: precio,
-          motivo: motivoCambio || 'Actualización de precio'
+          tipoServicioId: formData.tipoServicioId,
+          clienteId: formData.clienteId,
+          precio: parseFloat(formData.precio),
+          fechaDesde: formData.fechaDesde || undefined,
+          observaciones: formData.observaciones || undefined,
+          createdBy: operador?.nombre || 'Sistema'
         })
       })
 
-      const result = await res.json()
-      if (result.success) {
-        toast.success(result.message)
-        setModalNuevoPrecio(false)
-        cargarDatos()
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Precio creado exitosamente')
+        setDialogOpen(false)
+        fetchPrecios()
       } else {
-        toast.error(result.error || 'Error al actualizar precio')
+        toast.error(data.error || 'Error al crear precio')
       }
     } catch (error) {
-      toast.error('Error al guardar')
+      console.error('Error:', error)
+      toast.error('Error al crear precio')
     } finally {
-      setGuardando(false)
+      setSaving(false)
     }
   }
 
-  const productosFiltrados = productos.filter(p => {
-    const matchBusqueda = !busqueda || 
-      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.codigo.toLowerCase().includes(busqueda.toLowerCase())
-    const matchCategoria = !filtroCategoria || p.categoria === filtroCategoria
-    return matchBusqueda && matchCategoria
-  })
-
-  const formatFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+  const handleEditarPrecio = (precio: PrecioServicio) => {
+    setSelectedPrecio(precio)
+    setEditFormData({
+      precio: precio.precio.toString(),
+      fechaDesde: new Date().toISOString().split('T')[0],
+      observaciones: ''
     })
+    setEditDialogOpen(true)
   }
 
-  const formatMonto = (monto: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 2
-    }).format(monto)
+  const handleGuardarEdicion = async () => {
+    if (!selectedPrecio) return
+    if (!editFormData.precio || isNaN(parseFloat(editFormData.precio)) || parseFloat(editFormData.precio) <= 0) {
+      toast.error('Ingrese un precio válido mayor a 0')
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Create a new price record (the API automatically closes the previous one)
+      const res = await fetch('/api/precios-servicio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipoServicioId: selectedPrecio.tipoServicioId,
+          clienteId: selectedPrecio.clienteId,
+          precio: parseFloat(editFormData.precio),
+          fechaDesde: editFormData.fechaDesde || undefined,
+          observaciones: editFormData.observaciones || `Actualización de precio (anterior: ${formatCurrency(selectedPrecio.precio)})`,
+          createdBy: operador?.nombre || 'Sistema'
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Precio actualizado exitosamente')
+        setEditDialogOpen(false)
+        setSelectedPrecio(null)
+        fetchPrecios()
+      } else {
+        toast.error(data.error || 'Error al actualizar precio')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Error al actualizar precio')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const getVariacionIcon = (porcentaje: string) => {
-    const valor = parseFloat(porcentaje)
-    if (valor > 0) return <ArrowUpRight className="h-4 w-4 text-red-500" />
-    if (valor < 0) return <ArrowDownRight className="h-4 w-4 text-green-500" />
-    return <Minus className="h-4 w-4 text-gray-400" />
+  const handleEliminarPrecio = (precio: PrecioServicio) => {
+    setSelectedPrecio(precio)
+    setDeleteDialogOpen(true)
   }
 
-  const getVariacionColor = (porcentaje: string) => {
-    const valor = parseFloat(porcentaje)
-    if (valor > 0) return 'text-red-600 bg-red-50'
-    if (valor < 0) return 'text-green-600 bg-green-50'
-    return 'text-gray-600 bg-gray-50'
+  const handleConfirmarEliminar = async () => {
+    if (!selectedPrecio) return
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/precios-servicio?id=${selectedPrecio.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Precio eliminado exitosamente')
+        setDeleteDialogOpen(false)
+        setSelectedPrecio(null)
+        fetchPrecios()
+      } else {
+        toast.error(data.error || 'Error al eliminar precio')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      toast.error('Error al eliminar precio')
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const limpiarFiltros = () => {
+    setFiltroCliente('')
+    setFiltroTipoServicio('')
+    setSearchTerm('')
+  }
+
+  // ─── Auto-fill precio when service+client change in new price dialog ───
+
+  const handleFormTipoServicioChange = (value: string) => {
+    setFormData(prev => ({ ...prev, tipoServicioId: value }))
+    // Auto-fill current price if exists
+    const precioExistente = preciosVigentes.find(
+      p => p.tipoServicioId === value && p.clienteId === formData.clienteId
+    )
+    if (precioExistente) {
+      setFormData(prev => ({ ...prev, precio: precioExistente.precio.toString() }))
+    }
+  }
+
+  const handleFormClienteChange = (value: string) => {
+    setFormData(prev => ({ ...prev, clienteId: value }))
+    // Auto-fill current price if exists
+    const precioExistente = preciosVigentes.find(
+      p => p.tipoServicioId === formData.tipoServicioId && p.clienteId === value
+    )
+    if (precioExistente) {
+      setFormData(prev => ({ ...prev, precio: precioExistente.precio.toString() }))
+    }
+  }
+
+  // ─── Variation display helper ─────────────────────────────────────
+
+  const renderVariation = (precio: PrecioServicio) => {
+    const variation = getPriceVariation(precio)
+    if (!variation) return <span className="text-stone-400 text-xs">Nuevo</span>
+
+    const pct = variation.variacion.toFixed(1)
+    const color = variation.esAumento ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'
+    const icon = variation.esAumento
+      ? <ArrowUpRight className="w-3 h-3" />
+      : <ArrowDownRight className="w-3 h-3" />
+
+    return (
+      <Badge className={`${color} text-xs gap-0.5`}>
+        {icon}
+        {variation.esAumento ? '+' : ''}{pct}%
+      </Badge>
+    )
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Historial de Precios</h2>
-          <p className="text-muted-foreground">Seguimiento de cambios de precios en servicios y productos</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={cargarDatos}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
-        </Button>
+    <div className="space-y-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="border-0 shadow-sm bg-stone-50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-stone-600" />
+              <div>
+                <p className="text-xs text-stone-500">Total Precios</p>
+                <p className="text-xl font-bold text-stone-800">{precios.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm bg-emerald-50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
+              <div>
+                <p className="text-xs text-stone-500">Vigentes</p>
+                <p className="text-xl font-bold text-emerald-700">{preciosVigentes.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm bg-amber-50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <User className="w-5 h-5 text-amber-600" />
+              <div>
+                <p className="text-xs text-stone-500">Clientes c/Precio</p>
+                <p className="text-xl font-bold text-amber-700">{clientesConPrecio}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm bg-blue-50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-xs text-stone-500">Históricos</p>
+                <p className="text-xl font-bold text-blue-700">{preciosHistoricos.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Resumen */}
-      {resumen && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Package className="h-8 w-8 text-amber-500" />
-                <div>
-                  <p className="text-sm text-gray-600">Total Productos</p>
-                  <p className="text-2xl font-bold">{resumen.totalProductos}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <History className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-sm text-blue-600">Con Cambios</p>
-                  <p className="text-2xl font-bold text-blue-700">{resumen.productosConCambios}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-gray-500" />
-                <div>
-                  <p className="text-sm text-gray-600">Sin Cambios</p>
-                  <p className="text-2xl font-bold">{resumen.productosSinCambios}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className={parseFloat(resumen.variacionPromedio) >= 0 ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                {parseFloat(resumen.variacionPromedio) >= 0 ? (
-                  <TrendingUp className="h-8 w-8 text-red-500" />
-                ) : (
-                  <TrendingDown className="h-8 w-8 text-green-500" />
-                )}
-                <div>
-                  <p className="text-sm text-gray-600">Variación Promedio</p>
-                  <p className={`text-2xl font-bold ${parseFloat(resumen.variacionPromedio) >= 0 ? 'text-red-700' : 'text-green-700'}`}>
-                    {parseFloat(resumen.variacionPromedio) >= 0 ? '+' : ''}{resumen.variacionPromedio}%
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Filtros */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex gap-4">
-            <div className="flex-1">
+      {/* Filters */}
+      <Card className="border-0 shadow-md">
+        <CardContent className="p-3">
+          <div className="flex flex-wrap gap-2 items-end">
+            <div className="space-y-1">
+              <Label className="text-xs">Buscar</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
                 <Input
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar por nombre o código..."
-                  className="pl-10"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Servicio o cliente..."
+                  className="h-9 w-48 pl-8"
                 />
               </div>
             </div>
-            <select
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="border rounded px-3 py-2 text-sm"
-            >
-              <option value="">Todas las categorías</option>
-              {Object.entries(CATEGORIAS_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
+            <div className="space-y-1">
+              <Label className="text-xs">Cliente</Label>
+              <Select value={filtroCliente} onValueChange={setFiltroCliente}>
+                <SelectTrigger className="h-9 w-52">
+                  <SelectValue placeholder="Todos los clientes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Todos los clientes</SelectItem>
+                  {clientes.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Tipo Servicio</Label>
+              <Select value={filtroTipoServicio} onValueChange={setFiltroTipoServicio}>
+                <SelectTrigger className="h-9 w-52">
+                  <SelectValue placeholder="Todos los servicios" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Todos los servicios</SelectItem>
+                  {tiposServicio.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm" className="h-9" onClick={limpiarFiltros}>
+              Limpiar
+            </Button>
+            <Button size="sm" className="h-9 bg-amber-500 hover:bg-amber-600" onClick={fetchPrecios}>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            <Button size="sm" className="h-9 bg-amber-500 hover:bg-amber-600" onClick={handleNuevoPrecio}>
+              <Plus className="w-4 h-4 mr-1" /> Nuevo Precio
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de productos */}
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <Card className="flex-1 overflow-hidden">
-          <CardContent className="p-0">
-            <div className="overflow-auto max-h-[calc(100vh-400px)]">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-muted">
-                  <tr>
-                    <th className="text-left p-3 font-medium">Código</th>
-                    <th className="text-left p-3 font-medium">Producto</th>
-                    <th className="text-left p-3 font-medium">Categoría</th>
-                    <th className="text-right p-3 font-medium">Precio Actual</th>
-                    <th className="text-right p-3 font-medium">Anterior</th>
-                    <th className="text-center p-3 font-medium">Variación</th>
-                    <th className="text-center p-3 font-medium">Cambios</th>
-                    <th className="text-center p-3 font-medium">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productosFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-muted-foreground">
-                        <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>No se encontraron productos</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    productosFiltrados.map((producto) => (
-                      <tr key={producto.id} className="border-t hover:bg-muted/50">
-                        <td className="p-3 font-mono text-sm">{producto.codigo}</td>
-                        <td className="p-3">
-                          <p className="font-medium">{producto.nombre}</p>
-                          <p className="text-xs text-muted-foreground">{producto.unidadMedida}</p>
-                        </td>
-                        <td className="p-3">
-                          <Badge variant="outline">
-                            {CATEGORIAS_LABELS[producto.categoria] || producto.categoria}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-right font-bold">
-                          {formatMonto(producto.precioActual)}
-                        </td>
-                        <td className="p-3 text-right text-muted-foreground">
-                          {producto.precioAnterior ? formatMonto(producto.precioAnterior) : '-'}
-                        </td>
-                        <td className="p-3 text-center">
-                          <Badge className={getVariacionColor(producto.variacionPorcentaje)}>
-                            <span className="flex items-center gap-1">
-                              {getVariacionIcon(producto.variacionPorcentaje)}
-                              {parseFloat(producto.variacionPorcentaje) >= 0 ? '+' : ''}{producto.variacionPorcentaje}%
-                            </span>
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-center">
-                          <Badge variant="secondary">{producto.totalCambios}</Badge>
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="flex justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => verHistorialProducto(producto)}
-                              title="Ver historial"
-                            >
-                              <History className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => abrirNuevoPrecio(producto)}
-                              title="Actualizar precio"
-                            >
-                              <DollarSign className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Tabs: Vigentes / Historial */}
+      <Tabs value={tabActivo} onValueChange={setTabActivo} className="space-y-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="vigentes" className="gap-1">
+            <DollarSign className="w-4 h-4" /> Precios Vigentes
+          </TabsTrigger>
+          <TabsTrigger value="historial" className="gap-1">
+            <History className="w-4 h-4" /> Historial de Precios
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Modal Historial */}
-      <Dialog open={modalHistorial} onOpenChange={setModalHistorial}>
-        <DialogContent className="max-w-2xl">
+        {/* ─── Tab: Precios Vigentes ──────────────────────────── */}
+        <TabsContent value="vigentes" className="space-y-4">
+          <Card className="border-0 shadow-md">
+            <CardHeader className="bg-stone-50 rounded-t-lg py-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-500" />
+                  Precios Vigentes
+                </CardTitle>
+                <Badge className="bg-emerald-100 text-emerald-700">
+                  {preciosFiltrados.length} registro{preciosFiltrados.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                </div>
+              ) : preciosFiltrados.length === 0 ? (
+                <div className="py-12 text-center text-stone-400">
+                  <DollarSign className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p>No hay precios vigentes</p>
+                  <p className="text-sm mt-1">Agregue nuevos precios haciendo clic en &quot;Nuevo Precio&quot;</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-stone-50">
+                        <TableHead className="font-semibold text-xs">Tipo Servicio</TableHead>
+                        <TableHead className="font-semibold text-xs">Cliente</TableHead>
+                        <TableHead className="font-semibold text-xs text-right">Precio</TableHead>
+                        <TableHead className="font-semibold text-xs">Unidad</TableHead>
+                        <TableHead className="font-semibold text-xs">Vigente Desde</TableHead>
+                        <TableHead className="font-semibold text-xs text-center">Variación</TableHead>
+                        <TableHead className="font-semibold text-xs text-center">Estado</TableHead>
+                        <TableHead className="font-semibold text-xs text-center">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {preciosFiltrados.map(precio => (
+                        <TableRow key={precio.id} className="text-xs hover:bg-stone-50/50">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{precio.tipoServicio?.nombre || '-'}</p>
+                              <p className="text-stone-400 text-xs">{precio.tipoServicio?.codigo}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium truncate max-w-[140px]">{precio.cliente?.nombre || '-'}</p>
+                              <p className="text-stone-400 text-xs">{precio.cliente?.cuit || ''}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-stone-800">
+                            {formatCurrency(precio.precio)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {precio.tipoServicio?.unidad || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-stone-400" />
+                              {formatDate(precio.fechaDesde)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {renderVariation(precio)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                              Vigente
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                title="Editar precio"
+                                onClick={() => handleEditarPrecio(precio)}
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                title="Eliminar precio"
+                                onClick={() => handleEliminarPrecio(precio)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ─── Tab: Historial de Precios ──────────────────────── */}
+        <TabsContent value="historial" className="space-y-4">
+          <Card className="border-0 shadow-md">
+            <CardHeader className="bg-stone-50 rounded-t-lg py-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <History className="w-5 h-5 text-blue-500" />
+                  Historial de Precios
+                </CardTitle>
+                <Badge className="bg-stone-100 text-stone-700">
+                  {preciosFiltrados.length} registro{preciosFiltrados.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                </div>
+              ) : preciosFiltrados.length === 0 ? (
+                <div className="py-12 text-center text-stone-400">
+                  <History className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p>No hay precios históricos</p>
+                  <p className="text-sm mt-1">Los precios actualizados aparecerán aquí como registros históricos</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-stone-50">
+                        <TableHead className="font-semibold text-xs">Tipo Servicio</TableHead>
+                        <TableHead className="font-semibold text-xs">Cliente</TableHead>
+                        <TableHead className="font-semibold text-xs text-right">Precio</TableHead>
+                        <TableHead className="font-semibold text-xs">Unidad</TableHead>
+                        <TableHead className="font-semibold text-xs">Vigente Desde</TableHead>
+                        <TableHead className="font-semibold text-xs">Vigente Hasta</TableHead>
+                        <TableHead className="font-semibold text-xs text-center">Estado</TableHead>
+                        <TableHead className="font-semibold text-xs">Observaciones</TableHead>
+                        <TableHead className="font-semibold text-xs text-center">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {preciosFiltrados.map(precio => (
+                        <TableRow key={precio.id} className="text-xs hover:bg-stone-50/50 opacity-80">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{precio.tipoServicio?.nombre || '-'}</p>
+                              <p className="text-stone-400 text-xs">{precio.tipoServicio?.codigo}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium truncate max-w-[140px]">{precio.cliente?.nombre || '-'}</p>
+                              <p className="text-stone-400 text-xs">{precio.cliente?.cuit || ''}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-stone-600">
+                            {formatCurrency(precio.precio)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {precio.tipoServicio?.unidad || '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-stone-400" />
+                              {formatDate(precio.fechaDesde)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-stone-400" />
+                              {formatDate(precio.fechaHasta!)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-stone-100 text-stone-500 text-xs">
+                              Histórico
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <p className="truncate max-w-[150px] text-stone-500 text-xs">
+                              {precio.observaciones || '-'}
+                            </p>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Eliminar precio"
+                              onClick={() => handleEliminarPrecio(precio)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* ─── Dialog: Nuevo Precio ────────────────────────────────── */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Historial de {productoSeleccionado?.nombre}
+              <Plus className="w-5 h-5 text-amber-500" />
+              Nuevo Precio de Servicio
             </DialogTitle>
-          </DialogHeader>
-          <div className="max-h-96 overflow-y-auto">
-            {historialProducto.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No hay historial de cambios
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    <th className="text-left p-2 text-sm">Fecha</th>
-                    <th className="text-right p-2 text-sm">Anterior</th>
-                    <th className="text-right p-2 text-sm">Nuevo</th>
-                    <th className="text-right p-2 text-sm">Variación</th>
-                    <th className="text-left p-2 text-sm">Motivo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historialProducto.map((item, idx) => {
-                    const anterior = item.precioAnterior || 0
-                    const nuevo = item.precioNuevo
-                    const variacion = anterior > 0 ? ((nuevo - anterior) / anterior * 100).toFixed(2) : '0.00'
-                    
-                    return (
-                      <tr key={item.id} className="border-t">
-                        <td className="p-2 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatFecha(item.fechaVigencia)}
-                          </div>
-                        </td>
-                        <td className="p-2 text-right text-sm text-muted-foreground">
-                          {anterior ? formatMonto(anterior) : '-'}
-                        </td>
-                        <td className="p-2 text-right text-sm font-bold">
-                          {formatMonto(nuevo)}
-                        </td>
-                        <td className="p-2 text-right">
-                          <Badge className={getVariacionColor(variacion)}>
-                            {parseFloat(variacion) >= 0 ? '+' : ''}{variacion}%
-                          </Badge>
-                        </td>
-                        <td className="p-2 text-sm text-muted-foreground">
-                          {item.motivo || '-'}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Nuevo Precio */}
-      <Dialog open={modalNuevoPrecio} onOpenChange={setModalNuevoPrecio}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Actualizar Precio</DialogTitle>
+            <DialogDescription>
+              Configure el precio para un servicio y cliente. Si ya existe un precio vigente para la misma combinación, se cerrará automáticamente.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Producto</Label>
-              <p className="font-medium">{productoSeleccionado?.nombre}</p>
-              <p className="text-sm text-muted-foreground">Código: {productoSeleccionado?.codigo}</p>
-            </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Precio Actual</Label>
-                <p className="text-lg font-bold">{formatMonto(productoSeleccionado?.precioActual || 0)}</p>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Tipo de Servicio *</Label>
+                <Select value={formData.tipoServicioId} onValueChange={handleFormTipoServicioChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar servicio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposServicio.map(t => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.nombre} <span className="text-stone-400">({t.unidad})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <Label>Nuevo Precio</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Cliente *</Label>
+                <Select value={formData.clienteId} onValueChange={handleFormClienteChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Show existing price warning */}
+            {formData.tipoServicioId && formData.clienteId && preciosVigentes.find(
+              p => p.tipoServicioId === formData.tipoServicioId && p.clienteId === formData.clienteId
+            ) && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800">Precio vigente existente</p>
+                  <p className="text-amber-700">
+                    Precio actual: {formatCurrency(
+                      preciosVigentes.find(p => p.tipoServicioId === formData.tipoServicioId && p.clienteId === formData.clienteId)?.precio || 0
+                    )} — Se cerrará automáticamente al crear el nuevo precio.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Precio *</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.precio}
+                    onChange={e => setFormData(prev => ({ ...prev, precio: e.target.value }))}
+                    placeholder="0.00"
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Fecha Vigencia</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={nuevoPrecio}
-                  onChange={(e) => setNuevoPrecio(e.target.value)}
+                  type="date"
+                  value={formData.fechaDesde}
+                  onChange={e => setFormData(prev => ({ ...prev, fechaDesde: e.target.value }))}
                 />
               </div>
             </div>
-            {nuevoPrecio && productoSeleccionado && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm">
-                  Variación: {' '}
-                  <span className={getVariacionColor(
-                    ((parseFloat(nuevoPrecio) - productoSeleccionado.precioActual) / productoSeleccionado.precioActual * 100).toFixed(2)
-                  )}>
-                    {((parseFloat(nuevoPrecio) - productoSeleccionado.precioActual) / productoSeleccionado.precioActual * 100).toFixed(2)}%
-                  </span>
-                </p>
-              </div>
-            )}
-            <div>
-              <Label>Motivo del cambio</Label>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Observaciones</Label>
               <Textarea
-                value={motivoCambio}
-                onChange={(e) => setMotivoCambio(e.target.value)}
-                placeholder="Ej: Ajuste mensual, Aumento de costo, etc."
+                value={formData.observaciones}
+                onChange={e => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
+                placeholder="Ej: Ajuste trimestral, aumento de costo, etc."
+                rows={2}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalNuevoPrecio(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={guardarNuevoPrecio} disabled={guardando}>
-              {guardando ? 'Guardando...' : 'Guardar'}
+            <Button
+              className="bg-amber-500 hover:bg-amber-600"
+              onClick={handleGuardarNuevo}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" /> Crear Precio
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Dialog: Editar Precio (creates new record) ───────── */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-amber-500" />
+              Actualizar Precio
+            </DialogTitle>
+            <DialogDescription>
+              Se creará un nuevo registro de precio y se cerrará el anterior automáticamente.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPrecio && (
+            <div className="space-y-4">
+              {/* Current price info */}
+              <div className="p-3 bg-stone-50 rounded-lg space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-500">Servicio:</span>
+                  <span className="font-medium">{selectedPrecio.tipoServicio?.nombre}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-500">Cliente:</span>
+                  <span className="font-medium">{selectedPrecio.cliente?.nombre}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-500">Precio Actual:</span>
+                  <span className="font-bold text-stone-800">{formatCurrency(selectedPrecio.precio)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-500">Vigente Desde:</span>
+                  <span>{formatDate(selectedPrecio.fechaDesde)}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nuevo Precio *</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editFormData.precio}
+                      onChange={e => setEditFormData(prev => ({ ...prev, precio: e.target.value }))}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nueva Fecha Vigencia</Label>
+                  <Input
+                    type="date"
+                    value={editFormData.fechaDesde}
+                    onChange={e => setEditFormData(prev => ({ ...prev, fechaDesde: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Variation preview */}
+              {editFormData.precio && !isNaN(parseFloat(editFormData.precio)) && selectedPrecio.precio > 0 && (
+                <div className="p-3 bg-stone-50 rounded-lg">
+                  <p className="text-sm text-stone-600">
+                    Variación:{' '}
+                    {(() => {
+                      const variacion = ((parseFloat(editFormData.precio) - selectedPrecio.precio) / selectedPrecio.precio * 100).toFixed(1)
+                      const esAumento = parseFloat(variacion) > 0
+                      return (
+                        <span className={`font-bold ${esAumento ? 'text-red-600' : 'text-emerald-600'}`}>
+                          {esAumento ? '+' : ''}{variacion}%
+                        </span>
+                      )
+                    })()}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Observaciones</Label>
+                <Textarea
+                  value={editFormData.observaciones}
+                  onChange={e => setEditFormData(prev => ({ ...prev, observaciones: e.target.value }))}
+                  placeholder="Motivo de la actualización..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditDialogOpen(false); setSelectedPrecio(null) }}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-amber-500 hover:bg-amber-600"
+              onClick={handleGuardarEdicion}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Actualizando...
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="w-4 h-4 mr-2" /> Actualizar Precio
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Dialog: Confirmar Eliminación ────────────────────── */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <Trash2 className="w-5 h-5" />
+              Eliminar Precio
+            </DialogTitle>
+            <DialogDescription>
+              ¿Está seguro que desea eliminar este precio? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPrecio && (
+            <div className="p-3 bg-red-50 rounded-lg space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-stone-500">Servicio:</span>
+                <span className="font-medium">{selectedPrecio.tipoServicio?.nombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500">Cliente:</span>
+                <span className="font-medium">{selectedPrecio.cliente?.nombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500">Precio:</span>
+                <span className="font-bold">{formatCurrency(selectedPrecio.precio)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-500">Vigente Desde:</span>
+                <span>{formatDate(selectedPrecio.fechaDesde)}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteDialogOpen(false); setSelectedPrecio(null) }}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmarEliminar} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" /> Eliminar
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

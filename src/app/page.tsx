@@ -39,6 +39,7 @@ import { EmpaqueModule } from '@/components/empaque'
 import { CuerosModule } from '@/components/cueros'
 import { ReportesSenasaModule } from '@/components/reportes-senasa'
 import { FacturacionModule } from '@/components/facturacion'
+import { HistoricoPrecios as PreciosModule } from '@/modules/facturacion/components/HistoricoPrecios'
 import { ConfigRotulosModule } from '@/components/config-rotulos'
 import { ConfigInsumosModule } from '@/components/config-insumos'
 import { ConfigUsuariosModule } from '@/components/config-usuarios'
@@ -57,7 +58,7 @@ import {
   Truck, Beef, Scale, ClipboardList, TrendingUp, Package, Tag, Scissors, 
   Warehouse, FileText, Settings, Calendar, LogOut, Lock, Users,
   Loader2, Plus, Search, Weight, RefreshCw, BoxSelect, Barcode, Printer, Monitor,
-  ChevronDown, ChevronRight, LayoutDashboard, Wifi, WifiOff, CloudUpload
+  ChevronDown, ChevronRight, LayoutDashboard, Wifi, WifiOff, CloudUpload, DollarSign
 } from 'lucide-react'
 
 // Resilience imports
@@ -111,7 +112,7 @@ interface Stats {
   enCamara: number
 }
 
-type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicion' | 'despachos' | 'cuarteo' | 'ingresoDespostada' | 'movimientosDespostada' | 'cortesDespostada' | 'empaque' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stock' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'calidadRegistroUsuarios' | 'reportes' | 'configuracion'
+type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicion' | 'despachos' | 'cuarteo' | 'ingresoDespostada' | 'movimientosDespostada' | 'cortesDespostada' | 'empaque' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stock' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'calidadRegistroUsuarios' | 'reportes' | 'configuracion'
 
 // Navigation item
 interface NavItem {
@@ -212,7 +213,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Administración',
     icon: FileText,
     items: [
-      { id: 'facturacion', label: 'Facturación', icon: FileText, permiso: 'puedeConfiguracion' },
+      { id: 'facturacion', label: 'Facturación', icon: FileText, permiso: 'puedeFacturacion' },
+      { id: 'precios', label: 'Precios', icon: DollarSign, permiso: 'puedeFacturacion' },
       { id: 'insumos', label: 'Insumos', icon: Package, permiso: 'puedeConfiguracion' },
       { id: 'stocksInsumos', label: 'Stocks de Insumos', icon: Package, permiso: 'puedeStock' },
     ]
@@ -647,7 +649,7 @@ export default function FrigorificoApp() {
     ]
     
     const modulosAdmin = [
-      { id: 'facturacion' as Page, label: 'Facturación', icon: FileText, color: 'bg-slate-700', desc: 'Gestión de facturación', permiso: 'puedeConfiguracion' },
+      { id: 'facturacion' as Page, label: 'Facturación', icon: FileText, color: 'bg-slate-700', desc: 'Gestión de facturación', permiso: 'puedeFacturacion' },
       { id: 'configuracion' as Page, label: 'Configuración', icon: Settings, color: 'bg-stone-600', desc: 'Configuración del sistema', permiso: 'puedeConfiguracion' },
     ]
 
@@ -923,6 +925,8 @@ export default function FrigorificoApp() {
         return wrapModule('reportesSenasa', <ReportesSenasaModule operador={operador} />)
       case 'facturacion':
         return wrapModule('facturacion', <FacturacionModule operador={operador} />)
+      case 'precios':
+        return wrapModule('precios', <PreciosModule operador={operador} />)
       case 'insumos':
         return wrapModule('insumos', <ConfigInsumosModule operador={operador} />)
       case 'configRotulos':

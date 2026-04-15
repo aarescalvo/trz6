@@ -222,6 +222,10 @@ model Operador {
   decomisos            Decomiso[]
   grasasDressing       GrasaDressing[]
   pallets              Pallet[]
+  notasCreditoDebito   NotaCreditoDebito[]
+  liquidacionesOperador LiquidacionFaena[] @relation("LiquidacionOperador")
+  liquidacionesSupervisor LiquidacionFaena[] @relation("LiquidacionSupervisor")
+  historicoTarifas     HistoricoTarifa[]
 }
 
 enum RolOperador {
@@ -274,6 +278,8 @@ model Cliente {
   preciosServicio   PrecioServicio[]
   cuartos                Cuarto[]             @relation("CuartoPropietario")
   cajas                  CajaEmpaque[]        @relation("CajaPropietario")
+  liquidaciones          LiquidacionFaena[]
+  historicoTarifas       HistoricoTarifa[]
 }
 
 // ==================== TRANSPORTISTAS ====================
@@ -432,6 +438,7 @@ model Tropa {
   
   animales        Animal[]
   listasFaena     ListaFaenaTropa[]
+  liquidacion     LiquidacionFaena?
   
   @@index([especie])
   @@index([estado])
@@ -1133,6 +1140,7 @@ model Factura {
   iva               Float         @default(0)
   porcentajeIva     Float         @default(10.5)  // 10.5 o 21 según producto/servicio
   total             Float         @default(0)
+  importeTributos   Float         @default(0)
   
   // Estado y saldo
   estado            EstadoFactura @default(PENDIENTE)
@@ -1150,6 +1158,10 @@ model Factura {
   
   // Remito asociado
   remito            String?
+  cae               String?
+  caeVencimiento    DateTime?
+  puntoVenta        Int           @default(1)
+  numeroAfip        Int?
   
   // Operador
   operadorId        String?
@@ -1160,6 +1172,9 @@ model Factura {
   
   detalles          DetalleFactura[]
   pagos             PagoFactura[]
+  tributos          FacturaTributo[]
+  notas             NotaCreditoDebito[]
+  liquidacion       LiquidacionFaena?
   
   @@index([numero])
   @@index([clienteId])
@@ -2820,4 +2835,234 @@ model StockProducto {
   @@index([camaraId])
   @@index([estado])
   @@index([tropaCodigo])
+}
+
+// ==================== TRIBUTOS DE FACTURAS (Retenciones/Percepciones) ====================
+
+model FacturaTributo {
+  id            String   @id @default(cuid())
+  facturaId     String
+  factura       Factura  @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  
+  // Tipo de tributo (código AFIP)
+  tributoId     Int          // 1=Nacional, 4=Percep.IIBB, 5=Percep.IVA, 6=Percep.Gan, 7=Otros
+  descripcion   String       // "Percepción IIBB CABA", "Retención Ganancias", etc.
+  
+  // Cálculo
+  baseImponible Float    @default(0)
+  alicuota      Float    @default(0)   // Porcentaje
+  importe       Float    @default(0)   // Monto calculado
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([facturaId])
+  @@index([tributoId])
+}
+
+// ==================== NOTAS DE CRÉDITO/DÉBITO ====================
+
+model NotaCreditoDebito {
+  id              String   @id @default(cuid())
+  tipo            String   // CREDITO, DEBITO
+  tipoComprobante Int      // 02, 03, 07, 08, 12, 13 (AFIP codes)
+  
+  // Referencia a factura original
+  facturaId       String
+  factura         Factura  @relation(fields: [facturaId], references: [id])
+  
+  // Datos
+  numero          Int               // Número secuencial
+  puntoVenta      Int      @default(1)
+  fecha           DateTime @default(now())
+  
+  // Motivo
+  motivo          String   // DEVOLUCION, DESCUENTO, ERROR, ANULACION, AJUSTE
+  descripcion     String?
+  
+  // CAE (si aplica)
+  cae             String?
+  caeVencimiento  DateTime?
+  
+  // Totales
+  subtotal        Float    @default(0)
+  iva             Float    @default(0)
+  total           Float    @default(0)
+  
+  // Operador
+  operadorId      String?
+  operador        Operador? @relation(fields: [operadorId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([facturaId])
+  @@index([tipo])
+  @@index([fecha])
+}
+
+// ==================== CONFIGURACIÓN AFIP ====================
+
+model ConfiguracionAFIP {
+  id                    String   @id @default(cuid())
+  
+  // Certificados
+  certificadoPath       String?  // Ruta al certificado .crt
+  clavePrivadaPath      String?  // Ruta a la clave privada .key
+  
+  // Entorno
+  entorno               String   @default("testing") // testing | production
+  
+  // CUIT y razón social del emisor
+  cuit                  String?
+  razonSocial           String?
+  inicioActividades     DateTime?
+  
+  // Puntos de venta habilitados
+  puntosVenta           String?  // JSON array: [1, 2, 3]
+  
+  // Credenciales WSAA
+  wsaaUrl               String?  // URL del WSAA
+  wsfeUrl               String?  // URL del WSFEv1
+  
+  // Último token obtenido (cache)
+  tokenWsfe             String?
+  signWsfe              String?
+  tokenExpiracion       DateTime?
+  
+  activo                Boolean  @default(true)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+enum AlicuotaIVA {
+  CERO           // 0% - Exento
+  DIEZ_CINCO     // 10.5% - Carnes frescas
+  VEINTIUNO      // 21% - Productos elaborados/servicios
+  VEINTISIETE    // 27% - Servicios especiales
+}
+
+// ==================== TARIFAS Y LIQUIDACIONES ====================
+
+model TipoTarifa {
+  id          String   @id @default(cuid())
+  codigo      String   @unique  // FAENA_BOV, FAENA_EQU, ESTACIONAMIENTO, FLETE, etc.
+  descripcion String
+  unidad      String   @default("POR_KG")  // POR_KG, POR_CABEZA, FIJO, POR_KG_POR_DIA
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  historico   HistoricoTarifa[]
+  
+  @@index([activo])
+  @@index([orden])
+}
+
+model HistoricoTarifa {
+  id              String    @id @default(cuid())
+  tipoTarifaId    String
+  tipoTarifa      TipoTarifa @relation(fields: [tipoTarifaId], references: [id])
+  
+  // Segmentación (puede ser global, por especie, por usuario/cliente)
+  clienteId       String?   // null = tarifa general; con valor = tarifa especial del cliente
+  especie         String?   // BOVINO, EQUINO, etc.; null = todas
+  categoria       String?   // NOVILLO, VACA, etc.; null = todas
+  
+  // Precio y vigencia
+  valor           Float     // precio en pesos
+  moneda          String    @default("ARS")
+  vigenciaDesde   DateTime  // desde cuándo aplica
+  vigenciaHasta   DateTime? // null = vigente actualmente
+  
+  // Auditoría
+  operadorId      String?   // quién lo cargó
+  motivo          String?   // "Actualización por inflación", "Acuerdo con cliente X", etc.
+  
+  createdAt       DateTime  @default(now())
+  
+  cliente         Cliente?  @relation(fields: [clienteId], references: [id])
+  operador        Operador? @relation(fields: [operadorId], references: [id])
+  
+  @@index([tipoTarifaId, vigenciaDesde])
+  @@index([clienteId, tipoTarifaId])
+  @@index([especie])
+  @@index([vigenciaHasta])
+}
+
+model LiquidacionFaena {
+  id              String   @id @default(cuid())
+  numero          Int      @unique
+  
+  // Vínculos con el ciclo productivo
+  tropaId         String   @unique
+  tropa           Tropa    @relation(fields: [tropaId], references: [id])
+  clienteId       String
+  cliente         Cliente  @relation(fields: [clienteId], references: [id])
+  
+  // Datos de la faena (solo lectura desde romaneo)
+  fechaFaena      DateTime
+  dteSenasa       String?
+  certFaena       String?
+  cantCabezas     Int
+  kgRomaneo       Float    // SOLO LECTURA — tomado del romaneo cerrado
+  
+  // Tarifa aplicada (congelada)
+  tarifaFaenaId   String?     // referencia al HistoricoTarifa usado
+  tarifaFaenaValor Float     // valor copiado (no depender del histórico para recalcular)
+  
+  // Conceptos adicionales
+  items           LiquidacionItem[]
+  
+  // Totales calculados
+  subtotalNeto    Float    @default(0)
+  totalIVA        Float    @default(0)
+  totalRetenciones Float   @default(0)
+  totalFinal      Float    @default(0)
+  
+  // Estado
+  estado          String   @default("BORRADOR") // BORRADOR, EMITIDA, ANULADA
+  
+  // Comprobante generado
+  facturaId       String?   @unique
+  factura         Factura?  @relation(fields: [facturaId], references: [id])
+  
+  // Supervisor que aprobó edición
+  supervisorId    String?
+  supervisor      Operador? @relation("LiquidacionSupervisor", fields: [supervisorId], references: [id])
+  
+  operadorId      String?
+  operador        Operador? @relation("LiquidacionOperador", fields: [operadorId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([tropaId])
+  @@index([clienteId])
+  @@index([estado])
+  @@index([fechaFaena])
+}
+
+model LiquidacionItem {
+  id                String   @id @default(cuid())
+  liquidacionId     String
+  liquidacion       LiquidacionFaena @relation(fields: [liquidacionId], references: [id], onDelete: Cascade)
+  
+  tipoTarifaId      String?
+  descripcion       String
+  unidad            String   @default("POR_KG")  // POR_KG, POR_CABEZA, FIJO
+  cantidad          Float    @default(0)  // kg, cabezas, o 1 si es fijo
+  tarifaValor       Float    @default(0)  // valor congelado
+  subtotal          Float    @default(0)
+  alicuotaIVA       Float    @default(21)  // 0, 10.5, 21
+  importeIVA        Float    @default(0)
+  
+  esDescuento       Boolean  @default(false) // para cueros/menudencias cedidos como pago parcial
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([liquidacionId])
+  @@index([tipoTarifaId])
 }

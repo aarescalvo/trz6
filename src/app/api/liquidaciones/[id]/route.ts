@@ -1,0 +1,59 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { liquidacionService } from '@/modules/facturacion/services/liquidacion.service'
+import { actualizarItemsSchema, supervisorAuthSchema } from '@/modules/facturacion/types'
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const data = await liquidacionService.getById(id)
+    if (!data) return NextResponse.json({ success: false, error: 'Liquidación no encontrada' }, { status: 404 })
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    
+    // Check action type
+    if (body.action === 'emitir') {
+      const factura = await liquidacionService.emitirFactura(id)
+      return NextResponse.json({ success: true, data: factura, message: 'Factura emitida exitosamente' })
+    }
+    
+    if (body.action === 'autorizar') {
+      const parsed = supervisorAuthSchema.safeParse({ ...body, liquidacionId: id })
+      if (!parsed.success) {
+        return NextResponse.json({ success: false, error: parsed.error.errors.map(e => e.message).join(', ') }, { status: 400 })
+      }
+      const result = await liquidacionService.autorizarEdicion(id, body.pin, body.operadorId)
+      return NextResponse.json({ success: true, data: result })
+    }
+    
+    if (body.action === 'items') {
+      const parsed = actualizarItemsSchema.safeParse(body)
+      if (!parsed.success) {
+        return NextResponse.json({ success: false, error: parsed.error.errors.map(e => e.message).join(', ') }, { status: 400 })
+      }
+      const data = await liquidacionService.actualizarItems(id, parsed.data.items)
+      return NextResponse.json({ success: true, data })
+    }
+    
+    return NextResponse.json({ success: false, error: 'Acción no válida' }, { status: 400 })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const data = await liquidacionService.anular(id)
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}

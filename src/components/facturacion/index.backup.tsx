@@ -6,8 +6,7 @@ import {
   Plus, Search, Loader2, Printer, RefreshCw, CreditCard,
   Building2, Receipt, Calendar, User, Package, Beef,
   ArrowDownToLine, FileSpreadsheet, History, Pencil,
-  ArrowLeftRight, Shield, AlertTriangle, Settings, Save, Trash2,
-  TrendingUp, Clock, AlertCircle
+  ArrowLeftRight, Shield, AlertTriangle, Settings, Save, Trash2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,8 +23,6 @@ import { HistoricoPrecios } from '@/modules/facturacion/components/HistoricoPrec
 import { LiquidacionForm } from '@/modules/facturacion/components/LiquidacionForm'
 import { ComprobantesTable } from '@/modules/facturacion/components/ComprobantesTable'
 import { CtaCteCliente } from '@/modules/facturacion/components/CtaCteCliente'
-import { FacturaPreview } from '@/modules/facturacion/components/FacturaPreview'
-import { Separator } from '@/components/ui/separator'
 
 interface Operador { id: string; nombre: string; rol: string }
 
@@ -263,49 +260,9 @@ export function FacturacionModule({ operador }: Props) {
   })
   const [tributosFactura, setTributosFactura] = useState<FacturaTributo[]>([])
 
-  // Tarifas vigentes for auto-fill
-  const [tarifasVigentes, setTarifasVigentes] = useState<any[]>([])
-
-  // Tipo comprobante auto-determined
-  const [autoTipoComprobante, setAutoTipoComprobante] = useState<string>('')
-  const [previewOpen, setPreviewOpen] = useState(false)
-
   useEffect(() => {
     fetchAll()
   }, [])
-
-  // Fetch tarifas vigentes
-  useEffect(() => {
-    const fetchTarifas = async () => {
-      try {
-        const res = await fetch('/api/tarifas?modo=vigentes')
-        const data = await res.json()
-        if (data.success) setTarifasVigentes(data.data)
-      } catch { /* ignore */ }
-    }
-    fetchTarifas()
-  }, [])
-
-  // Auto-determine tipoComprobante when cliente changes
-  useEffect(() => {
-    if (formData.clienteId) {
-      const cliente = clientes.find(c => c.id === formData.clienteId)
-      if (cliente) {
-        const cond = (cliente.condicionIva || '').toUpperCase()
-        if (cond.includes('RESPONSABLE') || cond.includes('INSCRIPTO')) {
-          setAutoTipoComprobante('FACTURA_A')
-        } else if (cond.includes('MONOTRIBUTO') || cond.includes('CONSUMIDOR') || cond.includes('FINAL')) {
-          setAutoTipoComprobante('FACTURA_B')
-        } else if (cond.includes('EXENTO') || cond.includes('NO CATEGORIZADO')) {
-          setAutoTipoComprobante('FACTURA_C')
-        } else {
-          setAutoTipoComprobante('FACTURA_B')
-        }
-      }
-    } else {
-      setAutoTipoComprobante('')
-    }
-  }, [formData.clienteId, clientes])
 
   // Cargar servicio faena cuando se cambia al tab
   useEffect(() => {
@@ -890,40 +847,6 @@ ${factura.iva > 0 ? `<p>IVA (${factura.porcentajeIva}%): $${factura.iva?.toLocal
   const pagadas = facturas.filter(f => f.estado === 'PAGADA').length
   const montoTotal = facturas.filter(f => f.estado !== 'ANULADA').reduce((sum, f) => sum + (f.total || 0), 0)
 
-  // Professional dashboard KPIs
-  const ahora = new Date()
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
-  const totalFacturadoMes = facturas
-    .filter(f => f.estado !== 'ANULADA' && new Date(f.fecha) >= inicioMes)
-    .reduce((sum, f) => sum + (f.total || 0), 0)
-  const pendienteCobro = facturas
-    .filter(f => f.estado !== 'ANULADA' && f.estado !== 'PAGADA' && f.saldo > 0)
-    .reduce((sum, f) => sum + (f.saldo || 0), 0)
-  const facturasVencidas = facturas.filter(f => {
-    if (f.estado === 'PAGADA' || f.estado === 'ANULADA') return false
-    const fechaFact = new Date(f.fecha)
-    const diasTranscurridos = Math.floor((ahora.getTime() - fechaFact.getTime()) / (1000 * 60 * 60 * 24))
-    return diasTranscurridos > 30
-  }).length
-  const facturasPagadas = facturas.filter(f => f.estado === 'PAGADA')
-  const promedioDiasCobro = facturasPagadas.length > 0
-    ? facturasPagadas.reduce((sum, f) => {
-        const fechaFact = new Date(f.fecha)
-        const pagos = f.pagos || []
-        const fechaPago = pagos.length > 0 ? new Date(pagos[pagos.length - 1].fecha) : fechaFact
-        return sum + Math.floor((fechaPago.getTime() - fechaFact.getTime()) / (1000 * 60 * 60 * 24))
-      }, 0) / facturasPagadas.length
-    : 0
-
-  // Auto-calculate totals for nueva factura
-  const detallesSubtotal = formData.detalles.reduce((sum, d) => sum + (d.cantidad * d.precioUnitario), 0)
-  const ivaRate = formData.detalles.reduce((maxRate, d) => {
-    const tipo = tiposServicio.find(t => t.id === d.tipoServicioId)
-    return tipo && tipo.porcentajeIva > maxRate ? tipo.porcentajeIva : maxRate
-  }, 21)
-  const calculoIva = autoTipoComprobante === 'FACTURA_A' ? detallesSubtotal * (ivaRate / 100) : 0
-  const calculoTotal = autoTipoComprobante === 'FACTURA_A' ? detallesSubtotal + calculoIva : detallesSubtotal
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -944,54 +867,6 @@ ${factura.iva > 0 ? `<p>IVA (${factura.porcentajeIva}%): $${factura.iva?.toLocal
               <Plus className="w-4 h-4 mr-2" /> Nueva Factura
             </Button>
           </div>
-        </div>
-
-        {/* Professional Dashboard KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="border-0 shadow-md bg-gradient-to-br from-amber-50 to-amber-100/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-200/60 rounded-lg"><DollarSign className="w-5 h-5 text-amber-700" /></div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-amber-600 font-semibold">Total Facturado (mes)</p>
-                  <p className="text-lg font-bold text-amber-800">{formatCurrency(totalFacturadoMes)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md bg-gradient-to-br from-orange-50 to-orange-100/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-200/60 rounded-lg"><CreditCard className="w-5 h-5 text-orange-700" /></div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-orange-600 font-semibold">Pendiente Cobro</p>
-                  <p className="text-lg font-bold text-orange-800">{formatCurrency(pendienteCobro)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md bg-gradient-to-br from-red-50 to-red-100/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-200/60 rounded-lg"><AlertCircle className="w-5 h-5 text-red-700" /></div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-red-600 font-semibold">Facturas Vencidas</p>
-                  <p className="text-lg font-bold text-red-800">{facturasVencidas}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-md bg-gradient-to-br from-emerald-50 to-emerald-100/50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-200/60 rounded-lg"><Clock className="w-5 h-5 text-emerald-700" /></div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-emerald-600 font-semibold">Prom. Días Cobro</p>
-                  <p className="text-lg font-bold text-emerald-800">{promedioDiasCobro > 0 ? `${promedioDiasCobro.toFixed(0)} días` : '-'}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Tabs */}
@@ -1458,8 +1333,7 @@ ${factura.iva > 0 ? `<p>IVA (${factura.porcentajeIva}%): $${factura.iva?.toLocal
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <div className="flex items-center justify-center gap-1">
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Vista previa profesional" onClick={() => { setFacturaSeleccionada(f); fetchTributosFactura(f.id); setPreviewOpen(true) }}><FileText className="w-3.5 h-3.5 text-amber-600" /></Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver detalle rápido" onClick={() => { setFacturaSeleccionada(f); setViewOpen(true); fetchTributosFactura(f.id) }}><Eye className="w-3.5 h-3.5" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver detalle" onClick={() => { setFacturaSeleccionada(f); setViewOpen(true); fetchTributosFactura(f.id) }}><Eye className="w-3.5 h-3.5" /></Button>
                                     <Button variant="ghost" size="icon" className="h-7 w-7" title="Agregar tributo" onClick={() => { setTributoFormData({ ...tributoFormData, facturaId: f.id }); setTributoDialogOpen(true) }}><Plus className="w-3.5 h-3.5 text-orange-500" /></Button>
                                   </div>
                                 </TableCell>
@@ -1821,38 +1695,6 @@ ${factura.iva > 0 ? `<p>IVA (${factura.porcentajeIva}%): $${factura.iva?.toLocal
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
                 {saving ? 'Guardando...' : 'Crear Factura'}
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dialog Vista Previa Profesional */}
-        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-amber-600" />
-                Vista Previa - Comprobante Profesional
-              </DialogTitle>
-              <DialogDescription>
-                Vista previa del comprobante con formato profesional. Utilice los botones para imprimir o exportar a PDF.
-              </DialogDescription>
-            </DialogHeader>
-            {facturaSeleccionada && (
-              <FacturaPreview
-                factura={{
-                  ...facturaSeleccionada,
-                  tributos: tributosFactura.length > 0 ? tributosFactura : facturaSeleccionada.tributos
-                }}
-                onClose={() => setPreviewOpen(false)}
-              />
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setPreviewOpen(false)}>Cerrar</Button>
-              {!facturaSeleccionada?.cae && facturaSeleccionada?.estado !== 'ANULADA' && (
-                <Button variant="outline" onClick={handleSolicitarCAE}>
-                  <Shield className="w-4 h-4 mr-2" />Solicitar CAE
-                </Button>
-              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
