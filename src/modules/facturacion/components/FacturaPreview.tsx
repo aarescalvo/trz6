@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  Printer, Download, Building2, FileText, Receipt, 
-  Calendar, User, CreditCard, Shield, CheckCircle, X
+import {
+  Printer, Download, Building2, FileText, Receipt,
+  Calendar, User, CreditCard, Shield, CheckCircle, X, Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -304,9 +304,37 @@ export function FacturaPreview({ factura, onClose }: Props) {
     }, 100)
   }
 
-  const handleDownloadPDF = () => {
-    toast.info('Para generar PDF, utilice la función de impresión y seleccione "Guardar como PDF" como destino')
-    handlePrint()
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true)
+    try {
+      const res = await fetch('/api/facturacion/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facturaId: factura.id }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Error al generar PDF')
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const tipoLabel = TIPOS_COMPROBANTE_LABELS[factura.tipoComprobante] || 'Comprobante'
+      a.download = `${tipoLabel.replace(/ /g, '_')}_${factura.numero.replace(/-/g, '_')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success('PDF descargado exitosamente')
+    } catch (error: any) {
+      console.error('Error descargando PDF:', error)
+      toast.error(error.message || 'Error al generar PDF')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -321,8 +349,9 @@ export function FacturaPreview({ factura, onClose }: Props) {
           <Button size="sm" variant="outline" onClick={handlePrint} disabled={printing}>
             <Printer className="w-4 h-4 mr-1" />{printing ? 'Preparando...' : 'Imprimir'}
           </Button>
-          <Button size="sm" variant="outline" onClick={handleDownloadPDF}>
-            <Download className="w-4 h-4 mr-1" />PDF
+          <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={downloading}>
+            {downloading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+            {downloading ? 'Generando...' : 'PDF'}
           </Button>
           {onClose && (
             <Button size="sm" variant="ghost" onClick={onClose}>

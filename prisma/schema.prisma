@@ -2490,6 +2490,50 @@ model PrecioServicio {
   @@index([clienteId])
   @@index([fechaDesde])
   @@index([fechaHasta])
+  
+  // Relación con historial
+  historial        PrecioHistorial[]
+}
+
+// ==================== HISTORIAL DE PRECIOS ====================
+
+model PrecioHistorial {
+  id              String   @id @default(cuid())
+  
+  // Relación con el precio actual (opcional, null si el precio fue eliminado)
+  precioServicioId String?
+  precioServicio  PrecioServicio? @relation(fields: [precioServicioId], references: [id])
+  
+  // Snapshot del tipo de servicio y cliente (por si se eliminan)
+  tipoServicioId  String
+  tipoServicioNombre String                  // Snapshot del nombre
+  clienteId       String
+  clienteNombre   String                     // Snapshot del nombre
+  
+  // Cambio de precio
+  precioAnterior  Float?                     // null si es creación
+  precioNuevo     Float                      // Precio establecido
+  
+  // Vigencia
+  fechaDesde      DateTime                   // Desde cuándo rige
+  fechaHasta      DateTime?                  // Hasta cuándo rigió (null = vigente)
+  
+  // Motivo del cambio
+  motivo          String?                    // "Ajuste trimestral", "Nuevo contrato", etc.
+  
+  // Auditoría
+  operadorId      String?                    // Quién hizo el cambio
+  operadorNombre  String?                    // Snapshot del nombre
+  tipoCambio      String   @default("CREACION")  // CREACION, ACTUALIZACION, ELIMINACION
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([precioServicioId])
+  @@index([tipoServicioId])
+  @@index([clienteId])
+  @@index([fechaDesde])
+  @@index([operadorId])
+  @@index([tipoCambio])
 }
 
 // ==================== PAGOS DE FACTURAS ====================
