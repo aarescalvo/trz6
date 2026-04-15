@@ -26,6 +26,7 @@ import { ComprobantesTable } from '@/modules/facturacion/components/Comprobantes
 import { CtaCteCliente } from '@/modules/facturacion/components/CtaCteCliente'
 import { FacturaPreview } from '@/modules/facturacion/components/FacturaPreview'
 import { Separator } from '@/components/ui/separator'
+import { HistorialPreciosModule } from '@/components/historial-precios'
 
 interface Operador { id: string; nombre: string; rol: string }
 
@@ -2011,7 +2012,7 @@ ${factura.iva > 0 ? `<p>IVA (${factura.porcentajeIva}%): $${factura.iva?.toLocal
 
           {/* TAB HISTORIAL PRECIOS */}
           <TabsContent value="historialPrecios">
-            <HistorialPreciosModule />
+            <HistorialPreciosModule operador={operador} />
           </TabsContent>
         </Tabs>
 
