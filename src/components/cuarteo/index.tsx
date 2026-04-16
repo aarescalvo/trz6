@@ -1,33 +1,50 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { 
-  Scissors, Loader2, RefreshCw, Plus, Package, CheckCircle
-} from 'lucide-react'
-import { TextoEditable, EditableBlock, useEditor } from '@/components/ui/editable-screen'
+import { Scissors, Loader2, RefreshCw, Search, Package, AlertTriangle, CheckCircle2, BarChart3 } from 'lucide-react'
 
-interface Operador {
+interface Operador { id: string; nombre: string; rol: string }
+
+interface C2TipoCuarto {
   id: string
   nombre: string
-  rol: string
-  permisos?: Record<string, boolean>
+  codigo: string
+  descripcion?: string | null
+  orden: number
+  activo: boolean
 }
 
-interface Camara {
+interface MediaRes {
   id: string
-  nombre: string
+  codigo: string
+  peso: number
+  lado: string
+  sigla: string
+  estado: string
+  romaneo?: { tropaCodigo: string; garron: number | null } | null
+}
+
+interface CuartoItem {
+  id: string
   tipo: string
+  peso: number
+  codigo: string
+  estado: string
+  tipoCuarto?: { id: string; nombre: string; codigo: string } | null
+  camara?: { id: string; nombre: string } | null
 }
 
-interface Cuarteo {
+interface RegistroCuarteo {
   id: string
   fecha: string
   mediaResId: string | null
@@ -38,93 +55,172 @@ interface Cuarteo {
   camara: { id: string; nombre: string } | null
   operador: { id: string; nombre: string } | null
   observaciones: string | null
+  cuartos?: CuartoItem[]
 }
 
-interface Props {
-  operador: Operador
+interface Camara {
+  id: string
+  nombre: string
+  tipo: string
 }
 
-export function CuarteoModule({ operador }: Props) {
-  const { editMode, getTexto, setTexto, getBloque, updateBloque } = useEditor()
-  const [cuarteos, setCuarteos] = useState<Cuarteo[]>([])
+export function CuarteoModule({ operador }: { operador: Operador }) {
+  const [registros, setRegistros] = useState<RegistroCuarteo[]>([])
+  const [tiposCuarto, setTiposCuarto] = useState<C2TipoCuarto[]>([])
   const [camaras, setCameras] = useState<Camara[]>([])
   const [loading, setLoading] = useState(true)
-  const [filtro, setFiltro] = useState<'TODOS' | 'EN_PROCESO' | 'COMPLETADO'>('TODOS')
-  
-  const [mediaResId, setMediaResId] = useState('')
-  const [tipoCorte, setTipoCorte] = useState<string>('DELANTERO_TRASERO')
-  const [pesoTotal, setPesoTotal] = useState('')
-  const [pesoDelantero, setPesoDelantero] = useState('')
-  const [pesoTrasero, setPesoTrasero] = useState('')
-  const [camaraDestino, setCamaraDestino] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Form state
+  const [codigoBusqueda, setCodigoBusqueda] = useState('')
+  const [mediaResEncontrada, setMediaResEncontrada] = useState<MediaRes | null>(null)
+  const [buscandoMR, setBuscandoMR] = useState(false)
+  const [pesosCuartos, setPesosCuartos] = useState<Record<string, string>>({})
+  const [camaraDestino, setCamaraDestino] = useState('')
+  const [observaciones, setObservaciones] = useState('')
+
+  // Detalle dialog
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [registroDetalle, setRegistroDetalle] = useState<RegistroCuarteo | null>(null)
+
   useEffect(() => {
-    fetchCuarteos()
-    fetchCameras()
+    fetchDatos()
   }, [])
 
-  const fetchCameras = async () => {
-    try {
-      const res = await fetch('/api/camaras')
-      const data = await res.json()
-      if (data.success) {
-        setCameras(data.data.filter((c: Camara) => c.activo !== false))
-      }
-    } catch (error) {
-      console.error('Error fetching cámaras:', error)
-    }
-  }
-
-  const fetchCuarteos = async () => {
+  const fetchDatos = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/cuarteo')
-      const data = await res.json()
-      if (data.success) {
-        setCuarteos(data.data)
-      } else {
-        toast.error('Error al cargar cuarteos')
-      }
+      const [resReg, resTipos, resCamaras] = await Promise.all([
+        fetch('/api/cuarteo?includeCuartos=true&limit=30'),
+        fetch('/api/c2-tipos-cuarto'),
+        fetch('/api/camaras')
+      ])
+
+      const dataReg = await resReg.json()
+      const dataTipos = await resTipos.json()
+      const dataCamaras = await resCamaras.json()
+
+      if (dataReg.success) setRegistros(dataReg.data || [])
+      if (dataTipos.success) setTiposCuarto((dataTipos.data || []).filter((t: C2TipoCuarto) => t.activo))
+      if (dataCamaras.success) setCameras((dataCamaras.data || []).filter((c: Camara) => c.activo !== false))
     } catch (error) {
       console.error('Error:', error)
-      toast.error('Error al cargar cuarteos')
+      toast.error('Error al cargar datos')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleIniciarCuarteo = async () => {
-    if (!pesoTotal) {
-      toast.error('El peso total es obligatorio')
+  // Buscar MediaRes por código
+  const buscarMediaRes = async () => {
+    if (!codigoBusqueda.trim()) {
+      toast.error('Ingrese un código de Media Res')
+      return
+    }
+
+    setBuscandoMR(true)
+    try {
+      const res = await fetch(`/api/stock/medias?codigo=${encodeURIComponent(codigoBusqueda.trim())}`)
+      const data = await res.json()
+
+      if (data.success && data.data && data.data.length > 0) {
+        const mr = data.data[0]
+        if (mr.estado !== 'EN_CAMARA') {
+          toast.warning(`Media Res en estado ${mr.estado}, no disponible para cuarteo`)
+          setBuscandoMR(false)
+          return
+        }
+        setMediaResEncontrada(mr)
+        setPesosCuartos({})
+        toast.success(`Media Res encontrada: ${mr.peso} kg`)
+      } else {
+        // Fallback: buscar directamente por ID
+        try {
+          const res2 = await fetch(`/api/medias-res?search=${encodeURIComponent(codigoBusqueda.trim())}`)
+          const data2 = await res2.json()
+          if (data2.success && data2.data && data2.data.length > 0) {
+            const mr = data2.data[0]
+            setMediaResEncontrada(mr)
+            setPesosCuartos({})
+            toast.success(`Media Res encontrada: ${mr.peso} kg`)
+          } else {
+            toast.error('Media Res no encontrada')
+            setMediaResEncontrada(null)
+          }
+        } catch {
+          toast.error('Media Res no encontrada')
+          setMediaResEncontrada(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error buscando MR:', error)
+      toast.error('Error al buscar Media Res')
+      setMediaResEncontrada(null)
+    } finally {
+      setBuscandoMR(false)
+    }
+  }
+
+  // Calcular peso total de los cuartos ingresados
+  const pesoTotalCuartos = tiposCuarto.reduce((sum, tipo) => {
+    const peso = parseFloat(pesosCuartos[tipo.id] || '0') || 0
+    return sum + peso
+  }, 0)
+
+  // Merma de oreo
+  const mermaKg = mediaResEncontrada ? mediaResEncontrada.peso - pesoTotalCuartos : 0
+  const mermaPorcentaje = mediaResEncontrada && mediaResEncontrada.peso > 0
+    ? ((mermaKg / mediaResEncontrada.peso) * 100)
+    : 0
+
+  // Registrar cuarteo
+  const handleRegistrar = async () => {
+    if (!mediaResEncontrada) {
+      toast.error('Debe buscar una Media Res primero')
+      return
+    }
+
+    const cuartosConPeso = tiposCuarto.filter(t => parseFloat(pesosCuartos[t.id] || '0') > 0)
+    if (cuartosConPeso.length === 0) {
+      toast.error('Debe ingresar al menos un peso de cuarto')
       return
     }
 
     setSaving(true)
     try {
+      const payload = {
+        mediaResId: mediaResEncontrada.id,
+        pesoTotal: pesoTotalCuartos,
+        pesoDelantero: tiposCuarto.find(t => t.codigo.toUpperCase().includes('DEL')) ? parseFloat(pesosCuartos[tiposCuarto.find(t => t.codigo.toUpperCase().includes('DEL'))!.id] || '0') || null : null,
+        pesoTrasero: tiposCuarto.find(t => t.codigo.toUpperCase().includes('TRA')) ? parseFloat(pesosCuartos[tiposCuarto.find(t => t.codigo.toUpperCase().includes('TRA'))!.id] || '0') || null : null,
+        camaraId: camaraDestino || null,
+        operadorId: operador.id,
+        observaciones: observaciones.trim() || null,
+        cuartos: cuartosConPeso.map(t => ({
+          tipoCuartoId: t.id,
+          codigo: t.codigo,
+          nombre: t.nombre,
+          peso: parseFloat(pesosCuartos[t.id] || '0')
+        }))
+      }
+
       const res = await fetch('/api/cuarteo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mediaResId: mediaResId || null,
-          tipoCorte,
-          pesoTotal: parseFloat(pesoTotal),
-          pesoDelantero: pesoDelantero ? parseFloat(pesoDelantero) : null,
-          pesoTrasero: pesoTrasero ? parseFloat(pesoTrasero) : null,
-          camaraId: camaraDestino || null,
-          operadorId: operador.id
-        })
+        body: JSON.stringify(payload)
       })
 
       const data = await res.json()
+
       if (data.success) {
-        setCuarteos([data.data, ...cuarteos])
-        setMediaResId('')
-        setPesoTotal('')
-        setPesoDelantero('')
-        setPesoTrasero('')
-        setCamaraDestino('')
         toast.success('Cuarteo registrado correctamente')
+        // Reset form
+        setCodigoBusqueda('')
+        setMediaResEncontrada(null)
+        setPesosCuartos({})
+        setCamaraDestino('')
+        setObservaciones('')
+        fetchDatos()
       } else {
         toast.error(data.error || 'Error al registrar cuarteo')
       }
@@ -136,117 +232,241 @@ export function CuarteoModule({ operador }: Props) {
     }
   }
 
-  const getTipoCorteLabel = (tipo: string) => {
-    switch (tipo) {
-      case 'DELANTERO_TRASERO': return 'Delantero/Trasero'
-      case 'CUARTOS_IGUALES': return 'Cuartos Iguales'
-      default: return tipo
-    }
+  // Ver detalle de un registro
+  const handleVerDetalle = (registro: RegistroCuarteo) => {
+    setRegistroDetalle(registro)
+    setDialogOpen(true)
   }
 
-  const cuarteosFiltrados = cuarteos.filter(c => {
-    if (filtro === 'TODOS') return true
-    return true // Por ahora no hay estado en el modelo
-  })
+  // Stats
+  const stats = {
+    totalRegistros: registros.length,
+    pesoTotal: registros.reduce((acc, r) => acc + (r.pesoTotal || 0), 0),
+    conCuartos: registros.filter(r => r.cuartos && r.cuartos.length > 0).length,
+    mermaPromedio: registros.length > 0
+      ? (registros.reduce((acc, r) => {
+          if (r.cuartos && r.cuartos.length > 0 && r.pesoTotal > 0) {
+            const pesoOriginal = r.pesoDelantero && r.pesoTrasero
+              ? r.pesoDelantero + r.pesoTrasero : r.pesoTotal
+            return acc + ((pesoOriginal - r.pesoTotal) / pesoOriginal * 100)
+          }
+          return acc
+        }, 0) / registros.length).toFixed(1)
+      : '0'
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <EditableBlock bloqueId="header" label="Encabezado">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-stone-800 flex items-center gap-2">
-                <Scissors className="w-8 h-8 text-amber-500" />
-                <TextoEditable id="cuarteo-titulo" original="Cuarteo" tag="span" />
-              </h1>
-              <p className="text-stone-500 mt-1">
-                <TextoEditable id="cuarteo-subtitulo" original="División de medias en cuartos" tag="span" />
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={fetchCuarteos} variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                <TextoEditable id="btn-actualizar" original="Actualizar" tag="span" />
-              </Button>
-            </div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-stone-800 flex items-center gap-2">
+              <Scissors className="w-8 h-8 text-amber-500" />
+              Cuarteo (C2)
+            </h1>
+            <p className="text-stone-500">Pesaje dinámico de cuartos por tipo configurado</p>
           </div>
-        </EditableBlock>
+          <Button onClick={fetchDatos} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualizar
+          </Button>
+        </div>
 
-        {/* Resumen */}
-        <EditableBlock bloqueId="resumenCards" label="Tarjetas de Resumen">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setFiltro('TODOS')}>
-              <CardContent className="p-4">
-                <p className="text-xs text-stone-500 uppercase"><TextoEditable id="label-total" original="Total" tag="span" /></p>
-                <p className="text-3xl font-bold text-stone-800">{cuarteos.length}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4">
-                <p className="text-xs text-stone-500 uppercase"><TextoEditable id="label-peso-total" original="Peso Total" tag="span" /></p>
-                <p className="text-3xl font-bold text-amber-600">{cuarteos.reduce((acc, c) => acc + (c.pesoTotal || 0), 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4">
-                <p className="text-xs text-stone-500 uppercase"><TextoEditable id="label-delantero" original="Delantero" tag="span" /></p>
-                <p className="text-3xl font-bold text-emerald-600">{cuarteos.reduce((acc, c) => acc + (c.pesoDelantero || 0), 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg</p>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4">
-                <p className="text-xs text-stone-500 uppercase"><TextoEditable id="label-trasero" original="Trasero" tag="span" /></p>
-                <p className="text-3xl font-bold text-blue-600">{cuarteos.reduce((acc, c) => acc + (c.pesoTrasero || 0), 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg</p>
-              </CardContent>
-            </Card>
-          </div>
-        </EditableBlock>
-
-        {/* Formulario */}
-        <EditableBlock bloqueId="formulario" label="Formulario">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="border-0 shadow-md">
-            <CardHeader className="bg-stone-50 rounded-t-lg">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Plus className="w-5 h-5 text-amber-500" />
-                <TextoEditable id="titulo-registrar-cuarteo" original="Registrar Cuarteo" tag="span" />
-              </CardTitle>
-            </CardHeader>
             <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label><TextoEditable id="label-media-res" original="Media Res ID" tag="span" /></Label>
-                  <Input value={mediaResId} onChange={(e) => setMediaResId(e.target.value)} placeholder="Opcional" />
+              <div className="flex items-center gap-3">
+                <div className="bg-stone-100 p-2 rounded-lg">
+                  <Scissors className="w-5 h-5 text-stone-600" />
                 </div>
-                <div className="space-y-2">
-                  <Label><TextoEditable id="label-tipo-corte" original="Tipo Corte" tag="span" /></Label>
-                  <Select value={tipoCorte} onValueChange={setTipoCorte}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DELANTERO_TRASERO">Delantero/Trasero</SelectItem>
-                      <SelectItem value="CUARTOS_IGUALES">Cuartos Iguales</SelectItem>
-                      <SelectItem value="OTRO">Otro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label><TextoEditable id="label-peso-total" original="Peso Total (kg)" tag="span" /> *</Label>
-                  <Input type="number" step="0.1" value={pesoTotal} onChange={(e) => setPesoTotal(e.target.value)} placeholder="0.0" />
-                </div>
-                <div className="space-y-2">
-                  <Label><TextoEditable id="label-peso-delantero" original="Peso Delantero (kg)" tag="span" /></Label>
-                  <Input type="number" step="0.1" value={pesoDelantero} onChange={(e) => setPesoDelantero(e.target.value)} placeholder="0.0" />
+                <div>
+                  <p className="text-xs text-stone-500">Total Registros</p>
+                  <p className="text-xl font-bold">{stats.totalRegistros}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label><TextoEditable id="label-peso-trasero" original="Peso Trasero (kg)" tag="span" /></Label>
-                  <Input type="number" step="0.1" value={pesoTrasero} onChange={(e) => setPesoTrasero(e.target.value)} placeholder="0.0" />
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-100 p-2 rounded-lg">
+                  <Package className="w-5 h-5 text-amber-600" />
                 </div>
+                <div>
+                  <p className="text-xs text-stone-500">Peso Total</p>
+                  <p className="text-xl font-bold text-amber-600">{stats.pesoTotal.toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500">Con Cuartos C2</p>
+                  <p className="text-xl font-bold text-green-600">{stats.conCuartos}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500">Merma Prom.</p>
+                  <p className="text-xl font-bold text-blue-600">{stats.mermaPromedio}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Formulario de Cuarteo */}
+        <Card className="border-0 shadow-md">
+          <CardHeader className="bg-stone-50 rounded-t-lg">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Scissors className="w-5 h-5 text-amber-500" />
+              Registrar Cuarteo
+            </CardTitle>
+            <CardDescription>
+              Escanee la Media Res y registre el peso de cada tipo de cuarto
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            {/* Búsqueda de Media Res */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Buscar Media Res</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Escanear código o ingresar ID..."
+                    value={codigoBusqueda}
+                    onChange={(e) => setCodigoBusqueda(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && buscarMediaRes()}
+                  />
+                </div>
+                <Button onClick={buscarMediaRes} disabled={buscandoMR} variant="outline">
+                  {buscandoMR ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Buscar
+                </Button>
+              </div>
+            </div>
+
+            {/* Info Media Res encontrada */}
+            {mediaResEncontrada && (
+              <Card className="border-amber-200 bg-amber-50">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-4">
+                      <Badge className="bg-amber-500 text-white">{mediaResEncontrada.lado}</Badge>
+                      <div>
+                        <p className="font-medium text-stone-800">Código: {mediaResEncontrada.codigo}</p>
+                        <p className="text-sm text-stone-500">
+                          Peso: <span className="font-semibold text-amber-700">{mediaResEncontrada.peso} kg</span>
+                          {mediaResEncontrada.romaneo?.tropaCodigo && (
+                            <> · Tropa: {mediaResEncontrada.romaneo.tropaCodigo}</>
+                          )}
+                          {mediaResEncontrada.romaneo?.garron && (
+                            <> · Garrón: {mediaResEncontrada.romaneo.garron}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => { setMediaResEncontrada(null); setCodigoBusqueda(''); setPesosCuartos({}) }}>
+                      Limpiar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pesaje dinámico por tipo de cuarto */}
+            {mediaResEncontrada && tiposCuarto.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Pesaje por Tipo de Cuarto</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {tiposCuarto.sort((a, b) => a.orden - b.orden).map((tipo) => (
+                    <Card key={tipo.id} className="border-stone-200">
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Scissors className="w-4 h-4 text-amber-500" />
+                              <span className="font-medium text-stone-800">{tipo.nombre}</span>
+                            </div>
+                            <Badge variant="outline" className="font-mono text-xs bg-stone-50">
+                              {tipo.codigo}
+                            </Badge>
+                          </div>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="0.0"
+                              value={pesosCuartos[tipo.id] || ''}
+                              onChange={(e) => setPesosCuartos({ ...pesosCuartos, [tipo.id]: e.target.value })}
+                              className="text-right pr-8"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">kg</span>
+                          </div>
+                          {tipo.descripcion && (
+                            <p className="text-xs text-stone-400">{tipo.descripcion}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Merma de oreo */}
+                {pesoTotalCuartos > 0 && (
+                  <Card className={`border-2 ${mermaPorcentaje > 5 ? 'border-red-300 bg-red-50' : mermaPorcentaje > 3 ? 'border-amber-300 bg-amber-50' : 'border-green-300 bg-green-50'}`}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-3">
+                          {mermaPorcentaje > 5 ? (
+                            <AlertTriangle className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <BarChart3 className="w-5 h-5 text-green-500" />
+                          )}
+                          <div>
+                            <p className="font-medium text-stone-800">
+                              Merma de Oreo: {mermaKg.toFixed(1)} kg ({mermaPorcentaje.toFixed(1)}%)
+                            </p>
+                            <p className="text-xs text-stone-500">
+                              MR: {mediaResEncontrada.peso} kg → Cuartos: {pesoTotalCuartos.toFixed(1)} kg
+                            </p>
+                          </div>
+                        </div>
+                        {mermaPorcentaje > 5 && (
+                          <Badge className="bg-red-500 text-white">Merma alta</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Cámara destino y observaciones */}
+            {mediaResEncontrada && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label><TextoEditable id="label-camara-destino" original="Cámara Destino" tag="span" /></Label>
+                  <Label>Cámara Destino</Label>
                   <Select value={camaraDestino} onValueChange={setCamaraDestino}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cámara" />
+                    </SelectTrigger>
                     <SelectContent>
                       {camaras.map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
@@ -254,67 +474,155 @@ export function CuarteoModule({ operador }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end">
-                  <Button onClick={handleIniciarCuarteo} className="w-full bg-amber-500 hover:bg-amber-600" disabled={saving}>
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Scissors className="w-4 h-4 mr-2" />}
-                    <TextoEditable id="btn-registrar" original="Registrar" tag="span" />
-                  </Button>
+                <div className="space-y-2">
+                  <Label>Observaciones</Label>
+                  <Input
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    placeholder="Observaciones..."
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </EditableBlock>
+            )}
 
-        {/* Tabla */}
-        <EditableBlock bloqueId="tablaCuarteos" label="Tabla de Cuarteos">
-          <Card className="border-0 shadow-md">
-            <CardHeader className="bg-stone-50 rounded-t-lg">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Package className="w-5 h-5 text-amber-500" />
-                <TextoEditable id="titulo-cuarteos" original="Registros de Cuarteo" tag="span" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-                </div>
-              ) : cuarteosFiltrados.length === 0 ? (
-                <div className="py-12 text-center text-stone-400">
-                  <Scissors className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p><TextoEditable id="msg-no-hay-cuarteos" original="No hay registros de cuarteo" tag="span" /></p>
-                </div>
-              ) : (
+            {/* Botón registrar */}
+            {mediaResEncontrada && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleRegistrar}
+                  disabled={saving || pesoTotalCuartos <= 0}
+                  className="bg-amber-500 hover:bg-amber-600 min-w-[200px]"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Scissors className="w-4 h-4 mr-2" />}
+                  {saving ? 'Registrando...' : 'Registrar Cuarteo'}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tabla de Registros */}
+        <Card className="border-0 shadow-md">
+          <CardHeader className="bg-stone-50 rounded-t-lg">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Package className="w-5 h-5 text-amber-600" />
+              Registros de Cuarteo ({registros.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="p-8 text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-amber-500" />
+                <p className="text-stone-400 mt-2">Cargando registros...</p>
+              </div>
+            ) : registros.length === 0 ? (
+              <div className="p-8 text-center text-stone-400">
+                <Scissors className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No hay registros de cuarteo</p>
+              </div>
+            ) : (
+              <div className="max-h-[400px] overflow-y-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead><TextoEditable id="th-fecha" original="Fecha" tag="span" /></TableHead>
-                      <TableHead><TextoEditable id="th-tipo-corte" original="Tipo Corte" tag="span" /></TableHead>
-                      <TableHead><TextoEditable id="th-peso-total" original="Peso Total" tag="span" /></TableHead>
-                      <TableHead><TextoEditable id="th-peso-delantero" original="Peso Delantero" tag="span" /></TableHead>
-                      <TableHead><TextoEditable id="th-peso-trasero" original="Peso Trasero" tag="span" /></TableHead>
-                      <TableHead><TextoEditable id="th-camara" original="Cámara" tag="span" /></TableHead>
-                      <TableHead><TextoEditable id="th-operador" original="Operador" tag="span" /></TableHead>
+                    <TableRow className="bg-stone-50/50">
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Tipo Corte</TableHead>
+                      <TableHead>Peso Total</TableHead>
+                      <TableHead>Cuartos</TableHead>
+                      <TableHead>Cámara</TableHead>
+                      <TableHead>Operador</TableHead>
+                      <TableHead className="text-center">Detalle</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {cuarteosFiltrados.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell>{new Date(c.fecha).toLocaleDateString('es-AR')}</TableCell>
-                        <TableCell>{getTipoCorteLabel(c.tipoCorte)}</TableCell>
-                        <TableCell className="font-medium">{c.pesoTotal?.toLocaleString('es-AR', { maximumFractionDigits: 1 })} kg</TableCell>
-                        <TableCell>{c.pesoDelantero?.toLocaleString('es-AR', { maximumFractionDigits: 1 }) || '-'} kg</TableCell>
-                        <TableCell>{c.pesoTrasero?.toLocaleString('es-AR', { maximumFractionDigits: 1 }) || '-'} kg</TableCell>
-                        <TableCell>{c.camara?.nombre || '-'}</TableCell>
-                        <TableCell>{c.operador?.nombre || '-'}</TableCell>
+                    {registros.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>{new Date(r.fecha).toLocaleDateString('es-AR')}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-stone-50">
+                            {r.tipoCorte === 'DELANTERO_TRASERO' ? 'Del./Tras.' : r.tipoCorte}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{r.pesoTotal?.toLocaleString('es-AR', { maximumFractionDigits: 1 })} kg</TableCell>
+                        <TableCell>
+                          {r.cuartos && r.cuartos.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {r.cuartos.map((c, i) => (
+                                <Badge key={i} variant="outline" className="text-xs bg-teal-50 text-teal-700 border-teal-200">
+                                  {c.tipoCuarto?.nombre || c.tipo}: {c.peso}kg
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-stone-300 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{r.camara?.nombre || '-'}</TableCell>
+                        <TableCell>{r.operador?.nombre || '-'}</TableCell>
+                        <TableCell className="text-center">
+                          <Button variant="ghost" size="sm" onClick={() => handleVerDetalle(r)}>
+                            Ver
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </EditableBlock>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Dialog Detalle */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Scissors className="w-5 h-5 text-amber-500" />
+                Detalle de Cuarteo
+              </DialogTitle>
+              <DialogDescription>
+                {registroDetalle && new Date(registroDetalle.fecha).toLocaleString('es-AR')}
+              </DialogDescription>
+            </DialogHeader>
+            {registroDetalle && (
+              <div className="space-y-3 py-2">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-stone-500">Peso Total:</span> <span className="font-semibold">{registroDetalle.pesoTotal} kg</span></div>
+                  <div><span className="text-stone-500">Cámara:</span> {registroDetalle.camara?.nombre || '-'}</div>
+                  <div><span className="text-stone-500">Operador:</span> {registroDetalle.operador?.nombre || '-'}</div>
+                  <div><span className="text-stone-500">Tipo:</span> {registroDetalle.tipoCorte}</div>
+                </div>
+                {registroDetalle.cuartos && registroDetalle.cuartos.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm font-semibold mb-2">Cuartos Generados:</p>
+                    <div className="space-y-1">
+                      {registroDetalle.cuartos.map((c, i) => (
+                        <div key={i} className="flex items-center justify-between bg-stone-50 rounded-md px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Scissors className="w-3 h-3 text-amber-500" />
+                            <span className="font-medium text-sm">{c.tipoCuarto?.nombre || c.tipo}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-stone-400">{c.codigo}</span>
+                            <Badge variant="outline" className="bg-teal-50 text-teal-700">
+                              {c.peso} kg
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {registroDetalle.observaciones && (
+                  <div className="text-sm text-stone-500 mt-2">
+                    <span className="font-semibold">Obs:</span> {registroDetalle.observaciones}
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

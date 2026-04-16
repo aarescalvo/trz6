@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-// GET - Listar registros de cuarteo
+// Helper: map C2TipoCuarto codigo to TipoCuarto enum
+function mapTipoCuarto(codigo: string): 'DELANTERO' | 'TRASERO' | 'ASADO' {
+  const code = codigo.toUpperCase()
+  if (code.includes('DEL') || code.includes('D')) return 'DELANTERO'
+  if (code.includes('TRA') || code.includes('T')) return 'TRASERO'
+  return 'ASADO'
+}
+
+// GET - Listar registros de cuarteo (con cuartos opcionales)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const estado = searchParams.get('estado')
     const camaraId = searchParams.get('camaraId')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const includeCuartos = searchParams.get('includeCuartos') === 'true'
 
     const where: any = {}
-    if (estado) where.estado = estado
     if (camaraId) where.camaraId = camaraId
 
     const [registros, total] = await Promise.all([
@@ -19,7 +26,11 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           camara: { select: { id: true, nombre: true } },
-          operador: { select: { id: true, nombre: true } }
+          operador: { select: { id: true, nombre: true } },
+          ...(includeCuartos ? {
+            // NOTE: RegistroCuarteo doesn't have direct relation to Cuarto,
+            // we look up cuartos separately via mediaResId
+          } : {})
         },
         orderBy: { fecha: 'desc' },
         take: limit,
@@ -27,6 +38,30 @@ export async function GET(request: NextRequest) {
       }),
       db.registroCuarteo.count({ where })
     ])
+
+    // If includeCuartos, fetch related Cuarto records for each registro
+    let enrichedRegistros = registros
+    if (includeCuartos) {
+      const mediaResIds = registros.map(r => r.mediaResId).filter(Boolean) as string[]
+      const cuartos = mediaResIds.length > 0 ? await db.cuarto.findMany({
+        where: { mediaResId: { in: mediaResIds } },
+        include: {
+          tipoCuarto: { select: { id: true, nombre: true, codigo: true } },
+          camara: { select: { id: true, nombre: true } }
+        }
+      }) : []
+
+      const cuartosByMediaRes = cuartos.reduce((acc: any, c: any) => {
+        if (!acc[c.mediaResId]) acc[c.mediaResId] = []
+        acc[c.mediaResId].push(c)
+        return acc
+      }, {})
+
+      enrichedRegistros = registros.map(r => ({
+        ...r,
+        cuartos: r.mediaResId ? (cuartosByMediaRes[r.mediaResId] || []) : []
+      }))
+    }
 
     // Calcular estadísticas
     const stats = await db.registroCuarteo.aggregate({
@@ -36,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: registros,
+      data: enrichedRegistros,
       pagination: {
         total,
         limit,
@@ -59,7 +94,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear nuevo registro de cuarteo
+// POST - Crear nuevo registro de cuarteo (con cuartos dinámicos C2)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -71,23 +106,53 @@ export async function POST(request: NextRequest) {
       pesoTrasero,
       camaraId,
       operadorId,
-      observaciones
+      observaciones,
+      // Nuevo: array de cuartos dinámicos con C2TipoCuarto
+      cuartos: cuartosInput
     } = body
 
-    if (!pesoTotal) {
+    if (!pesoTotal && (!cuartosInput || cuartosInput.length === 0)) {
       return NextResponse.json(
-        { success: false, error: 'El peso total es requerido' },
+        { success: false, error: 'El peso total o los cuartos son requeridos' },
         { status: 400 }
       )
     }
 
+    // Buscar datos de la MediaRes si se proporcionó ID
+    let mediaRes = null
+    if (mediaResId) {
+      mediaRes = await db.mediaRes.findUnique({
+        where: { id: mediaResId },
+        include: {
+          romaneo: {
+            select: { tropaCodigo: true, garron: true }
+          }
+        }
+      })
+      if (!mediaRes) {
+        return NextResponse.json(
+          { success: false, error: 'Media Res no encontrada' },
+          { status: 404 }
+        )
+      }
+    }
+
+    // Calcular peso total de los cuartos dinámicos
+    let totalCuartos = 0
+    if (cuartosInput && cuartosInput.length > 0) {
+      totalCuartos = cuartosInput.reduce((sum: number, c: { peso: number }) => sum + (parseFloat(String(c.peso)) || 0), 0)
+    }
+
+    const pesoTotalFinal = parseFloat(pesoTotal) || totalCuartos
+
+    // Crear el registro de cuarteo
     const registro = await db.registroCuarteo.create({
       data: {
         mediaResId,
         tipoCorte: tipoCorte || 'DELANTERO_TRASERO',
-        pesoTotal: parseFloat(pesoTotal),
-        pesoDelantero: pesoDelantero ? parseFloat(pesoDelantero) : null,
-        pesoTrasero: pesoTrasero ? parseFloat(pesoTrasero) : null,
+        pesoTotal: pesoTotalFinal,
+        pesoDelantero: pesoDelantero ? parseFloat(pesoDelantero) : (cuartosInput?.find((c: any) => mapTipoCuarto(c.codigo || '') === 'DELANTERO')?.peso ? parseFloat(cuartosInput.find((c: any) => mapTipoCuarto(c.codigo || '') === 'DELANTERO').peso) : null),
+        pesoTrasero: pesoTrasero ? parseFloat(pesoTrasero) : (cuartosInput?.find((c: any) => mapTipoCuarto(c.codigo || '') === 'TRASERO')?.peso ? parseFloat(cuartosInput.find((c: any) => mapTipoCuarto(c.codigo || '') === 'TRASERO').peso) : null),
         camaraId,
         operadorId,
         observaciones
@@ -98,7 +163,41 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Si hay mediaResId, actualizar estado de la media
+    // Crear Cuarto records si se proporcionaron cuartos dinámicos
+    const cuartosCreated = []
+    if (cuartosInput && cuartosInput.length > 0 && mediaResId) {
+      const timestamp = Date.now()
+      for (let i = 0; i < cuartosInput.length; i++) {
+        const c = cuartosInput[i]
+        const peso = parseFloat(String(c.peso)) || 0
+        if (peso <= 0) continue
+
+        const tipoEnum = mapTipoCuarto(c.codigo || c.nombre || '')
+
+        const cuarto = await db.cuarto.create({
+          data: {
+            mediaResId,
+            tipo: tipoEnum,
+            tipoCuartoId: c.tipoCuartoId || null,
+            peso,
+            codigo: `CRT-${timestamp}-${i + 1}`,
+            tropaCodigo: mediaRes?.romaneo?.tropaCodigo || null,
+            garron: mediaRes?.romaneo?.garron || null,
+            sigla: mediaRes?.sigla || 'A',
+            camaraId: camaraId || null,
+            estado: 'EN_CAMARA',
+            registroCuarteoId: registro.id
+          },
+          include: {
+            tipoCuarto: { select: { id: true, nombre: true, codigo: true } },
+            camara: { select: { id: true, nombre: true } }
+          }
+        })
+        cuartosCreated.push(cuarto)
+      }
+    }
+
+    // Actualizar estado de la Media Res
     if (mediaResId) {
       await db.mediaRes.update({
         where: { id: mediaResId },
@@ -108,7 +207,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: registro,
+      data: {
+        ...registro,
+        cuartos: cuartosCreated,
+        mermaOreo: mediaRes ? {
+          pesoMediaRes: mediaRes.peso,
+          pesoTotalCuartos: totalCuartos || pesoTotalFinal,
+          mermaKg: mediaRes.peso - (totalCuartos || pesoTotalFinal),
+          mermaPorcentaje: ((mediaRes.peso - (totalCuartos || pesoTotalFinal)) / mediaRes.peso * 100).toFixed(2)
+        } : null
+      },
       message: 'Registro de cuarteo creado correctamente'
     })
   } catch (error) {
@@ -133,7 +241,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Preparar datos de actualización
     const data: any = {}
     if (updateData.tipoCorte) data.tipoCorte = updateData.tipoCorte
     if (updateData.pesoTotal) data.pesoTotal = parseFloat(updateData.pesoTotal)
