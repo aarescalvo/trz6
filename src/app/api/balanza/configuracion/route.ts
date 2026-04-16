@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener configuración de balanza
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     let config = await db.configuracionBalanza.findFirst({
       where: { activa: true }
@@ -39,6 +42,8 @@ export async function GET() {
 
 // PUT - Actualizar configuración
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     const { id, ...updateData } = data
@@ -66,6 +71,8 @@ export async function PUT(request: NextRequest) {
 
 // POST - Crear nueva configuración
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
 

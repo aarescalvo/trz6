@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Función para generar código de barras completo (32 dígitos)
 function generarCodigoBarras(data: {
@@ -45,6 +46,8 @@ function generarCodigoBarras(data: {
 
 // GET - Listar cajas de empaque
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeEmpaque')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const loteId = searchParams.get('loteId')
@@ -107,6 +110,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nueva caja de empaque
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeEmpaque')
+  if (authError) return authError
   try {
     const body = await request.json()
     const {
@@ -251,6 +256,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar caja (cambiar estado, asignar a pallet)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeEmpaque')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, estado, palletId, camaraId, observaciones } = body
@@ -299,6 +306,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Anular caja
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeEmpaque')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

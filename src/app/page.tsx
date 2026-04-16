@@ -99,6 +99,10 @@ interface Operador {
     puedeCCIR: boolean
     puedeFacturacion: boolean
     puedeConfiguracion: boolean
+    puedeDesposte: boolean
+    puedeCuarteo: boolean
+    puedeEmpaque: boolean
+    puedeExpedicionC2: boolean
   }
 }
 
@@ -172,6 +176,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'vbRomaneo', label: 'VB Romaneo', icon: FileText, permiso: 'puedeRomaneo' },
       { id: 'movimientoCamaras', label: 'Movimiento de Cámaras', icon: RefreshCw, permiso: 'puedeStock' },
       { id: 'expedicion', label: 'Expedición', icon: Truck, permiso: 'puedeStock' },
+      { id: 'despachos', label: 'Despachos', icon: Truck, permiso: 'puedeStock' },
     ]
   },
   // 3. CICLO II
@@ -179,20 +184,20 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'CICLO II',
     icon: Scissors,
     items: [
-      { id: 'cuarteo', label: 'Cuarteo', icon: Scissors, permiso: 'puedeConfiguracion' },
-      { id: 'c2IngresoDesposte', label: 'Ingreso a Desposte C2', icon: Package, permiso: 'puedeConfiguracion' },
-      { id: 'c2Produccion', label: 'Producción / Desposte', icon: Scissors, permiso: 'puedeConfiguracion' },
-      { id: 'c2Subproductos', label: 'Subproductos C2', icon: Package, permiso: 'puedeConfiguracion' },
-      { id: 'c2Expedicion', label: 'Expedición C2', icon: Truck, permiso: 'puedeStock' },
-      { id: 'c2Pallets', label: 'Pallets C2', icon: Package, permiso: 'puedeStock' },
+      { id: 'cuarteo', label: 'Cuarteo', icon: Scissors, permiso: 'puedeCuarteo' },
+      { id: 'c2IngresoDesposte', label: 'Ingreso a Desposte C2', icon: Package, permiso: 'puedeDesposte' },
+      { id: 'c2Produccion', label: 'Producción / Desposte', icon: Scissors, permiso: 'puedeDesposte' },
+      { id: 'c2Subproductos', label: 'Subproductos C2', icon: Package, permiso: 'puedeDesposte' },
+      { id: 'c2Expedicion', label: 'Expedición C2', icon: Truck, permiso: 'puedeExpedicionC2' },
+      { id: 'c2Pallets', label: 'Pallets C2', icon: Package, permiso: 'puedeExpedicionC2' },
       { id: 'c2Rendimiento', label: 'Rendimiento C2', icon: TrendingUp, permiso: 'puedeReportes' },
       { id: 'c2Stock', label: 'Stock C2', icon: Warehouse, permiso: 'puedeStock' },
-      { id: 'c2Degradacion', label: 'Degradación C2', icon: AlertTriangle, permiso: 'puedeConfiguracion' },
+      { id: 'c2Degradacion', label: 'Degradación C2', icon: AlertTriangle, permiso: 'puedeDesposte' },
       { id: 'c2Reportes', label: 'Reportes C2', icon: FileText, permiso: 'puedeReportes' },
-      { id: 'ingresoDespostada', label: 'Ingreso a Despostada', icon: Package, permiso: 'puedeConfiguracion' },
-      { id: 'movimientosDespostada', label: 'Movimientos de Despostada', icon: RefreshCw, permiso: 'puedeConfiguracion' },
-      { id: 'cortesDespostada', label: 'Cortes en Despostada', icon: Scissors, permiso: 'puedeConfiguracion' },
-      { id: 'empaque', label: 'Empaque', icon: Package, permiso: 'puedeConfiguracion' },
+      { id: 'ingresoDespostada', label: 'Ingreso a Despostada', icon: Package, permiso: 'puedeCuarteo' },
+      { id: 'movimientosDespostada', label: 'Movimientos de Despostada', icon: RefreshCw, permiso: 'puedeDesposte' },
+      { id: 'cortesDespostada', label: 'Cortes en Despostada', icon: Scissors, permiso: 'puedeDesposte' },
+      { id: 'empaque', label: 'Empaque', icon: Package, permiso: 'puedeEmpaque' },
       { id: 'configC2Rubros', label: 'Rubros', icon: Tag, permiso: 'puedeConfiguracion' },
       { id: 'configC2TiposCuarto', label: 'Tipos de Cuarto', icon: Scissors, permiso: 'puedeConfiguracion' },
       { id: 'configC2ProductosDesposte', label: 'Productos Desposte', icon: Package, permiso: 'puedeConfiguracion' },

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar ingresos a desposte C2 (usa IngresoDespostada)
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -30,6 +33,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear ingreso a desposte desde cuartos C2
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { cuartoIds, camaraDestinoId, operadorId, observaciones } = body

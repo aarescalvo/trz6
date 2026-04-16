@@ -8,8 +8,11 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   FileText, TrendingUp, BarChart3, Loader2, RefreshCw,
-  ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Package
+  ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Package,
+  FileDown, FileSpreadsheet
 } from 'lucide-react'
+import { ExcelExporter } from '@/lib/export-excel'
+import { PDFExporter } from '@/lib/export-pdf'
 
 interface Operador {
   id: string
@@ -29,6 +32,7 @@ export default function C2ReportesModule({ operador }: { operador: Operador }) {
   // Trazabilidad
   const [trazabilidadCodigo, setTrazabilidadCodigo] = useState('')
   const [trazabilidadData, setTrazabilidadData] = useState<any>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     if (tab === 'mermaCuarteo') cargarMermaCuarteo()
@@ -100,6 +104,122 @@ export default function C2ReportesModule({ operador }: { operador: Operador }) {
     }
   }
 
+  const exportarExcel = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+
+    if (tab === 'mermaCuarteo') {
+      const data = mermaCuarteoStats.map((r: any) => ({
+        Fecha: new Date(r.fecha || r.createdAt).toLocaleDateString('es-AR'),
+        Tropa: r.tropaCodigo || r.tropa?.codigo || '-',
+        'Peso Media (kg)': r.pesoMedia.toFixed(1),
+        'Suma Cuartos (kg)': r.sumaCuartos.toFixed(1),
+        'Merma (kg)': r.merma.toFixed(1),
+        '% Merma': r.porcentaje.toFixed(1)
+      }))
+      if (data.length > 0) {
+        ExcelExporter.exportFromObjects(data, `reporte_c2_merma_cuarteo_${dateStr}`, 'Merma Cuarteo')
+      }
+    } else if (tab === 'resumenDiario' && resumenDiario) {
+      const sheets: { name: string; headers: string[]; data: any[][] }[] = []
+      if (resumenDiario.rendimiento) {
+        const rg = resumenDiario.rendimiento
+        sheets.push({
+          name: 'Rendimiento',
+          headers: ['Ingresado kg', 'Producido kg', 'Subproductos kg', 'Rendimiento %', 'Merma kg', '% Merma'],
+          data: [[rg.totalIngresado.toFixed(1), rg.totalProducido.toFixed(1), rg.totalSubproductos.toFixed(1), rg.rendimientoGlobal.toFixed(1), rg.mermaTotal.toFixed(1), rg.porcentajeMerma.toFixed(1)]]
+        })
+      }
+      if (resumenDiario.stock && resumenDiario.stock.length > 0) {
+        sheets.push({
+          name: 'Stock por Estado',
+          headers: ['Estado', 'Cajas', 'Peso Neto kg'],
+          data: resumenDiario.stock.map((s: any) => [s.estado.replace('_', ' '), s.cantidadCajas, s.pesoNetoTotal.toFixed(1)])
+        })
+      }
+      if (resumenDiario.degradaciones && resumenDiario.degradaciones.length > 0) {
+        sheets.push({
+          name: 'Degradaciones',
+          headers: ['Caja', 'Producto', 'Tipo', 'Peso Degradado kg', 'Motivo'],
+          data: resumenDiario.degradaciones.map((d: any) => [
+            d.cajaOriginal?.numero || '-', d.cajaOriginal?.productoDesposte?.nombre || '-', d.tipo, d.pesoDegradado.toFixed(2), d.motivo
+          ])
+        })
+      }
+      if (sheets.length > 0) {
+        ExcelExporter.exportToExcel({ filename: `reporte_c2_resumen_diario_${dateStr}`, sheets, title: `Resumen Diario - ${filtroFecha}` })
+      }
+    } else if (tab === 'trazabilidad' && trazabilidadData) {
+      const d = trazabilidadData.data
+      const data = [{
+        'Nro Caja': d.numero || '-',
+        Producto: d.productoDesposte?.nombre || '-',
+        'Peso Neto kg': d.pesoNeto?.toFixed(2) || '-',
+        Tropa: d.tropaCodigo || '-',
+        Estado: d.estado || '-',
+        'Fecha Faena': d.fechaFaena ? new Date(d.fechaFaena).toLocaleDateString('es-AR') : '-',
+        'Fecha Desposte': d.fechaDesposte ? new Date(d.fechaDesposte).toLocaleDateString('es-AR') : '-',
+        'GS1-128': d.barcodeGs1_128 || '-'
+      }]
+      ExcelExporter.exportFromObjects(data, `reporte_c2_trazabilidad_${dateStr}`, 'Trazabilidad')
+    }
+    setExportOpen(false)
+  }
+
+  const exportarPDF = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+
+    if (tab === 'mermaCuarteo') {
+      const headers = ['Fecha', 'Tropa', 'Peso Media (kg)', 'Suma Cuartos (kg)', 'Merma (kg)', '% Merma']
+      const rows = mermaCuarteoStats.map((r: any) => [
+        new Date(r.fecha || r.createdAt).toLocaleDateString('es-AR'),
+        r.tropaCodigo || r.tropa?.codigo || '-',
+        r.pesoMedia.toFixed(1),
+        r.sumaCuartos.toFixed(1),
+        r.merma.toFixed(1),
+        r.porcentaje.toFixed(1) + '%'
+      ])
+      const doc = PDFExporter.generateReport({ title: 'Reporte de Merma por Cuarteo', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `reporte_c2_merma_cuarteo_${dateStr}.pdf`)
+    } else if (tab === 'resumenDiario' && resumenDiario) {
+      const headers = ['Concepto', 'Valor']
+      const rows: any[][] = []
+      if (resumenDiario.rendimiento) {
+        const rg = resumenDiario.rendimiento
+        rows.push(['Ingresado', rg.totalIngresado.toFixed(1) + ' kg'])
+        rows.push(['Producido', rg.totalProducido.toFixed(1) + ' kg'])
+        rows.push(['Subproductos', rg.totalSubproductos.toFixed(1) + ' kg'])
+        rows.push(['Rendimiento', rg.rendimientoGlobal.toFixed(1) + '%'])
+        rows.push(['Merma', rg.mermaTotal.toFixed(1) + ' kg'])
+        rows.push(['% Merma', rg.porcentajeMerma.toFixed(1) + '%'])
+      }
+      if (resumenDiario.stock && resumenDiario.stock.length > 0) {
+        rows.push(['', ''])
+        rows.push(['Stock por Estado:', ''])
+        resumenDiario.stock.forEach((s: any) => {
+          rows.push([s.estado.replace('_', ' '), `${s.cantidadCajas} cajas - ${s.pesoNetoTotal.toFixed(1)} kg`])
+        })
+      }
+      const doc = PDFExporter.generateReport({ title: 'Resumen Diario C2', subtitle: `Fecha: ${filtroFecha}`, headers, data: rows, orientation: 'portrait' })
+      PDFExporter.downloadPDF(doc, `reporte_c2_resumen_diario_${dateStr}.pdf`)
+    } else if (tab === 'trazabilidad' && trazabilidadData) {
+      const d = trazabilidadData.data
+      const headers = ['Campo', 'Valor']
+      const rows = [
+        ['Nro Caja', d.numero || '-'],
+        ['Producto', d.productoDesposte?.nombre || '-'],
+        ['Peso Neto', d.pesoNeto?.toFixed(2) + ' kg' || '-'],
+        ['Tropa', d.tropaCodigo || '-'],
+        ['Estado', d.estado || '-'],
+        ['Fecha Faena', d.fechaFaena ? new Date(d.fechaFaena).toLocaleDateString('es-AR') : '-'],
+        ['Fecha Desposte', d.fechaDesposte ? new Date(d.fechaDesposte).toLocaleDateString('es-AR') : '-'],
+        ['GS1-128', d.barcodeGs1_128 || '-']
+      ]
+      const doc = PDFExporter.generateReport({ title: 'Trazabilidad C2', headers, data: rows, orientation: 'portrait' })
+      PDFExporter.downloadPDF(doc, `reporte_c2_trazabilidad_${dateStr}.pdf`)
+    }
+    setExportOpen(false)
+  }
+
   const getRendimientoColor = (v: number) => v >= 80 ? 'text-green-600' : v >= 60 ? 'text-amber-600' : 'text-red-600'
 
   // Calcular merma de cuarteo
@@ -123,6 +243,32 @@ export default function C2ReportesModule({ operador }: { operador: Operador }) {
               Reportes C2
             </h1>
             <p className="text-stone-500 mt-1">Reportes de merma, resumen diario y trazabilidad</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="outline" onClick={() => setExportOpen(!exportOpen)}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-50 min-w-[180px]">
+                  <button
+                    onClick={exportarExcel}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-t-lg"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                    Exportar Excel
+                  </button>
+                  <button
+                    onClick={exportarPDF}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-b-lg"
+                  >
+                    <FileDown className="w-4 h-4 text-red-600" />
+                    Exportar PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

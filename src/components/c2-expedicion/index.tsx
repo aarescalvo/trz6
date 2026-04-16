@@ -9,8 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   Truck, Package, AlertTriangle, CheckCircle, Clock, XCircle,
-  Search, Plus, Eye, ChevronDown, ChevronRight, Loader2, FileText
+  Search, Plus, Eye, ChevronDown, ChevronRight, Loader2, FileText,
+  FileDown, FileSpreadsheet, RefreshCw
 } from 'lucide-react'
+import { ExcelExporter } from '@/lib/export-excel'
+import { PDFExporter } from '@/lib/export-pdf'
 
 interface Operador {
   id: string
@@ -77,6 +80,7 @@ export default function C2ExpedicionModule({ operador }: { operador: Operador })
   const [filtroEstado, setFiltroEstado] = useState<string>('')
   const [mostrarForm, setMostrarForm] = useState(false)
   const [expandida, setExpandida] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Form state
   const [clienteId, setClienteId] = useState('')
@@ -239,6 +243,49 @@ export default function C2ExpedicionModule({ operador }: { operador: Operador })
     setMostrarForm(false)
   }
 
+  const exportarExcel = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+    if (ordenes.length === 0) return
+
+    const data = ordenes.map(o => ({
+      'Nro Orden': o.numero,
+      Estado: o.estado.replace('_', ' '),
+      Cliente: o.cliente.nombre,
+      'Cajas': o.cantidadCajas,
+      'Peso Total (kg)': o.pesoTotal.toFixed(1),
+      Transporte: o.transporteNombre || '-',
+      Patente: o.patenteCamion || '-',
+      Chofer: o.choferNombre || '-',
+      'DNI Chofer': o.choferDni || '-',
+      'Nro Remito': o.nroRemito || '-',
+      Fecha: new Date(o.fecha).toLocaleDateString('es-AR'),
+      'Fecha Despacho': o.fechaDespacho ? new Date(o.fechaDespacho).toLocaleDateString('es-AR') : '-',
+      Observaciones: o.observaciones || '',
+      Operador: o.operador?.nombre || '-'
+    }))
+    ExcelExporter.exportFromObjects(data, `expedicion_c2_${dateStr}`, 'Expediciones')
+    setExportOpen(false)
+  }
+
+  const exportarPDF = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+    const headers = ['Orden', 'Estado', 'Cliente', 'Cajas', 'Peso (kg)', 'Transporte', 'Chofer', 'Remito', 'Fecha']
+    const rows = ordenes.map(o => [
+      `#${o.numero}`,
+      o.estado.replace('_', ' '),
+      o.cliente.nombre,
+      o.cantidadCajas.toString(),
+      o.pesoTotal.toFixed(1),
+      o.transporteNombre || '-',
+      o.choferNombre || '-',
+      o.nroRemito || '-',
+      new Date(o.fecha).toLocaleDateString('es-AR')
+    ])
+    const doc = PDFExporter.generateReport({ title: 'Reporte de Expediciones C2', subtitle: `Total: ${ordenes.length} órdenes`, headers, data: rows, orientation: 'landscape' })
+    PDFExporter.downloadPDF(doc, `expedicion_c2_${dateStr}.pdf`)
+    setExportOpen(false)
+  }
+
   const getEstadoBadge = (estado: string) => {
     const config: Record<string, { color: string; icon: typeof Clock }> = {
       PENDIENTE: { color: 'bg-amber-100 text-amber-800 border-amber-300', icon: Clock },
@@ -301,13 +348,39 @@ export default function C2ExpedicionModule({ operador }: { operador: Operador })
             </h1>
             <p className="text-stone-500 mt-1">Despacho de cajas y pallets con control FIFO</p>
           </div>
-          <Button
-            onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-amber-500 hover:bg-amber-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Orden
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="outline" onClick={() => setExportOpen(!exportOpen)}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-50 min-w-[180px]">
+                  <button
+                    onClick={exportarExcel}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-t-lg"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                    Exportar Excel
+                  </button>
+                  <button
+                    onClick={exportarPDF}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-b-lg"
+                  >
+                    <FileDown className="w-4 h-4 text-red-600" />
+                    Exportar PDF
+                  </button>
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={() => setMostrarForm(!mostrarForm)}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Orden
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}

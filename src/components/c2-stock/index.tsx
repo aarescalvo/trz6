@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   Warehouse, Package, TrendingUp, Loader2, RefreshCw,
-  ChevronDown, ChevronRight, Search, BarChart3
+  ChevronDown, ChevronRight, Search, BarChart3, FileDown, FileSpreadsheet, ChevronUp
 } from 'lucide-react'
+import { ExcelExporter } from '@/lib/export-excel'
+import { PDFExporter } from '@/lib/export-pdf'
 
 interface Operador {
   id: string
@@ -55,6 +57,7 @@ export default function C2StockModule({ operador }: { operador: Operador }) {
   const [tab, setTab] = useState<'producto' | 'estado' | 'camara' | 'tropa'>('producto')
   const [filtroProducto, setFiltroProducto] = useState('')
   const [expandido, setExpandido] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     cargarStock()
@@ -74,6 +77,75 @@ export default function C2StockModule({ operador }: { operador: Operador }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const exportarExcel = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+    const tabLabels: Record<string, string> = { producto: 'Producto', estado: 'Estado', camara: 'Cámara', tropa: 'Tropa' }
+
+    if (tab === 'producto') {
+      const data = (stockData as StockProducto[]).map(sp => ({
+        Producto: sp.productoNombre,
+        Código: sp.productoCodigo,
+        Rubro: sp.rubroNombre,
+        Cajas: sp.cantidadCajas,
+        'Peso Neto kg': sp.pesoNetoTotal.toFixed(1),
+        '% del Total': resumen.totalPesoNeto > 0 ? ((sp.pesoNetoTotal / resumen.totalPesoNeto) * 100).toFixed(1) : '0.0'
+      }))
+      ExcelExporter.exportToExcel({ filename: `stock_c2_producto_${dateStr}`, sheets: [{ name: 'Por Producto', headers: ['Producto', 'Código', 'Rubro', 'Cajas', 'Peso Neto kg', '% del Total'], data: data.map(d => Object.values(d)) }], title: 'Stock C2 - Por Producto' })
+    } else if (tab === 'estado') {
+      const data = (stockData as StockEstado[]).map(se => ({
+        Estado: se.estado,
+        Cajas: se.cantidadCajas,
+        'Peso Neto kg': se.pesoNetoTotal.toFixed(1),
+        '% del Total': resumen.totalPesoNeto > 0 ? ((se.pesoNetoTotal / resumen.totalPesoNeto) * 100).toFixed(1) : '0.0'
+      }))
+      ExcelExporter.exportToExcel({ filename: `stock_c2_estado_${dateStr}`, sheets: [{ name: 'Por Estado', headers: ['Estado', 'Cajas', 'Peso Neto kg', '% del Total'], data: data.map(d => Object.values(d)) }], title: 'Stock C2 - Por Estado' })
+    } else if (tab === 'camara') {
+      const data = (stockData as StockCamara[]).map(sc => ({
+        Cámara: sc.camaraNombre,
+        Cajas: sc.cantidadCajas,
+        'Peso Neto kg': sc.pesoNetoTotal.toFixed(1),
+        '% del Total': resumen.totalPesoNeto > 0 ? ((sc.pesoNetoTotal / resumen.totalPesoNeto) * 100).toFixed(1) : '0.0'
+      }))
+      ExcelExporter.exportToExcel({ filename: `stock_c2_camara_${dateStr}`, sheets: [{ name: 'Por Cámara', headers: ['Cámara', 'Cajas', 'Peso Neto kg', '% del Total'], data: data.map(d => Object.values(d)) }], title: 'Stock C2 - Por Cámara' })
+    } else if (tab === 'tropa') {
+      const data = (stockData as StockTropa[]).map(st => ({
+        Tropa: st.tropaCodigo,
+        Cajas: st.cantidadCajas,
+        'Peso Neto kg': st.pesoNetoTotal.toFixed(1),
+        Productos: st.productosDistintos
+      }))
+      ExcelExporter.exportToExcel({ filename: `stock_c2_tropa_${dateStr}`, sheets: [{ name: 'Por Tropa', headers: ['Tropa', 'Cajas', 'Peso Neto kg', 'Productos'], data: data.map(d => Object.values(d)) }], title: 'Stock C2 - Por Tropa' })
+    }
+    setExportOpen(false)
+  }
+
+  const exportarPDF = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+
+    if (tab === 'producto') {
+      const headers = ['Producto', 'Código', 'Rubro', 'Cajas', 'Peso Neto kg', '% del Total']
+      const rows = (stockData as StockProducto[]).map(sp => [sp.productoNombre, sp.productoCodigo, sp.rubroNombre, sp.cantidadCajas.toString(), sp.pesoNetoTotal.toFixed(1), resumen.totalPesoNeto > 0 ? ((sp.pesoNetoTotal / resumen.totalPesoNeto) * 100).toFixed(1) + '%' : '0.0%'])
+      const doc = PDFExporter.generateReport({ title: 'Stock C2 - Por Producto', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `stock_c2_producto_${dateStr}.pdf`)
+    } else if (tab === 'estado') {
+      const headers = ['Estado', 'Cajas', 'Peso Neto kg', '% del Total']
+      const rows = (stockData as StockEstado[]).map(se => [se.estado, se.cantidadCajas.toString(), se.pesoNetoTotal.toFixed(1), resumen.totalPesoNeto > 0 ? ((se.pesoNetoTotal / resumen.totalPesoNeto) * 100).toFixed(1) + '%' : '0.0%'])
+      const doc = PDFExporter.generateReport({ title: 'Stock C2 - Por Estado', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `stock_c2_estado_${dateStr}.pdf`)
+    } else if (tab === 'camara') {
+      const headers = ['Cámara', 'Cajas', 'Peso Neto kg', '% del Total']
+      const rows = (stockData as StockCamara[]).map(sc => [sc.camaraNombre, sc.cantidadCajas.toString(), sc.pesoNetoTotal.toFixed(1), resumen.totalPesoNeto > 0 ? ((sc.pesoNetoTotal / resumen.totalPesoNeto) * 100).toFixed(1) + '%' : '0.0%'])
+      const doc = PDFExporter.generateReport({ title: 'Stock C2 - Por Cámara', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `stock_c2_camara_${dateStr}.pdf`)
+    } else if (tab === 'tropa') {
+      const headers = ['Tropa', 'Cajas', 'Peso Neto kg', 'Productos']
+      const rows = (stockData as StockTropa[]).map(st => [st.tropaCodigo, st.cantidadCajas.toString(), st.pesoNetoTotal.toFixed(1), st.productosDistintos.toString()])
+      const doc = PDFExporter.generateReport({ title: 'Stock C2 - Por Tropa', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `stock_c2_tropa_${dateStr}.pdf`)
+    }
+    setExportOpen(false)
   }
 
   const getEstadoBadge = (estado: string) => {
@@ -116,10 +188,36 @@ export default function C2StockModule({ operador }: { operador: Operador }) {
             </h1>
             <p className="text-stone-500 mt-1">Inventario de cajas de desposte por producto, estado, cámara y tropa</p>
           </div>
-          <Button variant="outline" onClick={cargarStock}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Actualizar
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="outline" onClick={() => setExportOpen(!exportOpen)}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-50 min-w-[180px]">
+                  <button
+                    onClick={exportarExcel}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-t-lg"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                    Exportar Excel
+                  </button>
+                  <button
+                    onClick={exportarPDF}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-b-lg"
+                  >
+                    <FileDown className="w-4 h-4 text-red-600" />
+                    Exportar PDF
+                  </button>
+                </div>
+              )}
+            </div>
+            <Button variant="outline" onClick={cargarStock}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         {/* KPIs */}

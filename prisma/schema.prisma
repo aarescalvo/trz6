@@ -189,6 +189,10 @@ model Operador {
   puedeCCIR               Boolean @default(false)
   puedeFacturacion        Boolean @default(false)
   puedeConfiguracion      Boolean @default(false)
+  puedeDesposte           Boolean @default(false)  // C2: produccion, subproductos, degradacion, ingreso desposte
+  puedeCuarteo            Boolean @default(false)  // Cuarteo de medias
+  puedeEmpaque            Boolean @default(false)  // Empaque y cajas
+  puedeExpedicionC2       Boolean @default(false)  // Expedición C2 y pallets
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

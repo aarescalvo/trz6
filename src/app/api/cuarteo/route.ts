@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Helper: map C2TipoCuarto codigo to TipoCuarto enum
 function mapTipoCuarto(codigo: string): 'DELANTERO' | 'TRASERO' | 'ASADO' {
@@ -11,6 +12,8 @@ function mapTipoCuarto(codigo: string): 'DELANTERO' | 'TRASERO' | 'ASADO' {
 
 // GET - Listar registros de cuarteo (con cuartos opcionales)
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCuarteo')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const camaraId = searchParams.get('camaraId')
@@ -96,6 +99,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo registro de cuarteo (con cuartos dinámicos C2)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCuarteo')
+  if (authError) return authError
   try {
     const body = await request.json()
     const {
@@ -230,6 +235,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar registro de cuarteo
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCuarteo')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, ...updateData } = body
@@ -274,6 +281,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar registro de cuarteo
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCuarteo')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

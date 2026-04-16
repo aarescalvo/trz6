@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Simulador de peso para testing
 function simularPeso() {
@@ -17,6 +18,8 @@ function simularPeso() {
 
 // GET - Lectura de peso en tiempo real
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedePesajeIndividual')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const simular = searchParams.get('simular') === 'true'
@@ -81,6 +84,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Capturar peso y guardarlo
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedePesajeIndividual')
+  if (authError) return authError
   try {
     const data = await request.json()
     const { peso, animalId, operadorId } = data

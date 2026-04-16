@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   AlertTriangle, Plus, Package, Loader2, ChevronDown, ChevronRight,
-  ArrowDownRight, Scissors
+  ArrowDownRight, Scissors, FileDown, FileSpreadsheet, RefreshCw
 } from 'lucide-react'
+import { ExcelExporter } from '@/lib/export-excel'
+import { PDFExporter } from '@/lib/export-pdf'
 
 interface Operador {
   id: string
@@ -59,6 +61,7 @@ export default function C2DegradacionModule({ operador }: { operador: Operador }
   const [mostrarForm, setMostrarForm] = useState(false)
   const [filtroTipo, setFiltroTipo] = useState('')
   const [expandida, setExpandida] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Form state
   const [cajaIdOriginal, setCajaIdOriginal] = useState('')
@@ -175,6 +178,45 @@ export default function C2DegradacionModule({ operador }: { operador: Operador }
     setMostrarForm(false)
   }
 
+  const exportarExcel = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+    if (degradaciones.length === 0) return
+
+    const data = degradaciones.map(d => ({
+      Fecha: new Date(d.fecha).toLocaleDateString('es-AR'),
+      'Caja Nro': d.cajaOriginal.numero,
+      Producto: d.cajaOriginal.productoDesposte?.nombre || '-',
+      Tipo: d.tipo,
+      'Peso Degradado (kg)': d.pesoDegradado.toFixed(2),
+      'Peso Aprovechado (kg)': d.pesoAprovechamiento?.toFixed(2) || '0.00',
+      'Peso Descarte (kg)': d.pesoDescarte?.toFixed(2) || '0.00',
+      'Nuevo Producto': d.nuevoProducto?.nombre || 'Sin reasignar',
+      Motivo: d.motivo,
+      Observaciones: d.observaciones || '',
+      Operador: d.operador?.nombre || '-'
+    }))
+    ExcelExporter.exportFromObjects(data, `degradacion_c2_${dateStr}`, 'Degradaciones')
+    setExportOpen(false)
+  }
+
+  const exportarPDF = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+    const headers = ['Fecha', 'Caja', 'Producto', 'Tipo', 'Degradado (kg)', 'Aprovechado (kg)', 'Descarte (kg)', 'Motivo']
+    const rows = degradaciones.map(d => [
+      new Date(d.fecha).toLocaleDateString('es-AR'),
+      d.cajaOriginal.numero,
+      d.cajaOriginal.productoDesposte?.nombre || '-',
+      d.tipo,
+      d.pesoDegradado.toFixed(2),
+      d.pesoAprovechamiento?.toFixed(2) || '0.00',
+      d.pesoDescarte?.toFixed(2) || '0.00',
+      d.motivo
+    ])
+    const doc = PDFExporter.generateReport({ title: 'Reporte de Degradaciones C2', subtitle: `Total: ${degradaciones.length} registros - ${totalPesoDegradado.toFixed(1)} kg degradado`, headers, data: rows, orientation: 'landscape' })
+    PDFExporter.downloadPDF(doc, `degradacion_c2_${dateStr}.pdf`)
+    setExportOpen(false)
+  }
+
   const getTipoBadge = (t: string) => {
     const config: Record<string, { color: string; label: string }> = {
       TRIMMING: { color: 'bg-amber-100 text-amber-800', label: 'Trimming' },
@@ -210,13 +252,39 @@ export default function C2DegradacionModule({ operador }: { operador: Operador }
             </h1>
             <p className="text-stone-500 mt-1">Registro de trimming, decomisos y aprovechamientos de cajas</p>
           </div>
-          <Button
-            onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-red-500 hover:bg-red-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Registrar Degradación
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="outline" onClick={() => setExportOpen(!exportOpen)}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-50 min-w-[180px]">
+                  <button
+                    onClick={exportarExcel}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-t-lg"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                    Exportar Excel
+                  </button>
+                  <button
+                    onClick={exportarPDF}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-b-lg"
+                  >
+                    <FileDown className="w-4 h-4 text-red-600" />
+                    Exportar PDF
+                  </button>
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={() => setMostrarForm(!mostrarForm)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Registrar Degradación
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}

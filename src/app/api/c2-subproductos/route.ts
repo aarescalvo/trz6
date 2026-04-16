@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar subproductos pesaje C2
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo')
@@ -55,6 +58,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear registro de pesaje de subproducto
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { tipo, pesoKg, tropaCodigo, destino, operadorId, observaciones } = body
@@ -103,6 +108,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Eliminar registro de subproducto
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

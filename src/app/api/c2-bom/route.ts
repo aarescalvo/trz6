@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { checkPermission } from '@/lib/auth-helpers';
 
 // GET - List all BOM items
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion');
+  if (authError) return authError;
   try {
     const bomItems = await db.c2BOM.findMany({
       include: {
@@ -25,6 +28,8 @@ export async function GET() {
 
 // POST - Create new BOM item
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion');
+  if (authError) return authError;
   try {
     const body = await request.json();
 
@@ -88,6 +93,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update existing BOM item
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion');
+  if (authError) return authError;
   try {
     const body = await request.json();
     const { id, ...data } = body;
@@ -123,6 +130,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete BOM item by id
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion');
+  if (authError) return authError;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

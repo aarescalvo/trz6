@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Scissors, Package, Loader2, RefreshCw, Search, ArrowRight, AlertTriangle, CheckCircle2, BarChart3, TrendingDown } from 'lucide-react'
+import { useBalanza } from '@/hooks/useBalanza'
+import { useImpresora } from '@/hooks/useImpresora'
+import { Scissors, Package, Loader2, RefreshCw, Search, ArrowRight, AlertTriangle, CheckCircle2, BarChart3, TrendingDown, Scale, Printer } from 'lucide-react'
 
 interface Operador { id: string; nombre: string; rol: string }
 
@@ -54,6 +56,8 @@ interface CajaProduccion {
 }
 
 export default function C2ProduccionModule({ operador }: { operador: Operador }) {
+  const balanza = useBalanza()
+  const impresora = useImpresora()
   const [productos, setProductos] = useState<C2ProductoDesposte[]>([])
   const [cuartos, setCuartos] = useState<CuartoEnDesposte[]>([])
   const [cajas, setCajas] = useState<CajaProduccion[]>([])
@@ -199,6 +203,16 @@ export default function C2ProduccionModule({ operador }: { operador: Operador })
 
       if (data.success) {
         toast.success(data.message || 'Caja registrada correctamente')
+        // Auto-print caja label
+        const prod = productos.find(p => p.id === productoSeleccionado)
+        impresora.imprimirRotulo({
+          producto: prod?.nombre || '',
+          peso: pesoNetoNum.toFixed(2),
+          unidades: piezas,
+          codigo: data.data?.numero || '',
+          lote: cuartoSeleccionado?.mediaRes?.romaneo?.tropaCodigo || '',
+          fecha: new Date().toLocaleDateString('es-AR'),
+        }, 'caja')
         // Reset form pero mantener cuarto seleccionado
         setProductoSeleccionado('')
         setPesoBruto('')
@@ -523,6 +537,42 @@ export default function C2ProduccionModule({ operador }: { operador: Operador })
               </div>
 
               {/* Pesaje */}
+              {/* Balanza Integration */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button 
+                  type="button" 
+                  variant={balanza.leyendo ? "destructive" : "outline"} 
+                  size="sm"
+                  onClick={() => balanza.leyendo ? balanza.detener() : balanza.iniciar()}
+                >
+                  <Scale className="w-4 h-4 mr-1" />
+                  {balanza.leyendo ? 'Detener' : 'Balanza'}
+                </Button>
+                {balanza.leyendo && (
+                  <>
+                    <span className={`text-lg font-mono ${balanza.estable ? 'text-green-600' : 'text-amber-500'}`}>
+                      {balanza.peso.toFixed(2)} kg
+                    </span>
+                    <Button 
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!balanza.estable || balanza.peso <= 0}
+                      onClick={() => {
+                        const captured = balanza.capturarPeso()
+                        if (captured) {
+                          setPesoNeto(captured.toFixed(2))
+                          const t = parseFloat(tara) || 0
+                          setPesoBruto((captured + t).toFixed(2))
+                        }
+                      }}
+                    >
+                      Capturar
+                    </Button>
+                  </>
+                )}
+                {balanza.error && <span className="text-xs text-red-500">{balanza.error}</span>}
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Peso Neto (kg)</Label>
@@ -654,14 +704,34 @@ export default function C2ProduccionModule({ operador }: { operador: Operador })
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDegradar(c)}
-                          >
-                            <TrendingDown className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDegradar(c)}
+                            >
+                              <TrendingDown className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-stone-500"
+                              disabled={impresora.imprimiendo}
+                              onClick={() => {
+                                impresora.imprimirRotulo({
+                                  producto: c.productoDesposte?.nombre || '',
+                                  peso: c.pesoNeto.toFixed(2),
+                                  unidades: c.piezas.toString(),
+                                  codigo: c.numero,
+                                  lote: c.tropaCodigo || '',
+                                  fecha: new Date(c.createdAt).toLocaleDateString('es-AR'),
+                                }, 'caja')
+                              }}
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

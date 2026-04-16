@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Stock de cajas C2 agrupado por producto/estado/cámara
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const agrupar = searchParams.get('agrupar') || 'producto' // producto, estado, camara, tropa

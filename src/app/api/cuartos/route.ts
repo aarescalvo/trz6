@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar cuartos con filtros
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCuarteo')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -64,6 +67,8 @@ export async function GET(request: NextRequest) {
 
 // PUT - Actualizar cuarto (cambiar estado, cámara, etc.)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCuarteo')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, ...data } = body

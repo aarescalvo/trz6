@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { 
-  Package, Loader2, RefreshCw, Plus, CheckCircle, Truck
+  Package, Loader2, RefreshCw, Plus, CheckCircle, Truck, Scale, Printer
 } from 'lucide-react'
 import { TextoEditable, EditableBlock, useEditor } from '@/components/ui/editable-screen'
+import { useBalanza } from '@/hooks/useBalanza'
+import { useImpresora } from '@/hooks/useImpresora'
 
 interface Operador {
   id: string
@@ -58,6 +60,8 @@ const DESTINOS = [
 
 export function EmpaqueModule({ operador }: Props) {
   const { editMode, getTexto, setTexto, getBloque, updateBloque } = useEditor()
+  const balanza = useBalanza()
+  const impresora = useImpresora()
   const [empaques, setEmpaques] = useState<Empaque[]>([])
   const [camaras, setCameras] = useState<Camara[]>([])
   const [loading, setLoading] = useState(true)
@@ -168,6 +172,14 @@ export function EmpaqueModule({ operador }: Props) {
       const data = await res.json()
       if (data.success) {
         setEmpaques([data.data, ...empaques])
+        // Auto-print rótulo
+        impresora.imprimirRotulo({
+          producto,
+          peso: pesoKg,
+          lote: data.data.lote?.numero?.toString(),
+          fecha: new Date().toLocaleDateString('es-AR'),
+          codigoBarras: data.data.paqueteId,
+        }, 'caja')
         setProducto('')
         setPesoKg('')
         setCantidad('')
@@ -305,6 +317,38 @@ export function EmpaqueModule({ operador }: Props) {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-stone-600"><TextoEditable id="label-peso-unidad" original="Peso por Unidad (Kg)" tag="span" /> *</Label>
+                  {/* Balanza Integration */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Button 
+                      type="button" 
+                      variant={balanza.leyendo ? "destructive" : "outline"} 
+                      size="sm"
+                      onClick={() => balanza.leyendo ? balanza.detener() : balanza.iniciar()}
+                    >
+                      <Scale className="w-4 h-4 mr-1" />
+                      {balanza.leyendo ? 'Detener' : 'Balanza'}
+                    </Button>
+                    {balanza.leyendo && (
+                      <>
+                        <span className={`text-lg font-mono ${balanza.estable ? 'text-green-600' : 'text-amber-500'}`}>
+                          {balanza.peso.toFixed(2)} kg
+                        </span>
+                        <Button 
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!balanza.estable || balanza.peso <= 0}
+                          onClick={() => {
+                            const captured = balanza.capturarPeso()
+                            if (captured) setPesoKg(captured.toString())
+                          }}
+                        >
+                          Capturar
+                        </Button>
+                      </>
+                    )}
+                    {balanza.error && <span className="text-xs text-red-500">{balanza.error}</span>}
+                  </div>
                   <Input type="number" step="0.1" value={pesoKg} onChange={(e) => setPesoKg(e.target.value)} placeholder="0.0" className="bg-white" />
                 </div>
                 <div className="space-y-2">
@@ -400,6 +444,25 @@ export function EmpaqueModule({ operador }: Props) {
                                 <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleDespachar(emp.id)}>
                                   <Truck className="w-4 h-4 mr-1" />
                                   Despachar
+                                </Button>
+                              )}
+                              {(emp.estado === 'EMPACADO' || emp.estado === 'PENDIENTE') && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  disabled={impresora.imprimiendo}
+                                  onClick={() => {
+                                    impresora.imprimirRotulo({
+                                      producto: emp.producto,
+                                      peso: emp.pesoKg.toString(),
+                                      lote: emp.lote?.numero?.toString(),
+                                      fecha: new Date(emp.fecha).toLocaleDateString('es-AR'),
+                                      codigoBarras: emp.paqueteId,
+                                    }, 'caja')
+                                  }}
+                                >
+                                  <Printer className="w-4 h-4 mr-1" />
+                                  Reimprimir
                                 </Button>
                               )}
                             </div>

@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Scissors, Loader2, RefreshCw, Search, Package, AlertTriangle, CheckCircle2, BarChart3 } from 'lucide-react'
+import { useBalanza } from '@/hooks/useBalanza'
+import { useImpresora } from '@/hooks/useImpresora'
+import { Scissors, Loader2, RefreshCw, Search, Package, AlertTriangle, CheckCircle2, BarChart3, Scale, Printer } from 'lucide-react'
 
 interface Operador { id: string; nombre: string; rol: string }
 
@@ -65,6 +67,8 @@ interface Camara {
 }
 
 export function CuarteoModule({ operador }: { operador: Operador }) {
+  const balanza = useBalanza()
+  const impresora = useImpresora()
   const [registros, setRegistros] = useState<RegistroCuarteo[]>([])
   const [tiposCuarto, setTiposCuarto] = useState<C2TipoCuarto[]>([])
   const [camaras, setCameras] = useState<Camara[]>([])
@@ -214,6 +218,16 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
 
       if (data.success) {
         toast.success('Cuarteo registrado correctamente')
+        // Print cuarto labels
+        cuartosConPeso.forEach((tipo) => {
+          impresora.imprimirRotulo({
+            producto: tipo.nombre,
+            peso: pesosCuartos[tipo.id] || '0',
+            codigo: tipo.codigo,
+            lote: mediaResEncontrada.codigo,
+            fecha: new Date().toLocaleDateString('es-AR'),
+          }, 'cuarto')
+        })
         // Reset form
         setCodigoBusqueda('')
         setMediaResEncontrada(null)
@@ -393,7 +407,47 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
             {/* Pesaje dinámico por tipo de cuarto */}
             {mediaResEncontrada && tiposCuarto.length > 0 && (
               <div className="space-y-3">
-                <Label className="text-sm font-semibold">Pesaje por Tipo de Cuarto</Label>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <Label className="text-sm font-semibold">Pesaje por Tipo de Cuarto</Label>
+                  {/* Balanza Integration */}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant={balanza.leyendo ? "destructive" : "outline"} 
+                      size="sm"
+                      onClick={() => balanza.leyendo ? balanza.detener() : balanza.iniciar()}
+                    >
+                      <Scale className="w-4 h-4 mr-1" />
+                      {balanza.leyendo ? 'Detener' : 'Balanza'}
+                    </Button>
+                    {balanza.leyendo && (
+                      <>
+                        <span className={`text-lg font-mono ${balanza.estable ? 'text-green-600' : 'text-amber-500'}`}>
+                          {balanza.peso.toFixed(2)} kg
+                        </span>
+                        <Button 
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={!balanza.estable || balanza.peso <= 0}
+                          onClick={() => {
+                            const captured = balanza.capturarPeso()
+                            if (captured) {
+                              // Fill the first empty cuarto weight
+                              const emptyTipo = tiposCuarto.find(t => !pesosCuartos[t.id] || parseFloat(pesosCuartos[t.id]) === 0)
+                              if (emptyTipo) {
+                                setPesosCuartos({ ...pesosCuartos, [emptyTipo.id]: captured.toFixed(1) })
+                              }
+                            }
+                          }}
+                        >
+                          Capturar
+                        </Button>
+                      </>
+                    )}
+                    {balanza.error && <span className="text-xs text-red-500">{balanza.error}</span>}
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {tiposCuarto.sort((a, b) => a.orden - b.orden).map((tipo) => (
                     <Card key={tipo.id} className="border-stone-200">
@@ -408,16 +462,33 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
                               {tipo.codigo}
                             </Badge>
                           </div>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              step="0.1"
-                              placeholder="0.0"
-                              value={pesosCuartos[tipo.id] || ''}
-                              onChange={(e) => setPesosCuartos({ ...pesosCuartos, [tipo.id]: e.target.value })}
-                              className="text-right pr-8"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">kg</span>
+                          <div className="flex gap-1">
+                            <div className="relative flex-1">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="0.0"
+                                value={pesosCuartos[tipo.id] || ''}
+                                onChange={(e) => setPesosCuartos({ ...pesosCuartos, [tipo.id]: e.target.value })}
+                                className="text-right pr-8"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">kg</span>
+                            </div>
+                            {balanza.leyendo && (
+                              <Button 
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-9 px-2"
+                                disabled={!balanza.estable || balanza.peso <= 0}
+                                onClick={() => {
+                                  const captured = balanza.capturarPeso()
+                                  if (captured) setPesosCuartos({ ...pesosCuartos, [tipo.id]: captured.toFixed(1) })
+                                }}
+                              >
+                                <Scale className="w-3 h-3" />
+                              </Button>
+                            )}
                           </div>
                           {tipo.descripcion && (
                             <p className="text-xs text-stone-400">{tipo.descripcion}</p>
@@ -560,9 +631,31 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
                         <TableCell>{r.camara?.nombre || '-'}</TableCell>
                         <TableCell>{r.operador?.nombre || '-'}</TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="sm" onClick={() => handleVerDetalle(r)}>
-                            Ver
-                          </Button>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleVerDetalle(r)}>
+                              Ver
+                            </Button>
+                            {r.cuartos && r.cuartos.length > 0 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-stone-500"
+                                disabled={impresora.imprimiendo}
+                                onClick={() => {
+                                  r.cuartos!.forEach((c) => {
+                                    impresora.imprimirRotulo({
+                                      producto: c.tipoCuarto?.nombre || c.tipo,
+                                      peso: c.peso.toString(),
+                                      codigo: c.codigo,
+                                      fecha: new Date(r.fecha).toLocaleDateString('es-AR'),
+                                    }, 'cuarto')
+                                  })
+                                }}
+                              >
+                                <Printer className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   TrendingUp, BarChart3, PieChart, Loader2, RefreshCw,
-  ArrowUpRight, ArrowDownRight, Minus
+  ArrowUpRight, ArrowDownRight, Minus, FileDown, FileSpreadsheet
 } from 'lucide-react'
+import { ExcelExporter } from '@/lib/export-excel'
+import { PDFExporter } from '@/lib/export-pdf'
 
 interface Operador {
   id: string
@@ -54,6 +56,7 @@ export default function C2RendimientoModule({ operador }: { operador: Operador }
   const [tab, setTab] = useState<'productos' | 'ingresos' | 'global'>('global')
   const [filtroTropa, setFiltroTropa] = useState('')
   const [filtroFecha, setFiltroFecha] = useState('')
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     cargarRendimiento()
@@ -78,6 +81,49 @@ export default function C2RendimientoModule({ operador }: { operador: Operador }
     } finally {
       setLoading(false)
     }
+  }
+
+  const exportarExcel = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+
+    if (tab === 'global' && rendimientoGlobal) {
+      const rg = rendimientoGlobal
+      const headers = ['Ingresado kg', 'Producido kg', 'Subproductos kg', 'Rendimiento %', 'Merma kg', '% Merma']
+      const data = [[rg.totalIngresado.toFixed(1), rg.totalProducido.toFixed(1), rg.totalSubproductos.toFixed(1), rg.rendimientoGlobal.toFixed(1), rg.mermaTotal.toFixed(1), rg.porcentajeMerma.toFixed(1)]]
+      ExcelExporter.exportToExcel({ filename: `rendimiento_c2_global_${dateStr}`, sheets: [{ name: 'Rendimiento Global', headers, data }], title: 'Rendimiento C2 - Global' })
+    } else if (tab === 'productos') {
+      const headers = ['Producto', 'Código', 'Rubro', 'Cajas', 'Peso Neto kg', 'Rendimiento %']
+      const data = rendimientoProductos.map(rp => [rp.productoNombre, rp.productoCodigo, rp.rubroNombre, rp.cantidadCajas.toString(), rp.pesoNetoTotal.toFixed(1), rp.porcentajeRendimiento.toFixed(1)])
+      ExcelExporter.exportToExcel({ filename: `rendimiento_c2_productos_${dateStr}`, sheets: [{ name: 'Por Producto', headers, data }], title: 'Rendimiento C2 - Por Producto' })
+    } else if (tab === 'ingresos') {
+      const headers = ['Tropa', 'Ingresado kg', 'Producido kg', 'Cajas', 'Rendimiento %']
+      const data = rendimientoIngresos.map(ri => [ri.tropaCodigo, ri.pesoIngresado.toFixed(1), ri.pesoProducido.toFixed(1), ri.cantidadCajas.toString(), ri.rendimiento.toFixed(1)])
+      ExcelExporter.exportToExcel({ filename: `rendimiento_c2_ingresos_${dateStr}`, sheets: [{ name: 'Por Ingreso', headers, data }], title: 'Rendimiento C2 - Por Ingreso/Tropa' })
+    }
+    setExportOpen(false)
+  }
+
+  const exportarPDF = () => {
+    const dateStr = new Date().toISOString().split('T')[0]
+
+    if (tab === 'global' && rendimientoGlobal) {
+      const rg = rendimientoGlobal
+      const headers = ['Ingresado kg', 'Producido kg', 'Subproductos kg', 'Rendimiento %', 'Merma kg', '% Merma']
+      const rows = [[rg.totalIngresado.toFixed(1), rg.totalProducido.toFixed(1), rg.totalSubproductos.toFixed(1), rg.rendimientoGlobal.toFixed(1) + '%', rg.mermaTotal.toFixed(1), rg.porcentajeMerma.toFixed(1) + '%']]
+      const doc = PDFExporter.generateReport({ title: 'Rendimiento C2 - Global', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `rendimiento_c2_global_${dateStr}.pdf`)
+    } else if (tab === 'productos') {
+      const headers = ['Producto', 'Código', 'Rubro', 'Cajas', 'Peso Neto kg', 'Rendimiento %']
+      const rows = rendimientoProductos.map(rp => [rp.productoNombre, rp.productoCodigo, rp.rubroNombre, rp.cantidadCajas.toString(), rp.pesoNetoTotal.toFixed(1), rp.porcentajeRendimiento.toFixed(1) + '%'])
+      const doc = PDFExporter.generateReport({ title: 'Rendimiento C2 - Por Producto', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `rendimiento_c2_productos_${dateStr}.pdf`)
+    } else if (tab === 'ingresos') {
+      const headers = ['Tropa', 'Ingresado kg', 'Producido kg', 'Cajas', 'Rendimiento %']
+      const rows = rendimientoIngresos.map(ri => [ri.tropaCodigo, ri.pesoIngresado.toFixed(1), ri.pesoProducido.toFixed(1), ri.cantidadCajas.toString(), ri.rendimiento.toFixed(1) + '%'])
+      const doc = PDFExporter.generateReport({ title: 'Rendimiento C2 - Por Ingreso/Tropa', headers, data: rows, orientation: 'landscape' })
+      PDFExporter.downloadPDF(doc, `rendimiento_c2_ingresos_${dateStr}.pdf`)
+    }
+    setExportOpen(false)
   }
 
   const getRendimientoColor = (valor: number) => {
@@ -118,10 +164,36 @@ export default function C2RendimientoModule({ operador }: { operador: Operador }
             </h1>
             <p className="text-stone-500 mt-1">Análisis de rindes de desposte por producto, tropa y global</p>
           </div>
-          <Button variant="outline" onClick={cargarRendimiento} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Actualizar
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button variant="outline" onClick={() => setExportOpen(!exportOpen)}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-50 min-w-[180px]">
+                  <button
+                    onClick={exportarExcel}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-t-lg"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                    Exportar Excel
+                  </button>
+                  <button
+                    onClick={exportarPDF}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-stone-50 rounded-b-lg"
+                  >
+                    <FileDown className="w-4 h-4 text-red-600" />
+                    Exportar PDF
+                  </button>
+                </div>
+              )}
+            </div>
+            <Button variant="outline" onClick={cargarRendimiento} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
