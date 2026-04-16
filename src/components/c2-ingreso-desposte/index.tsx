@@ -44,6 +44,7 @@ interface Camara {
   id: string
   nombre: string
   tipo: string
+  activo?: boolean
 }
 
 export default function C2IngresoDesposteModule({ operador }: { operador: Operador }) {

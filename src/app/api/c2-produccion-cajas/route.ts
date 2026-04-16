@@ -121,26 +121,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener datos del cuarto si se proporcionó
-    let cuarto = null
-    if (cuartoId) {
-      cuarto = await db.cuarto.findUnique({
-        where: { id: cuartoId },
-        include: {
-          mediaRes: {
-            select: {
-              id: true,
-              codigo: true,
-              romaneo: { select: { tropaCodigo: true, fecha: true } }
+    const cuarto = cuartoId
+      ? await db.cuarto.findUnique({
+          where: { id: cuartoId },
+          include: {
+            mediaRes: {
+              select: {
+                id: true,
+                codigo: true,
+                romaneo: { select: { tropaCodigo: true, fecha: true } }
+              }
             }
           }
-        }
-      })
-      if (!cuarto) {
-        return NextResponse.json(
-          { success: false, error: 'Cuarto no encontrado' },
-          { status: 404 }
-        )
-      }
+        })
+      : null
+
+    if (cuartoId && !cuarto) {
+      return NextResponse.json(
+        { success: false, error: 'Cuarto no encontrado' },
+        { status: 404 }
+      )
     }
 
     // Generar número de caja correlativo

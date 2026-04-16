@@ -25,7 +25,7 @@ interface CajaDisponible {
   pesoBruto: number
   tropaCodigo?: string
   estado: string
-  productoDesposte?: { nombre: string; codigo: string; rubro?: { nombre: string } }
+  productoDesposte?: { id: string; nombre: string; codigo: string; rubro?: { nombre: string } }
 }
 
 interface Pallet {
@@ -44,7 +44,7 @@ interface Pallet {
     id: string
     numero: string
     pesoNeto: number
-    productoDesposte?: { nombre: string; codigo: string; rubro?: { nombre: string } }
+    productoDesposte?: { id: string; nombre: string; codigo: string; rubro?: { nombre: string } }
     producto?: { nombre: string }
   }[]
 }
@@ -419,7 +419,7 @@ export default function C2PalletsModule({ operador }: { operador: Operador }) {
 
                 {!esMixto && cajasSeleccionadas.length > 0 && (() => {
                   const productosUnicos = new Set(
-                    cajasDisponibles.filter(c => cajasSeleccionadas.includes(c.id)).map(c => c.productoDesposteId).filter(Boolean)
+                    cajasDisponibles.filter(c => cajasSeleccionadas.includes(c.id)).map(c => c.productoDesposte?.id).filter(Boolean)
                   )
                   if (productosUnicos.size > 1) {
                     return (

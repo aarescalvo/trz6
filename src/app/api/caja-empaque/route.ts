@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     if (loteId) where.loteId = loteId
     if (productoId) where.productoId = productoId
     if (estado) where.estado = estado
-    if (camaraId) where.camaraId = camaraId
+    // Nota: CajaEmpaque no tiene camaraId directamente; la cámara se accede via Pallet
     if (palletId) where.palletId = palletId
 
     const cajas = await db.cajaEmpaque.findMany({
@@ -70,19 +70,13 @@ export async function GET(request: NextRequest) {
           select: { id: true, codigo: true, nombre: true, tara: true }
         },
         lote: {
-          select: { id: true, numero: true, anio: true, estado: true }
+          select: { id: true, numero: true, estado: true }
         },
         propietario: {
           select: { id: true, nombre: true }
         },
-        camara: {
-          select: { id: true, nombre: true }
-        },
         pallet: {
           select: { id: true, numero: true, estado: true }
-        },
-        operador: {
-          select: { id: true, nombre: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -93,10 +87,10 @@ export async function GET(request: NextRequest) {
       total: cajas.length,
       pesoNetoTotal: cajas.reduce((acc, c) => acc + c.pesoNeto, 0),
       pesoBrutoTotal: cajas.reduce((acc, c) => acc + c.pesoBruto, 0),
-      unidadesTotal: cajas.reduce((acc, c) => acc + c.unidades, 0),
+      piezasTotal: cajas.reduce((acc, c) => acc + c.piezas, 0),
       porEstado: {
         enCamara: cajas.filter(c => c.estado === 'EN_CAMARA').length,
-        enPallets: cajas.filter(c => c.estado === 'EN_PALLETS').length,
+        enPallet: cajas.filter(c => c.estado === 'EN_PALLET').length,
         despachadas: cajas.filter(c => c.estado === 'DESPACHADA').length
       }
     }
@@ -118,11 +112,8 @@ export async function POST(request: NextRequest) {
       productoId,
       loteId,
       propietarioId,
-      camaraId,
       unidades,
-      pesoNeto,
-      operadorId,
-      observaciones
+      pesoNeto
     } = body
 
     // Obtener producto para los códigos
@@ -159,17 +150,16 @@ export async function POST(request: NextRequest) {
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
     
-    const ultimaCaja = await db.cajaEmpaque.findFirst({
+    const cajasHoy = await db.cajaEmpaque.count({
       where: {
         productoId,
-        fechaProduccion: {
+        createdAt: {
           gte: hoy
         }
-      },
-      orderBy: { numeradorCaja: 'desc' }
+      }
     })
 
-    const numeradorCaja = (ultimaCaja?.numeradorCaja || 0) + 1
+    const numeradorCaja = cajasHoy + 1
 
     // Generar código de barras
     const codigoBarras = generarCodigoBarras({
@@ -193,55 +183,44 @@ export async function POST(request: NextRequest) {
       fechaVencimiento.setDate(fechaVencimiento.getDate() + producto.diasConservacion)
     }
 
+    // Generar numero unico para la caja
+    const fechaStr = `${String(hoy.getFullYear())}${String(hoy.getMonth() + 1).padStart(2, '0')}${String(hoy.getDate()).padStart(2, '0')}`
+    const numero = `${producto.codigo}-${fechaStr}-${String(numeradorCaja).padStart(4, '0')}`
+
     // Crear caja
     const caja = await db.cajaEmpaque.create({
       data: {
+        numero,
         codigoBarras,
-        codigoArticulo,
-        codigoEspecie,
-        codigoTipificacion,
-        codigoTrabajo,
-        codigoTransporte,
-        codigoDestino,
-        fechaProduccion: new Date(),
-        loteNumero: lote.numero,
-        unidades,
+        tara,
+        piezas: unidades,
         pesoNeto,
-        numeradorCaja,
         pesoBruto,
         productoId,
         loteId,
         propietarioId,
-        camaraId,
-        operadorId,
+        fechaFaena: new Date(),
         fechaVencimiento: producto.diasConservacion ? fechaVencimiento : null,
-        observaciones,
-        estado: 'EN_CAMARA'
+        estado: 'ARMADA'
       },
       include: {
         producto: {
           select: { id: true, codigo: true, nombre: true }
         },
         lote: {
-          select: { id: true, numero: true, anio: true }
+          select: { id: true, numero: true }
         },
         propietario: {
-          select: { id: true, nombre: true }
-        },
-        camara: {
-          select: { id: true, nombre: true }
-        },
-        operador: {
           select: { id: true, nombre: true }
         }
       }
     })
 
-    // Actualizar kg producidos del lote
+    // Actualizar total kg del lote
     await db.loteDespostada.update({
       where: { id: loteId },
       data: {
-        kgProducidos: {
+        totalKg: {
           increment: pesoNeto
         }
       }
@@ -260,13 +239,11 @@ export async function PUT(request: NextRequest) {
   if (authError) return authError
   try {
     const body = await request.json()
-    const { id, estado, palletId, camaraId, observaciones } = body
+    const { id, estado, palletId } = body
 
     const updateData: any = {}
     if (estado) updateData.estado = estado
     if (palletId !== undefined) updateData.palletId = palletId || null
-    if (camaraId !== undefined) updateData.camaraId = camaraId || null
-    if (observaciones) updateData.observaciones = observaciones
 
     const caja = await db.cajaEmpaque.update({
       where: { id },
@@ -325,18 +302,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Caja no encontrada' }, { status: 404 })
     }
 
-    // Anular en lugar de eliminar
-    const cajaAnulada = await db.cajaEmpaque.update({
-      where: { id },
-      data: { estado: 'ANULADA' }
+    // Eliminar la caja (EstadoCaja no tiene estado ANULADA)
+    const cajaAnulada = await db.cajaEmpaque.delete({
+      where: { id }
     })
 
-    // Actualizar kg producidos del lote (restar)
+    // Actualizar total kg del lote (restar)
     if (caja.loteId) {
       await db.loteDespostada.update({
         where: { id: caja.loteId },
         data: {
-          kgProducidos: {
+          totalKg: {
             decrement: caja.pesoNeto
           }
         }

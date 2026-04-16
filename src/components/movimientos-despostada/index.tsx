@@ -45,6 +45,7 @@ interface Lote {
   numero: number
   estado: string
   totalKg?: number
+  fecha?: string
 }
 
 interface Props {
@@ -589,7 +590,7 @@ export function MovimientosDespostadaModule({ operador }: Props) {
                       <SelectContent>
                         <SelectItem value="TODOS">Todos los lotes</SelectItem>
                         {lotes.map(l => (
-                          <SelectItem key={l.id} value={l.id}>Lote {l.numero}/{l.anio}</SelectItem>
+                          <SelectItem key={l.id} value={l.id}>Lote {l.numero}{l.fecha ? '/' + new Date(l.fecha).getFullYear() : ''}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

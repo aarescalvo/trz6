@@ -60,6 +60,27 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   '/api/backup': 'puedeConfiguracion',
   '/api/productos': 'puedeStock',
   '/api/sistema/backup': 'puedeConfiguracion',
+  // Ciclo II - Desposte y Logística
+  '/api/cuarteo': 'puedeCuarteo',
+  '/api/cuartos': 'puedeCuarteo',
+  '/api/ingreso-despostada': 'puedeDesposte',
+  '/api/c2-ingreso-desposte': 'puedeDesposte',
+  '/api/c2-produccion-cajas': 'puedeDesposte',
+  '/api/c2-subproductos': 'puedeDesposte',
+  '/api/c2-degradacion': 'puedeDesposte',
+  '/api/empaque': 'puedeEmpaque',
+  '/api/caja-empaque': 'puedeEmpaque',
+  '/api/c2-expedicion': 'puedeExpedicionC2',
+  '/api/c2-pallets': 'puedeExpedicionC2',
+  '/api/c2-stock': 'puedeStock',
+  '/api/c2-rendimiento': 'puedeStock',
+  '/api/movimientos-despostada': 'puedeDesposte',
+  '/api/lotes-despostada': 'puedeDesposte',
+  // Ciclo II - Configuración
+  '/api/c2-rubros': 'puedeConfiguracion',
+  '/api/c2-tipos-cuarto': 'puedeConfiguracion',
+  '/api/c2-productos-desposte': 'puedeConfiguracion',
+  '/api/c2-bom': 'puedeConfiguracion',
 }
 
 function isPublicRoute(pathname: string): boolean {

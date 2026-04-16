@@ -27,6 +27,7 @@ interface Camara {
   id: string
   nombre: string
   tipo: string
+  activo?: boolean
 }
 
 interface Empaque {

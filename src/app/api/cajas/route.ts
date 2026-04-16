@@ -1,26 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-// GET - Listar cajas
+// GET - Listar cajas de empaque
+// Nota: Este endpoint usa el modelo CajaEmpaque (cajas de empaque de productos),
+// ya que no existe un modelo "Caja" (caja registradora) en el schema.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const activos = searchParams.get('activos')
-    const tipo = searchParams.get('tipo')
     const id = searchParams.get('id')
+    const estado = searchParams.get('estado')
+    const productoId = searchParams.get('productoId')
 
     // Si se pasa un ID específico, devolver esa caja con sus relaciones
     if (id) {
-      const caja = await db.caja.findUnique({
+      const caja = await db.cajaEmpaque.findUnique({
         where: { id },
         include: {
-          movimientos: {
-            orderBy: { fecha: 'desc' },
-            take: 50
+          producto: {
+            select: { id: true, codigo: true, nombre: true }
           },
-          arqueos: {
-            orderBy: { fecha: 'desc' },
-            take: 10
+          lote: {
+            select: { id: true, numero: true }
+          },
+          propietario: {
+            select: { id: true, nombre: true }
+          },
+          pallet: {
+            select: { id: true, numero: true, estado: true }
           }
         }
       })
@@ -39,21 +45,24 @@ export async function GET(request: NextRequest) {
     }
 
     const where: Record<string, unknown> = {}
-    if (activos === 'true') {
-      where.activo = true
+    if (estado) {
+      where.estado = estado
     }
-    if (tipo) {
-      where.tipo = tipo
+    if (productoId) {
+      where.productoId = productoId
     }
 
-    const cajas = await db.caja.findMany({
+    const cajas = await db.cajaEmpaque.findMany({
       where,
-      orderBy: { nombre: 'asc' },
+      orderBy: { createdAt: 'desc' },
       include: {
+        producto: {
+          select: { id: true, codigo: true, nombre: true }
+        },
         _count: {
           select: {
-            movimientos: true,
-            arqueos: true
+            degradaciones: true,
+            expedicionItems: true
           }
         }
       }
@@ -72,65 +81,48 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear caja
+// POST - Crear caja de empaque
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
 
     // Validaciones
-    if (!data.nombre) {
+    if (!data.numero) {
       return NextResponse.json(
-        { success: false, error: 'El nombre es requerido' },
-        { status: 400 }
-      )
-    }
-    if (!data.tipo) {
-      return NextResponse.json(
-        { success: false, error: 'El tipo es requerido' },
+        { success: false, error: 'El numero es requerido' },
         { status: 400 }
       )
     }
 
-    // Verificar si ya existe una caja con el mismo nombre
-    const existente = await db.caja.findUnique({
-      where: { nombre: data.nombre }
+    // Verificar si ya existe una caja con el mismo numero
+    const existente = await db.cajaEmpaque.findUnique({
+      where: { numero: data.numero }
     })
     if (existente) {
       return NextResponse.json(
-        { success: false, error: 'Ya existe una caja con ese nombre' },
+        { success: false, error: 'Ya existe una caja con ese numero' },
         { status: 400 }
       )
     }
 
-    const saldoInicial = data.saldoInicial ?? 0
-
-    const caja = await db.caja.create({
+    const caja = await db.cajaEmpaque.create({
       data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        tipo: data.tipo,
-        responsable: data.responsable || null,
-        saldoActual: saldoInicial,
-        saldoInicial: saldoInicial,
-        cuentaBancariaId: data.cuentaBancariaId || null,
-        activo: data.activo ?? true,
+        numero: data.numero,
+        pesoBruto: data.pesoBruto ?? 0,
+        pesoNeto: data.pesoNeto ?? 0,
+        tara: data.tara ?? 0,
+        piezas: data.piezas ?? 1,
+        productoId: data.productoId || null,
+        loteId: data.loteId || null,
+        propietarioId: data.propietarioId || null,
+        palletId: data.palletId || null,
+        tropaCodigo: data.tropaCodigo || null,
+        codigoBarras: data.codigoBarras || null,
+        fechaFaena: data.fechaFaena ? new Date(data.fechaFaena) : null,
+        fechaDesposte: data.fechaDesposte ? new Date(data.fechaDesposte) : null,
+        fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null,
       }
     })
-
-    // Si hay saldo inicial, crear movimiento de apertura
-    if (saldoInicial > 0) {
-      await db.movimientoCaja.create({
-        data: {
-          cajaId: caja.id,
-          tipo: 'APERTURA',
-          monto: saldoInicial,
-          saldoAnterior: 0,
-          saldoNueva: saldoInicial,
-          concepto: 'Saldo inicial de apertura de caja',
-          operadorId: data.operadorId || null,
-        }
-      })
-    }
 
     return NextResponse.json({
       success: true,
@@ -158,7 +150,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verificar que existe
-    const existente = await db.caja.findUnique({
+    const existente = await db.cajaEmpaque.findUnique({
       where: { id: data.id }
     })
     if (!existente) {
@@ -168,30 +160,13 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Verificar nombre duplicado si se está cambiando
-    if (data.nombre && data.nombre !== existente.nombre) {
-      const nombreDuplicado = await db.caja.findUnique({
-        where: { nombre: data.nombre }
-      })
-      if (nombreDuplicado) {
-        return NextResponse.json(
-          { success: false, error: 'Ya existe una caja con ese nombre' },
-          { status: 400 }
-        )
-      }
-    }
+    const updateData: Record<string, unknown> = {}
+    if (data.estado !== undefined) updateData.estado = data.estado
+    if (data.palletId !== undefined) updateData.palletId = data.palletId || null
 
-    const caja = await db.caja.update({
+    const caja = await db.cajaEmpaque.update({
       where: { id: data.id },
-      data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion,
-        tipo: data.tipo,
-        responsable: data.responsable,
-        cuentaBancariaId: data.cuentaBancariaId,
-        activo: data.activo,
-        // saldoActual solo se actualiza a través de movimientos
-      }
+      data: updateData
     })
 
     return NextResponse.json({
@@ -220,29 +195,27 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Verificar que no tenga movimientos asociados
-    const movimientosAsociados = await db.movimientoCaja.findFirst({
-      where: { cajaId: id }
+    // Verificar que no tenga expediciones asociadas
+    const expedicionesAsociadas = await db.cajaEmpaque.findUnique({
+      where: { id },
+      include: { _count: { select: { expedicionItems: true } } }
     })
-    if (movimientosAsociados) {
+
+    if (!expedicionesAsociadas) {
       return NextResponse.json(
-        { success: false, error: 'No se puede eliminar, tiene movimientos asociados' },
+        { success: false, error: 'Caja no encontrada' },
+        { status: 404 }
+      )
+    }
+
+    if (expedicionesAsociadas._count.expedicionItems > 0) {
+      return NextResponse.json(
+        { success: false, error: 'No se puede eliminar, tiene expediciones asociadas' },
         { status: 400 }
       )
     }
 
-    // Verificar que no tenga arqueos asociados
-    const arqueosAsociados = await db.arqueoCaja.findFirst({
-      where: { cajaId: id }
-    })
-    if (arqueosAsociados) {
-      return NextResponse.json(
-        { success: false, error: 'No se puede eliminar, tiene arqueos asociados' },
-        { status: 400 }
-      )
-    }
-
-    await db.caja.delete({
+    await db.cajaEmpaque.delete({
       where: { id }
     })
 

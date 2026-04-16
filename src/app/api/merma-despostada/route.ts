@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// Nota: No existe un modelo MermaDespostada. Las mermas se registran
+// como MovimientoDespostada con tipo HUESO, GRASA, MERMA o DESECHO.
+
 // GET - Listar mermas de despostada
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +15,8 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
     if (loteId) where.loteId = loteId
+    // Solo mostrar movimientos de tipo merma (no CORTE)
+    where.tipo = { in: ['HUESO', 'GRASA', 'MERMA', 'DESECHO'] }
     if (tipo) where.tipo = tipo
     if (fechaDesde || fechaHasta) {
       where.fecha = {}
@@ -19,16 +24,14 @@ export async function GET(request: NextRequest) {
       if (fechaHasta) where.fecha.lte = new Date(fechaHasta)
     }
 
-    const mermas = await db.mermaDespostada.findMany({
+    const mermas = await db.movimientoDespostada.findMany({
       where,
       include: {
         lote: {
           select: { 
             id: true, 
             numero: true, 
-            anio: true,
-            kgIngresados: true,
-            kgProducidos: true
+            totalKg: true
           }
         },
         operador: {
@@ -41,13 +44,12 @@ export async function GET(request: NextRequest) {
     // Calcular estadísticas
     const stats = {
       total: mermas.length,
-      pesoTotal: mermas.reduce((acc, m) => acc + m.pesoKg, 0),
+      pesoTotal: mermas.reduce((acc, m) => acc + m.pesoDesperdicio, 0),
       porTipo: {
-        hueso: mermas.filter(m => m.tipo === 'HUESO').reduce((acc, m) => acc + m.pesoKg, 0),
-        grasa: mermas.filter(m => m.tipo === 'GRASA').reduce((acc, m) => acc + m.pesoKg, 0),
-        incomestible: mermas.filter(m => m.tipo === 'INCOMESTIBLE').reduce((acc, m) => acc + m.pesoKg, 0),
-        recortes: mermas.filter(m => m.tipo === 'RECORTES').reduce((acc, m) => acc + m.pesoKg, 0),
-        otro: mermas.filter(m => m.tipo === 'OTRO').reduce((acc, m) => acc + m.pesoKg, 0)
+        hueso: mermas.filter(m => m.tipo === 'HUESO').reduce((acc, m) => acc + m.pesoDesperdicio, 0),
+        grasa: mermas.filter(m => m.tipo === 'GRASA').reduce((acc, m) => acc + m.pesoDesperdicio, 0),
+        merma: mermas.filter(m => m.tipo === 'MERMA').reduce((acc, m) => acc + m.pesoDesperdicio, 0),
+        desecho: mermas.filter(m => m.tipo === 'DESECHO').reduce((acc, m) => acc + m.pesoDesperdicio, 0),
       }
     }
 
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { loteId, tipo, pesoKg, observaciones, operadorId } = body
+    const { loteId, tipo, pesoKg, observaciones, operadorId, productoNombre } = body
 
     if (!loteId || !tipo || !pesoKg) {
       return NextResponse.json({ 
@@ -87,18 +89,19 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Crear merma
-    const merma = await db.mermaDespostada.create({
+    // Crear merma como MovimientoDespostada
+    const merma = await db.movimientoDespostada.create({
       data: {
         loteId,
         tipo,
-        pesoKg,
+        productoNombre: productoNombre || 'Merma',
+        pesoDesperdicio: pesoKg,
         observaciones,
         operadorId
       },
       include: {
         lote: {
-          select: { id: true, numero: true, anio: true }
+          select: { id: true, numero: true }
         },
         operador: {
           select: { id: true, nombre: true }
@@ -106,11 +109,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Actualizar kg de mermas del lote
+    // Actualizar total kg del lote
     await db.loteDespostada.update({
       where: { id: loteId },
       data: {
-        kgMermas: {
+        totalKg: {
           increment: pesoKg
         }
       }
@@ -129,7 +132,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, tipo, pesoKg, observaciones } = body
 
-    const mermaActual = await db.mermaDespostada.findUnique({
+    const mermaActual = await db.movimientoDespostada.findUnique({
       where: { id },
       include: { lote: true }
     })
@@ -138,7 +141,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Merma no encontrada' }, { status: 404 })
     }
 
-    if (mermaActual.lote.estado !== 'ABIERTO') {
+    if (mermaActual.lote?.estado !== 'ABIERTO') {
       return NextResponse.json({ 
         success: false, 
         error: 'No se puede modificar una merma de un lote cerrado' 
@@ -150,26 +153,28 @@ export async function PUT(request: NextRequest) {
     if (observaciones) updateData.observaciones = observaciones
 
     // Si cambia el peso, actualizar el lote
-    if (pesoKg !== undefined && pesoKg !== mermaActual.pesoKg) {
-      const diferencia = pesoKg - mermaActual.pesoKg
-      updateData.pesoKg = pesoKg
+    if (pesoKg !== undefined && pesoKg !== mermaActual.pesoDesperdicio) {
+      const diferencia = pesoKg - mermaActual.pesoDesperdicio
+      updateData.pesoDesperdicio = pesoKg
 
-      await db.loteDespostada.update({
-        where: { id: mermaActual.loteId },
-        data: {
-          kgMermas: {
-            increment: diferencia
+      if (mermaActual.loteId) {
+        await db.loteDespostada.update({
+          where: { id: mermaActual.loteId },
+          data: {
+            totalKg: {
+              increment: diferencia
+            }
           }
-        }
-      })
+        })
+      }
     }
 
-    const merma = await db.mermaDespostada.update({
+    const merma = await db.movimientoDespostada.update({
       where: { id },
       data: updateData,
       include: {
         lote: {
-          select: { id: true, numero: true, anio: true }
+          select: { id: true, numero: true }
         },
         operador: {
           select: { id: true, nombre: true }
@@ -194,7 +199,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'ID requerido' }, { status: 400 })
     }
 
-    const merma = await db.mermaDespostada.findUnique({
+    const merma = await db.movimientoDespostada.findUnique({
       where: { id },
       include: { lote: true }
     })
@@ -203,7 +208,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Merma no encontrada' }, { status: 404 })
     }
 
-    if (merma.lote.estado !== 'ABIERTO') {
+    if (merma.lote?.estado !== 'ABIERTO') {
       return NextResponse.json({ 
         success: false, 
         error: 'No se puede eliminar una merma de un lote cerrado' 
@@ -211,17 +216,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Restar del lote
-    await db.loteDespostada.update({
-      where: { id: merma.loteId },
-      data: {
-        kgMermas: {
-          decrement: merma.pesoKg
+    if (merma.loteId) {
+      await db.loteDespostada.update({
+        where: { id: merma.loteId },
+        data: {
+          totalKg: {
+            decrement: merma.pesoDesperdicio
+          }
         }
-      }
-    })
+      })
+    }
 
     // Eliminar merma
-    await db.mermaDespostada.delete({
+    await db.movimientoDespostada.delete({
       where: { id }
     })
 

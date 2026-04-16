@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const db = new PrismaClient()
+import { db } from '@/lib/db'
 
 // GET - Obtener stock de cuartos con filtros
 export async function GET(request: NextRequest) {
@@ -53,7 +51,7 @@ export async function GET(request: NextRequest) {
           select: { id: true, nombre: true, cuit: true }
         }
       },
-      orderBy: { fechaCuarteo: 'desc' }
+      orderBy: { createdAt: 'desc' }
     })
 
     // Calcular estadísticas
@@ -61,17 +59,17 @@ export async function GET(request: NextRequest) {
       totalCuartos: cuartos.length,
       enCamara: cuartos.filter(c => c.estado === 'EN_CAMARA').length,
       enDespostada: cuartos.filter(c => c.estado === 'EN_DESPOSTADA').length,
-      despostados: cuartos.filter(c => c.estado === 'DESPOSTADO').length,
-      pesoTotal: cuartos.reduce((acc, c) => acc + c.pesoCuarto, 0),
+      despostados: cuartos.filter(c => c.estado === 'EN_DESPOSTADA').length,
+      pesoTotal: cuartos.reduce((acc, c) => acc + c.peso, 0),
       porSigla: {
         A: cuartos.filter(c => c.sigla === 'A').length,
         D: cuartos.filter(c => c.sigla === 'D').length,
         T: cuartos.filter(c => c.sigla === 'T').length
       },
       pesoPorSigla: {
-        A: cuartos.filter(c => c.sigla === 'A').reduce((acc, c) => acc + c.pesoCuarto, 0),
-        D: cuartos.filter(c => c.sigla === 'D').reduce((acc, c) => acc + c.pesoCuarto, 0),
-        T: cuartos.filter(c => c.sigla === 'T').reduce((acc, c) => acc + c.pesoCuarto, 0)
+        A: cuartos.filter(c => c.sigla === 'A').reduce((acc, c) => acc + c.peso, 0),
+        D: cuartos.filter(c => c.sigla === 'D').reduce((acc, c) => acc + c.peso, 0),
+        T: cuartos.filter(c => c.sigla === 'T').reduce((acc, c) => acc + c.peso, 0)
       },
       alertasVencimiento: [] as any[]
     }
@@ -83,7 +81,7 @@ export async function GET(request: NextRequest) {
         acc[camaraNombre] = { cantidad: 0, peso: 0 }
       }
       acc[camaraNombre].cantidad++
-      acc[camaraNombre].peso += c.pesoCuarto
+      acc[camaraNombre].peso += c.peso
       return acc
     }, {})
 
@@ -94,7 +92,7 @@ export async function GET(request: NextRequest) {
         acc[tropa] = { cantidad: 0, peso: 0, propietario: c.propietario?.nombre || c.mediaRes.usuarioFaena?.nombre }
       }
       acc[tropa].cantidad++
-      acc[tropa].peso += c.pesoCuarto
+      acc[tropa].peso += c.peso
       return acc
     }, {})
 
@@ -111,8 +109,6 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Error al obtener stock de cuartos' },
       { status: 500 }
     )
-  } finally {
-    await db.$disconnect()
   }
 }
 
@@ -126,18 +122,11 @@ export async function PUT(request: NextRequest) {
     
     if (estado) {
       updateData.estado = estado
-      if (estado === 'EN_DESPOSTADA') {
-        updateData.fechaIngresoDespostada = new Date()
-      }
     }
     if (camaraId !== undefined) updateData.camaraId = camaraId
     if (propietarioId !== undefined) updateData.propietarioId = propietarioId
     if (pesoCuarto !== undefined) {
-      const cuarto = await db.cuarto.findUnique({ where: { id } })
-      if (cuarto) {
-        updateData.pesoCuarto = pesoCuarto
-        updateData.merma = cuarto.pesoOriginal - pesoCuarto
-      }
+      updateData.peso = pesoCuarto
     }
 
     const cuarto = await db.cuarto.update({
@@ -171,7 +160,5 @@ export async function PUT(request: NextRequest) {
       { success: false, error: 'Error al actualizar cuarto' },
       { status: 500 }
     )
-  } finally {
-    await db.$disconnect()
   }
 }

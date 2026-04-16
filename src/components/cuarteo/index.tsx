@@ -64,6 +64,7 @@ interface Camara {
   id: string
   nombre: string
   tipo: string
+  activo?: boolean
 }
 
 export function CuarteoModule({ operador }: { operador: Operador }) {

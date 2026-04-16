@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       return acc
     }, {})
 
-    const ingresosCreated = []
+    const ingresosCreated: any[] = []
 
     for (const [mediaResId, cuartosGrupo] of Object.entries(cuartosByMediaRes)) {
       const primerCuarto = cuartosGrupo[0]

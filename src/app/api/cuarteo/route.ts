@@ -124,22 +124,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar datos de la MediaRes si se proporcionó ID
-    let mediaRes = null
-    if (mediaResId) {
-      mediaRes = await db.mediaRes.findUnique({
-        where: { id: mediaResId },
-        include: {
-          romaneo: {
-            select: { tropaCodigo: true, garron: true }
-          }
+    const mediaRes = mediaResId ? await db.mediaRes.findUnique({
+      where: { id: mediaResId },
+      include: {
+        romaneo: {
+          select: { tropaCodigo: true, garron: true }
         }
-      })
-      if (!mediaRes) {
-        return NextResponse.json(
-          { success: false, error: 'Media Res no encontrada' },
-          { status: 404 }
-        )
       }
+    }) : null
+
+    if (mediaResId && !mediaRes) {
+      return NextResponse.json(
+        { success: false, error: 'Media Res no encontrada' },
+        { status: 404 }
+      )
     }
 
     // Calcular peso total de los cuartos dinámicos
@@ -169,7 +167,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Crear Cuarto records si se proporcionaron cuartos dinámicos
-    const cuartosCreated = []
+    const cuartosCreated: any[] = []
     if (cuartosInput && cuartosInput.length > 0 && mediaResId) {
       const timestamp = Date.now()
       for (let i = 0; i < cuartosInput.length; i++) {

@@ -50,7 +50,7 @@ interface CajaProduccion {
   tropaCodigo?: string | null
   estado: string
   barcodeGs1_128?: string | null
-  productoDesposte?: { nombre: string; codigo: string; rubro?: { nombre: string } | null } | null
+  productoDesposte?: { id: string; nombre: string; codigo: string; rubro?: { nombre: string } | null } | null
   cuarto?: { codigo: string; tipo: string; tipoCuarto?: { nombre: string } | null } | null
   createdAt: string
 }

@@ -21,28 +21,22 @@ export async function GET(request: NextRequest) {
               select: { id: true, codigo: true, nombre: true }
             },
             lote: {
-              select: { id: true, numero: true, anio: true }
-            },
-            propietario: {
-              select: { id: true, nombre: true }
+              select: { id: true, numero: true, estado: true }
             }
           }
         },
-        expedicion: {
-          select: { id: true, numero: true, destino: true, estado: true }
-        },
-        operador: {
+        camara: {
           select: { id: true, nombre: true }
         }
       },
-      orderBy: { fecha: 'desc' }
+      orderBy: { createdAt: 'desc' }
     })
 
     // Calcular estadísticas
     const stats = {
       total: pallets.length,
       armados: pallets.filter(p => p.estado === 'ARMADO').length,
-      completos: pallets.filter(p => p.estado === 'COMPLETO').length,
+      enCamara: pallets.filter(p => p.estado === 'EN_CAMARA').length,
       despachados: pallets.filter(p => p.estado === 'DESPACHADO').length,
       totalCajas: pallets.reduce((acc, p) => acc + p.cantidadCajas, 0),
       pesoTotal: pallets.reduce((acc, p) => acc + p.pesoTotal, 0)
@@ -59,26 +53,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { destino, destinoId, operadorId, observaciones } = body
+    const { operadorId, observaciones, camaraId } = body
 
     // Obtener último número de pallet
     const ultimoPallet = await db.pallet.findFirst({
       orderBy: { numero: 'desc' }
     })
 
-    const numero = (ultimoPallet?.numero || 0) + 1
+    const numero = String((parseInt(ultimoPallet?.numero || '0', 10) || 0) + 1)
 
     const pallet = await db.pallet.create({
       data: {
         numero,
-        destino,
-        destinoId,
-        operadorId,
+        camaraId: camaraId || null,
         observaciones,
         estado: 'ARMADO'
       },
       include: {
-        operador: {
+        camara: {
           select: { id: true, nombre: true }
         }
       }
@@ -95,11 +87,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, estado, expedicionId, observaciones } = body
+    const { id, estado, expedicionId, observaciones, expedicionOrdenId } = body
 
     const updateData: any = {}
     if (estado) updateData.estado = estado
     if (expedicionId !== undefined) updateData.expedicionId = expedicionId || null
+    if (expedicionOrdenId !== undefined) updateData.expedicionOrdenId = expedicionOrdenId || null
     if (observaciones) updateData.observaciones = observaciones
 
     const pallet = await db.pallet.update({
@@ -113,17 +106,17 @@ export async function PUT(request: NextRequest) {
             }
           }
         },
-        expedicion: {
-          select: { id: true, numero: true, destino: true }
+        camara: {
+          select: { id: true, nombre: true }
         }
       }
     })
 
     // Si se cierra el pallet, actualizar estado de las cajas
-    if (estado === 'COMPLETO') {
+    if (estado === 'EN_CAMARA') {
       await db.cajaEmpaque.updateMany({
         where: { palletId: id },
-        data: { estado: 'EN_PALLETS' }
+        data: { estado: 'EN_PALLET' }
       })
     }
 
@@ -142,7 +135,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Anular pallet
+// DELETE - Anular pallet (soft delete: cambiar estado)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -174,13 +167,12 @@ export async function DELETE(request: NextRequest) {
       }
     })
 
-    // Anular pallet
-    const palletAnulado = await db.pallet.update({
-      where: { id },
-      data: { estado: 'ANULADO' }
+    // Eliminar pallet (hard delete)
+    await db.pallet.delete({
+      where: { id }
     })
 
-    return NextResponse.json({ success: true, data: palletAnulado })
+    return NextResponse.json({ success: true, message: 'Pallet eliminado' })
   } catch (error) {
     console.error('Error al anular pallet:', error)
     return NextResponse.json({ success: false, error: 'Error al anular pallet' }, { status: 500 })

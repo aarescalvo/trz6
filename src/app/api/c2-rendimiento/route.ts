@@ -54,7 +54,7 @@ async function getRendimientoGlobal(tropaCodigo?: string | null, fecha?: string 
   const [ingresos, cajasResult, subproductos] = await Promise.all([
     db.ingresoDespostada.aggregate({
       where: whereIngresos,
-      _sum: { pesoTotal: true },
+      _sum: { pesoKg: true },
       _count: true
     }),
     db.cajaEmpaque.aggregate({
@@ -68,7 +68,7 @@ async function getRendimientoGlobal(tropaCodigo?: string | null, fecha?: string 
     })
   ])
 
-  const totalIngresado = ingresos._sum.pesoTotal || 0
+  const totalIngresado = ingresos._sum?.pesoKg ?? 0
   const totalProducido = cajasResult._sum.pesoNeto || 0
   const totalSubproductos = subproductos._sum.pesoKg || 0
   const rendimientoGlobal = totalIngresado > 0 ? (totalProducido / totalIngresado) * 100 : 0
@@ -105,8 +105,8 @@ async function getRendimientoPorProducto(tropaCodigo?: string | null, fecha?: st
   if (tropaCodigo) whereIngresos.tropaCodigo = tropaCodigo
   const totalIngresado = (await db.ingresoDespostada.aggregate({
     where: whereIngresos,
-    _sum: { pesoTotal: true }
-  }))._sum.pesoTotal || 0
+    _sum: { pesoKg: true }
+  }))._sum?.pesoKg ?? 0
 
   // Agrupar por producto de desposte
   const cajas = await db.cajaEmpaque.findMany({
@@ -184,7 +184,15 @@ async function getRendimientoPorIngreso(tropaCodigo?: string | null, fecha?: str
     take: 50
   })
 
-  const resultado = []
+  const resultado: {
+    ingresoId: string
+    tropaCodigo: string
+    pesoIngresado: number
+    pesoProducido: number
+    rendimiento: number
+    cantidadCajas: number
+    productos: { nombre: string; peso: number }[]
+  }[] = []
 
   for (const ingreso of ingresos) {
     // Buscar cajas de esta tropa
@@ -210,9 +218,9 @@ async function getRendimientoPorIngreso(tropaCodigo?: string | null, fecha?: str
     resultado.push({
       ingresoId: ingreso.id,
       tropaCodigo: ingreso.tropaCodigo || 'S/T',
-      pesoIngresado: ingreso.pesoTotal,
+      pesoIngresado: ingreso.pesoKg,
       pesoProducido,
-      rendimiento: ingreso.pesoTotal > 0 ? (pesoProducido / ingreso.pesoTotal) * 100 : 0,
+      rendimiento: ingreso.pesoKg > 0 ? (pesoProducido / ingreso.pesoKg) * 100 : 0,
       cantidadCajas: cajas.length,
       productos: Array.from(productosMap.entries()).map(([nombre, peso]) => ({ nombre, peso }))
     })

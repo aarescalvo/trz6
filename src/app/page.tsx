@@ -1,14 +1,13 @@
 'use client'
 // Sistema Frigorífico - Solemar Alimentaria v2.2.0
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EditableScreenWrapper } from '@/components/ui/editable-screen'
 import { ConfiguracionModule } from '@/components/configuracion'
 import { PesajeCamionesModule } from '@/components/pesaje-camiones-module'
@@ -66,14 +65,13 @@ import { MovimientoCamarasModule } from '@/components/movimiento-camaras'
 import { 
   Truck, Beef, Scale, ClipboardList, TrendingUp, Package, Tag, Scissors, 
   Warehouse, FileText, Settings, Calendar, LogOut, Lock, Users,
-  Loader2, Plus, Search, Weight, RefreshCw, BoxSelect, Barcode, Printer, Monitor,
+  Loader2, Search, RefreshCw, BoxSelect, Barcode,
   ChevronDown, ChevronRight, LayoutDashboard, Wifi, WifiOff, CloudUpload, DollarSign,
   AlertTriangle
 } from 'lucide-react'
 
 // Resilience imports
 import { useOfflineStore } from '@/stores/offlineStore'
-import { useAppStore } from '@/stores/appStore'
 
 // Types
 interface Operador {
@@ -134,6 +132,7 @@ interface NavItem {
   label: string
   icon: typeof Beef
   permiso?: string
+  permisoAlt?: string  // Permiso alternativo (OR) — si tiene permiso O permisoAlt, tiene acceso
 }
 
 // Sub-group (for nested menus like Consumo/Rendering)
@@ -171,7 +170,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'romaneo', label: 'Romaneo', icon: TrendingUp, permiso: 'puedeRomaneo' },
       { id: 'vbRomaneo', label: 'VB Romaneo', icon: FileText, permiso: 'puedeRomaneo' },
       { id: 'movimientoCamaras', label: 'Movimiento de Cámaras', icon: RefreshCw, permiso: 'puedeStock' },
-      { id: 'expedicionUnificada', label: 'Expedición', icon: Truck, permiso: 'puedeStock' },
+      { id: 'expedicionUnificada', label: 'Expedición', icon: Truck, permiso: 'puedeStock', permisoAlt: 'puedeExpedicionC2' },
       { id: 'despachos', label: 'Despachos', icon: Truck, permiso: 'puedeStock' },
     ]
   },
@@ -182,7 +181,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'cuarteo', label: 'Cuarteo', icon: Scissors, permiso: 'puedeCuarteo' },
       { id: 'ingresoDesposteUnificado', label: 'Ingreso a Desposte', icon: Package, permiso: 'puedeDesposte' },
-      { id: 'produccionUnificada', label: 'Producción / Empaque', icon: Scissors, permiso: 'puedeDesposte' },
+      { id: 'produccionUnificada', label: 'Producción / Empaque', icon: Scissors, permiso: 'puedeDesposte', permisoAlt: 'puedeEmpaque' },
       { id: 'c2Subproductos', label: 'Subproductos C2', icon: Package, permiso: 'puedeDesposte' },
       { id: 'c2Pallets', label: 'Pallets C2', icon: Package, permiso: 'puedeExpedicionC2' },
       { id: 'c2Rendimiento', label: 'Rendimiento C2', icon: TrendingUp, permiso: 'puedeReportes' },
@@ -456,6 +455,12 @@ export default function FrigorificoApp() {
     return operador?.permisos[permiso as keyof typeof operador.permisos] === true
   }
 
+  // Check if user has ANY of two permissions (OR logic for unified modules)
+  const hasPermissionOr = (permiso: string | undefined, permisoAlt: string | undefined): boolean => {
+    if (operador?.rol === 'ADMINISTRADOR') return true
+    return hasPermission(permiso) || hasPermission(permisoAlt)
+  }
+
   // Check permission - recorre items y subgrupos
   const canAccess = (page: Page): boolean => {
     if (!operador) return false
@@ -463,14 +468,14 @@ export default function FrigorificoApp() {
       // Buscar en items directos
       const item = group.items.find(n => n.id === page)
       if (item) {
-        return hasPermission(item.permiso)
+        return hasPermissionOr(item.permiso, item.permisoAlt)
       }
       // Buscar en subgrupos
       if (group.subGroups) {
         for (const subGroup of group.subGroups) {
           const subItem = subGroup.items.find(n => n.id === page)
           if (subItem) {
-            return hasPermission(subItem.permiso)
+            return hasPermissionOr(subItem.permiso, subItem.permisoAlt)
           }
         }
       }
@@ -501,17 +506,13 @@ export default function FrigorificoApp() {
   const visibleNavGroups = NAV_GROUPS.map(group => {
     // Filtrar items directos
     const filteredItems = group.items.filter(item => {
-      // Dashboard Ejecutivo solo para ADMINISTRADOR
-      if (item.id === 'dashboardEjecutivo') {
-        return operador?.rol === 'ADMINISTRADOR'
-      }
-      return hasPermission(item.permiso)
+      return hasPermissionOr(item.permiso, item.permisoAlt)
     })
     
     // Filtrar subgrupos
     const filteredSubGroups = group.subGroups?.map(subGroup => ({
       ...subGroup,
-      items: subGroup.items.filter(item => hasPermission(item.permiso))
+      items: subGroup.items.filter(item => hasPermissionOr(item.permiso, item.permisoAlt))
     })).filter(subGroup => subGroup.items.length > 0)
     
     return {
@@ -546,7 +547,7 @@ export default function FrigorificoApp() {
               />
             </div>
             <CardTitle className="text-2xl">Solemar Alimentaria</CardTitle>
-            <CardDescription>Sistema de Gestión Frigorífica - CICLO I</CardDescription>
+            <CardDescription>Sistema de Gestión Frigorífica</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={loginTab} onValueChange={(v) => setLoginTab(v as 'usuario' | 'pin')}>
@@ -627,27 +628,6 @@ export default function FrigorificoApp() {
     )
   }
 
-  // Placeholder content for modules
-  const PlaceholderContent = ({ title, description, icon: Icon }: { title: string; description: string; icon: typeof LayoutDashboard }) => (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-stone-800">{title}</h1>
-            <p className="text-stone-500 mt-1">{description}</p>
-          </div>
-        </div>
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-12 text-center text-stone-400">
-            <Icon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg mb-2">Módulo en desarrollo</p>
-            <p className="text-sm">Esta funcionalidad estará disponible próximamente</p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
-
   // Dashboard content - Menú navegable de módulos
   const DashboardContent = () => {
     // Agrupar módulos para el menú principal
@@ -667,7 +647,7 @@ export default function FrigorificoApp() {
     
     const modulosReportes = [
       { id: 'stocksCorrales' as Page, label: 'Stocks Corrales', icon: Warehouse, color: 'bg-indigo-600', desc: 'Stock en corrales', permiso: 'puedeReportes' },
-      { id: 'stock' as Page, label: 'Stocks Cámaras', icon: Warehouse, color: 'bg-cyan-600', desc: 'Stock en cámaras frigoríficas', permiso: 'puedeReportes' },
+      { id: 'stockUnificada' as Page, label: 'Stock Cámaras / Cajas', icon: Warehouse, color: 'bg-cyan-600', desc: 'Stock en cámaras y cajas C2', permiso: 'puedeReportes' },
       { id: 'planilla01' as Page, label: 'Planilla 01', icon: FileText, color: 'bg-gray-600', desc: 'Planilla oficial SENASA', permiso: 'puedeReportes' },
       { id: 'rindesTropa' as Page, label: 'Rindes por Tropa', icon: TrendingUp, color: 'bg-lime-600', desc: 'Análisis de rindes', permiso: 'puedeReportes' },
     ]
