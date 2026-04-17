@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Reporte de Producción
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const fechaDesde = searchParams.get('fechaDesde') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]

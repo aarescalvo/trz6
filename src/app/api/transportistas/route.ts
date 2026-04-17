@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch transportistas
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const transportistas = await db.transportista.findMany({
       orderBy: { nombre: 'asc' }
@@ -23,6 +26,8 @@ export async function GET() {
 
 // POST - Create transportista
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { nombre, cuit, direccion, telefono } = body
@@ -72,6 +77,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update transportista
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, nombre, cuit, direccion, telefono } = body
@@ -125,6 +132,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete transportista
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

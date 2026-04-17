@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkAdminRole } from '@/lib/auth-helpers'
 
-// POST - Crear datos de simulación
+// POST - Crear datos de simulación (solo ADMINISTRADOR)
 export async function POST(request: NextRequest) {
+  // Verificar que sea administrador
+  const adminError = await checkAdminRole(request)
+  if (adminError) return adminError
+
   try {
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET: Resumen mensual
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const mes = searchParams.get('mes') // 1-12

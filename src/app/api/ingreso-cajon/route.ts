@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+import { checkPermission } from '@/lib/auth-helpers'
 interface AnimalIngreso {
   id: string
   codigo: string
@@ -31,6 +32,9 @@ interface TropaIngreso {
 
 // GET - Fetch tropas with animals ready for camera ingress
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeIngresoCajon')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo') // 'pendientes' | 'historial'
@@ -170,6 +174,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Register camera ingress for an animal
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeIngresoCajon')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { romaneoId, camaraId, operadorId, siglas } = body

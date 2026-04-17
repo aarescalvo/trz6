@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Inicializar tipos de servicio por defecto
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const tiposDefault = [
       { codigo: 'FAENA', nombre: 'Servicio de Faena x Kg', unidad: 'KG', seFactura: true, porcentajeIva: 10.5, orden: 1, descripcion: 'Servicio de faena por kilogramo de res' },

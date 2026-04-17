@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Obtener cotizaciones
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const monedaId = searchParams.get('monedaId')
@@ -43,6 +47,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nueva cotización
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     
@@ -99,6 +106,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar cotización
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     
@@ -133,6 +143,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar cotización
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

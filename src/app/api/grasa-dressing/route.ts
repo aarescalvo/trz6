@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar grasa dressing
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const enStock = searchParams.get('enStock')
@@ -55,6 +59,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear grasa dressing
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     
@@ -85,6 +92,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar grasa dressing
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     const { id, ...updateData } = data
@@ -121,6 +131,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar grasa dressing
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

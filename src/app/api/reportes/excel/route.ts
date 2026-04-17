@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Exportar reporte Excel
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { 

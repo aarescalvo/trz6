@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener el próximo código libre
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     // Obtener todos los códigos existentes
     const productos = await db.producto.findMany({

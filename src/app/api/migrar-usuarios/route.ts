@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkAdminRole } from '@/lib/auth-helpers'
 
 interface UsuarioExcel {
   'TITULAR ': string
@@ -20,8 +21,12 @@ interface ResultadoMigracion {
   }>
 }
 
-// GET - Mostrar estado de la migración
-export async function GET() {
+// GET - Mostrar estado de la migración (solo ADMINISTRADOR)
+export async function GET(request: NextRequest) {
+  // Verificar que sea administrador
+  const adminError = await checkAdminRole(request)
+  if (adminError) return adminError
+
   try {
     // Contar usuarios de faena existentes
     const usuariosFaena = await db.cliente.count({
@@ -61,8 +66,12 @@ export async function GET() {
   }
 }
 
-// POST - Ejecutar migración
+// POST - Ejecutar migración (solo ADMINISTRADOR)
 export async function POST(request: NextRequest) {
+  // Verificar que sea administrador
+  const adminError = await checkAdminRole(request)
+  if (adminError) return adminError
+
   try {
     // Importar xlsx dinámicamente
     const XLSX = await import('xlsx').then(m => m.default || m)

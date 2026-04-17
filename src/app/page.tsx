@@ -60,6 +60,14 @@ import { CalidadRegistroUsuariosModule } from '@/components/calidad-registro-usu
 import { DespachosModule } from '@/components/despachos'
 import { ConfigOperadoresModule } from '@/components/config-operadores'
 import { MovimientoCamarasModule } from '@/components/movimiento-camaras'
+// Módulos integrados desde modules-pending
+import { AuditoriaOperadorModule } from '@/modules-pending/auditoria-operador'
+import { RotulosMejorasModule } from '@/modules-pending/rotulos-mejoras'
+import { DashboardEjecutivoModule } from '@/modules-pending/dashboard-ejecutivo'
+import { ReportesGerencialesModule } from '@/modules-pending/reportes-gerenciales'
+import { ControlVencimientosModule } from '@/modules-pending/control-vencimientos'
+import { AlertasStockModule } from '@/modules-pending/alertas-stock'
+import { HistorialPreciosModule } from '@/modules-pending/historial-precios'
 
 // Lucide icons
 import { 
@@ -124,7 +132,7 @@ interface Stats {
   enCamara: number
 }
 
-type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'reportes' | 'configuracion'
+type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA'
 
 // Navigation item
 interface NavItem {
@@ -229,6 +237,10 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'rindesTropa', label: 'Rindes por Tropa', icon: TrendingUp, permiso: 'puedeReportes' },
       { id: 'busquedaFiltro', label: 'Búsqueda por Filtro', icon: Search, permiso: 'puedeReportes' },
       { id: 'reportesSenasa', label: 'Reportes SENASA', icon: FileText, permiso: 'puedeReportes' },
+      { id: 'reportesSIGICA', label: 'Reportes SIGICA', icon: FileText, permiso: 'puedeReportes' },
+      { id: 'reportesGerenciales', label: 'Reportes Gerenciales', icon: TrendingUp, permiso: 'puedeReportes' },
+      { id: 'controlVencimientos', label: 'Control Vencimientos', icon: AlertTriangle, permiso: 'puedeStock' },
+      { id: 'dashboardEjecutivo', label: 'Dashboard Ejecutivo', icon: LayoutDashboard, permiso: 'puedeReportes' },
     ]
   },
   // 6. Administración
@@ -238,8 +250,10 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'facturacion', label: 'Facturación', icon: FileText, permiso: 'puedeFacturacion' },
       { id: 'precios', label: 'Precios', icon: DollarSign, permiso: 'puedeFacturacion' },
+      { id: 'historialPrecios', label: 'Historial de Precios', icon: TrendingUp, permiso: 'puedeFacturacion' },
       { id: 'insumos', label: 'Insumos', icon: Package, permiso: 'puedeConfiguracion' },
       { id: 'stocksInsumos', label: 'Stocks de Insumos', icon: Package, permiso: 'puedeStock' },
+      { id: 'alertasStock', label: 'Alertas de Stock', icon: AlertTriangle, permiso: 'puedeStock' },
     ]
   },
   // 7. Configuración
@@ -268,6 +282,15 @@ const NAV_GROUPS: NavGroup[] = [
     icon: FileText,
     items: [
       { id: 'calidadRegistroUsuarios', label: 'Registro de Usuarios', icon: Users, permiso: 'puedeConfiguracion' },
+      { id: 'auditoriaOperador', label: 'Auditoría Operadores', icon: Users, permiso: 'puedeConfiguracion' },
+    ]
+  },
+  // 9. Diseño de Etiquetas
+  {
+    label: 'Diseño',
+    icon: Tag,
+    items: [
+      { id: 'rotulosMejoras', label: 'Diseñador Etiquetas', icon: Tag, permiso: 'puedeConfiguracion' },
     ]
   }
 ]
@@ -619,8 +642,12 @@ export default function FrigorificoApp() {
             </Tabs>
             
             <div className="mt-6 pt-4 border-t text-center text-xs text-stone-400">
-              <p>Credenciales de prueba:</p>
-              <p>Usuario: <span className="font-mono">admin</span> / Password: <span className="font-mono">admin123</span></p>
+              {process.env.NODE_ENV === 'development' && (
+                <>
+                  <p>Credenciales de prueba:</p>
+                  <p>Usuario: <span className="font-mono">admin</span> / Password: <span className="font-mono">admin123</span></p>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -973,6 +1000,23 @@ export default function FrigorificoApp() {
         return wrapModule('configC2BOM', <C2BOMModule operador={operador} />)
       case 'calidadRegistroUsuarios':
         return wrapModule('calidadRegistroUsuarios', <CalidadRegistroUsuariosModule operador={operador} />)
+      // Módulos integrados desde modules-pending
+      case 'auditoriaOperador':
+        return wrapModule('auditoriaOperador', <AuditoriaOperadorModule operador={operador} />)
+      case 'rotulosMejoras':
+        return wrapModule('rotulosMejoras', <RotulosMejorasModule operador={operador} />)
+      case 'dashboardEjecutivo':
+        return wrapModule('dashboardEjecutivo', <DashboardEjecutivoModule operador={operador} />)
+      case 'reportesGerenciales':
+        return wrapModule('reportesGerenciales', <ReportesGerencialesModule operador={operador} />)
+      case 'controlVencimientos':
+        return wrapModule('controlVencimientos', <ControlVencimientosModule operador={operador} />)
+      case 'alertasStock':
+        return wrapModule('alertasStock', <AlertasStockModule operador={operador} />)
+      case 'historialPrecios':
+        return wrapModule('historialPrecios', <HistorialPreciosModule operador={operador} />)
+      case 'reportesSIGICA':
+        return wrapModule('reportesSIGICA', <ReportesSenasaModule operador={operador} />)
       default:
         return wrapModule('pesajeCamiones', <PesajeCamionesModule operador={operador} onTropaCreada={fetchTropas} />)
     }

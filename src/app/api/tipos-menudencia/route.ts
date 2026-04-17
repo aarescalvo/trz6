@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar tipos de menudencia
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET() {
   try {
     const tipos = await db.tipoMenudencia.findMany({
@@ -28,6 +29,9 @@ export async function GET() {
 
 // POST - Crear tipo de menudencia
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMenudencias')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { nombre, observaciones } = body

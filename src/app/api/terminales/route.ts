@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { randomUUID } from 'crypto'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar todas las terminales
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const terminales = await db.terminal.findMany({
       include: {
@@ -22,6 +25,8 @@ export async function GET() {
 
 // POST - Crear nueva terminal
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     
@@ -51,6 +56,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar terminal
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     
@@ -80,6 +87,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar terminal
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

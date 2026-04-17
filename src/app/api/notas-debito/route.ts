@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { EstadoNota } from '@prisma/client'
 
 // GET - Fetch notas de débito
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -73,6 +77,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new nota de débito
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { 
@@ -174,6 +181,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update nota de débito
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, estado, observaciones, motivo } = body
@@ -223,6 +233,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete nota de débito
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

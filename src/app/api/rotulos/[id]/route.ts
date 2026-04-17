@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
@@ -8,6 +9,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { id } = await params
 
@@ -37,6 +40,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { id } = await params
     const data = await request.json()
@@ -114,6 +119,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { id } = await params
 

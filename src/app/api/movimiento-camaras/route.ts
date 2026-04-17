@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Mover medias reses entre cámaras
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { camaraOrigenId, camaraDestinoId, mediaResIds, observaciones, operadorId } = body

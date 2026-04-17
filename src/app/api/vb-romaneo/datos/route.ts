@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener datos para VB Romaneo
 // ?listaFaenaId=xxx - Datos de una lista específica
 // ?fecha=2024-01-15 - Buscar listas por fecha
 // ?historico=true - Últimas 10 listas de faena
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const listaFaenaId = searchParams.get('listaFaenaId')

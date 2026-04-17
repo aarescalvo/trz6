@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient, TipoRotulo } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
@@ -138,7 +139,9 @@ const VARIABLES_MENUDENCIA = JSON.stringify([
 
 // ==================== POST - CREAR RÓTULOS ====================
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const rotulos = [
       // ZEBRA ZT230 (203 DPI)
@@ -320,7 +323,9 @@ export async function POST() {
 
 // ==================== GET - VER ESTADO ====================
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const total = await prisma.rotulo.count()
     const activos = await prisma.rotulo.count({ where: { activo: true } })

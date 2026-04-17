@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // POST - Despachar cueros
+import { checkPermission } from '@/lib/auth-helpers'
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {

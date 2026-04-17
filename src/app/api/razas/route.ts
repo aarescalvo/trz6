@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch all razas
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const especie = searchParams.get('especie')
@@ -35,6 +38,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new raza
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { nombre, especie, observaciones } = body
@@ -85,6 +90,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update raza
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, nombre, especie, observaciones, activo } = body
@@ -122,6 +129,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete raza (soft delete)
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

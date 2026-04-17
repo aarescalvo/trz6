@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Pesaje de media res con impresión de rótulo
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const {

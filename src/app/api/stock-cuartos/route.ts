@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener stock de cuartos con filtros
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const camaraId = searchParams.get('camaraId')
@@ -114,6 +117,8 @@ export async function GET(request: NextRequest) {
 
 // PUT - Actualizar estado de cuarto o mover de cámara
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, estado, camaraId, propietarioId, pesoCuarto, operadorId } = body

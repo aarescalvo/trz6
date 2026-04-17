@@ -1,7 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function GET() {
+import { checkPermission } from '@/lib/auth-helpers'
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     // Obtener todos los corrales
     const corrales = await db.corral.findMany({

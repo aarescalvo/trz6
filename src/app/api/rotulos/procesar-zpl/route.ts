@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
 // POST - Procesar ZPL con datos dinámicos para impresión
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     const { rotuloId, datos } = data
@@ -57,6 +60,8 @@ export async function POST(request: NextRequest) {
 
 // GET - Procesar ZPL con datos de prueba (preview)
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const rotuloId = searchParams.get('rotuloId')

@@ -30,23 +30,35 @@ setInterval(() => {
 
 // Configuraciones predefinidas
 export const RATE_LIMIT_CONFIGS = {
-  // Login: 5 intentos por minuto, bloqueo 15 min
+  // Login con usuario/password: 5 intentos en 15 min, bloqueo 30 min
   AUTH_LOGIN: {
-    windowMs: 60 * 1000,        // 1 minuto
+    windowMs: 15 * 60 * 1000,     // 15 minutos
     maxRequests: 5,
+    blockDurationMs: 30 * 60 * 1000 // 30 minutos
+  },
+  // Login con PIN: 10 intentos en 5 min, bloqueo 15 min
+  AUTH_PIN: {
+    windowMs: 5 * 60 * 1000,      // 5 minutos
+    maxRequests: 10,
     blockDurationMs: 15 * 60 * 1000 // 15 minutos
   },
-  // PIN: 3 intentos por minuto, bloqueo 30 min
-  AUTH_PIN: {
-    windowMs: 60 * 1000,
+  // Login supervisor: 3 intentos en 15 min, bloqueo 30 min
+  AUTH_SUPERVISOR: {
+    windowMs: 15 * 60 * 1000,     // 15 minutos
     maxRequests: 3,
-    blockDurationMs: 30 * 60 * 1000
+    blockDurationMs: 30 * 60 * 1000 // 30 minutos
   },
   // API general: 100 requests por minuto
   API_GENERAL: {
     windowMs: 60 * 1000,
     maxRequests: 100,
     blockDurationMs: 60 * 1000
+  },
+  // Escritura API: 30 requests por minuto
+  API_WRITE: {
+    windowMs: 60 * 1000,
+    maxRequests: 30,
+    blockDurationMs: 2 * 60 * 1000
   },
   // Creación de registros: 30 por minuto
   CREATE_RECORD: {

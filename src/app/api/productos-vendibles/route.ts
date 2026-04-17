@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar productos vendibles
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
@@ -86,6 +89,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear producto vendible
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const {

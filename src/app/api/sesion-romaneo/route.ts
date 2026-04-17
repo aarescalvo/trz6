@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener sesión activa del operador
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const operadorId = searchParams.get('operadorId')
@@ -63,6 +66,8 @@ export async function GET(request: NextRequest) {
 
 // PUT - Actualizar configuración de sesión
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, tipificadorId, camaraId, ultimoGarron, cerrar } = body
@@ -115,6 +120,8 @@ export async function PUT(request: NextRequest) {
 
 // POST - Crear nueva sesión
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { operadorId, tipificadorId, camaraId } = body

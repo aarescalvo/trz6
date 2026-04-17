@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch all valores de indicador
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const indicadorId = searchParams.get('indicadorId')
@@ -67,6 +71,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new valor de indicador
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -170,6 +177,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update valor de indicador
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -302,6 +312,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete valor de indicador
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

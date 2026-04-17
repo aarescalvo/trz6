@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar despachos
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -73,6 +77,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo despacho
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -180,6 +187,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar despacho
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, accion, ...updateData } = body
@@ -255,6 +265,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar despacho
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

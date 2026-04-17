@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar todos los CCIR
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const searchParams = request.nextUrl.searchParams
     const estado = searchParams.get('estado')
@@ -43,6 +46,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo CCIR
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const body = await request.json()
     
@@ -107,6 +112,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar CCIR (marcar como impreso o cambiar estado)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, estado, marcarImpreso } = body
@@ -141,6 +148,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Anular CCIR
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')

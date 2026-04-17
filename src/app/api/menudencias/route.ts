@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar menudencias
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET() {
   try {
     const menudencias = await db.menudencia.findMany({
@@ -29,6 +30,9 @@ export async function GET() {
 
 // POST - Crear menudencia
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMenudencias')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { tipoMenudenciaId, tipoMenudenciaNombre, tropaCodigo, pesoIngreso, operadorElaboracion } = body
@@ -95,6 +99,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar menudencia (elaboración)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMenudencias')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, pesoElaborado, cantidadBolsas, operadorElaboracion } = body

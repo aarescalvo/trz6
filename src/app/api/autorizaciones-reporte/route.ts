@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar autorizaciones pendientes
 export async function GET(request: Request) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado') || 'PENDIENTE'
@@ -39,6 +42,8 @@ export async function GET(request: Request) {
 
 // POST - Crear nueva solicitud de autorización
 export async function POST(request: Request) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     const {
@@ -92,6 +97,8 @@ export async function POST(request: Request) {
 
 // PUT - Autorizar o rechazar
 export async function PUT(request: Request) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, accion, autorizadoPorId, autorizadoPor, motivoRechazo } = body

@@ -5,7 +5,11 @@ import { db } from '@/lib/db'
 // como MovimientoDespostada con tipo HUESO, GRASA, MERMA o DESECHO.
 
 // GET - Listar mermas de despostada
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const loteId = searchParams.get('loteId')
@@ -62,6 +66,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Registrar nueva merma
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { loteId, tipo, pesoKg, observaciones, operadorId, productoNombre } = body
@@ -128,6 +135,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar merma
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, tipo, pesoKg, observaciones } = body
@@ -191,6 +201,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar merma
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeDesposte')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

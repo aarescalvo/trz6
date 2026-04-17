@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Add tropa to lista de faena (with transaction for multi-user safety)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { listaFaenaId, tropaId, corralId, cantidad } = body
@@ -158,6 +161,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove tropa from lista de faena (con transacción)
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const listaFaenaId = searchParams.get('listaFaenaId')
@@ -348,6 +353,8 @@ export async function DELETE(request: NextRequest) {
 
 // PATCH - Update tropa quantity in lista de faena (con transacción)
 export async function PATCH(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { listaFaenaId, tropaId, corralId, cantidad } = body

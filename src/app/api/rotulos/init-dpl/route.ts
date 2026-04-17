@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 /**
  * POST - Crear rótulos DPL por defecto para Datamax Mark II
@@ -11,6 +12,8 @@ import { db } from '@/lib/db'
  * - (3100) Peso neto en kg (sin decimales)
  */
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const rotulosCreados = []
 
@@ -291,7 +294,9 @@ E
 /**
  * GET - Listar rótulos DPL disponibles
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const rotulos = await db.rotulo.findMany({
       where: {

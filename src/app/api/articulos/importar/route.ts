@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import * as XLSX from 'xlsx'
 import * as fs from 'fs'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Import articulos from Excel file
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { filePath } = body

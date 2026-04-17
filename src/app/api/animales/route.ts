@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { TipoAnimal } from '@prisma/client'
 
 // GET - List animales by tropa
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tropaId = searchParams.get('tropaId')
@@ -26,6 +30,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new animal with weighing
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -140,6 +147,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update animal
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, pesoVivo, caravana, raza, estado, corral, corralId, tipoAnimal } = body
@@ -168,6 +178,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete animal
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

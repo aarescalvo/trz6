@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar precios de servicio
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const clienteId = searchParams.get('clienteId')
@@ -69,6 +73,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo precio de servicio
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { 
@@ -144,6 +151,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar precio de servicio
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, ...data } = body
@@ -186,6 +196,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar precio de servicio
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

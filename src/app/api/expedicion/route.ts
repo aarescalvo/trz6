@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Obtener stock de cámaras y despachos
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo') || 'stock'
@@ -285,6 +289,9 @@ async function getDespachoById(id: string | null) {
 
 // POST - Crear nuevo despacho
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { accion, ...data } = body

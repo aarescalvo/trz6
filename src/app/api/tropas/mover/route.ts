@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { Especie } from '@prisma/client'
 
 // POST - Move tropa to corral with stock update
+import { checkPermission } from '@/lib/auth-helpers'
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { tropaId, corralDestinoId, operadorId } = body
@@ -183,6 +187,9 @@ export async function POST(request: NextRequest) {
 
 // GET - Get available corrales with capacity
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const especie = searchParams.get('especie') as Especie || 'BOVINO'

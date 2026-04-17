@@ -12,9 +12,13 @@ import {
   CONCEPTO
 } from '@/lib/afip-wsfe'
 import { getConfiguracionAFIP } from '@/lib/afip-wsaa'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Emitir factura electrónica
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     const { facturaId, simular = false } = data
@@ -249,6 +253,9 @@ function determinarTipoComprobante(
 
 // GET - Consultar estado de una factura
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const searchParams = request.nextUrl.searchParams
     const facturaId = searchParams.get('facturaId')

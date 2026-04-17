@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch all tipos de trabajo
 // Optional query param: ?activo=true to filter only active tipos
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const activoParam = searchParams.get('activo')
@@ -41,6 +44,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new tipo de trabajo
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { codigo, nombre, descripcion, esDefault } = body
@@ -113,6 +118,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update tipo de trabajo
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, codigo, nombre, descripcion, esDefault, activo } = body
@@ -197,6 +204,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Soft delete tipo de trabajo (set activo=false)
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

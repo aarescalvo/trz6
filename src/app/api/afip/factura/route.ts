@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
+import { checkPermission } from '@/lib/auth-helpers'
 
 /**
  * API de Facturación Electrónica AFIP
@@ -173,6 +174,9 @@ function generateQRData(
  * GET - Obtener estado de facturas AFIP
  */
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const facturaId = searchParams.get('facturaId')
@@ -258,6 +262,9 @@ export async function GET(request: NextRequest) {
  * POST - Emitir factura electrónica AFIP
  */
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { facturaId, operadorId } = body
@@ -428,6 +435,9 @@ export async function POST(request: NextRequest) {
  * PUT - Consultar estado de CAE en AFIP
  */
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { cae, facturaId } = body

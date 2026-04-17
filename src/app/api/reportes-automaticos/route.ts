@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar reportes automáticos
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url);
     const activo = searchParams.get('activo');
@@ -32,6 +35,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo reporte automático
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json();
     const { nombre, descripcion, tipo, formato, frecuencia, diaSemana, diaMes, hora, destinatarios } = body;
@@ -70,6 +75,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar reporte
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json();
     const { id, ...data } = body;
@@ -97,6 +104,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar reporte
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { randomUUID } from 'crypto'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar todas las impresoras
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const impresoras = await db.impresora.findMany({
       orderBy: { nombre: 'asc' }
@@ -18,6 +21,8 @@ export async function GET() {
 
 // POST - Crear nueva impresora
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     
@@ -57,6 +62,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar impresora
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     
@@ -96,6 +103,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar impresora
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

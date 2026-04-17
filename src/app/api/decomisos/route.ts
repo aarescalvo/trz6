@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { TipoDecomiso } from '@prisma/client'
 
 // GET - Fetch decomisos with optional filters
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const fecha = searchParams.get('fecha')
@@ -77,6 +81,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new decomiso
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { 
@@ -166,6 +173,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update decomiso
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { 
@@ -256,6 +266,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete decomiso by id
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

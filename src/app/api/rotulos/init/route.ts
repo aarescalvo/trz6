@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, TipoRotulo } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
@@ -36,7 +37,9 @@ const crearElementosMediaRes = () => [
 ]
 
 // POST - Inicializar rótulos por defecto
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     // Verificar si ya existen rótulos
     const existentes = await prisma.rotulo.count()

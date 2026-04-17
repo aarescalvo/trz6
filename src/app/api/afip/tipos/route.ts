@@ -10,9 +10,13 @@ import {
   limpiarCacheTipos
 } from '@/lib/afip-wsfe'
 import { getConfiguracionAFIP } from '@/lib/afip-wsaa'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener tipos de AFIP
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const searchParams = request.nextUrl.searchParams
     const tipo = searchParams.get('tipo') || 'todos'

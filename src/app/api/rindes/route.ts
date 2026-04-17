@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 
 // GET - Obtener rindes por tropa
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tropaId = searchParams.get('tropaId')

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar movimientos de caja
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const cajaId = searchParams.get('cajaId')
@@ -80,6 +84,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear movimiento de caja
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
 
@@ -253,6 +260,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar movimiento de caja
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
 
@@ -302,6 +312,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Anular movimiento de caja
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

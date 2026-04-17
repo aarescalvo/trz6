@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar todas las Declaraciones Juradas
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const searchParams = request.nextUrl.searchParams
     const estado = searchParams.get('estado')
@@ -52,6 +55,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nueva Declaración Jurada
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const body = await request.json()
     
@@ -119,6 +124,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar Declaración Jurada (marcar como impreso o cambiar estado)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, estado, marcarImpreso } = body
@@ -156,6 +163,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Anular Declaración Jurada
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeCCIR')
+  if (authError) return authError
   try {
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get('id')

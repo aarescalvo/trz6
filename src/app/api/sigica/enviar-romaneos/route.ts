@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { enviarRomaneosSIGICA } from '@/lib/sigica'
 import { registrarAuditoria } from '@/lib/audit'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST /api/sigica/enviar-romaneos - Enviar romaneos a SIGICA
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { romaneoIds, operadorId } = body

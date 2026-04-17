@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener cupos de la lista de faena activa
 // Devuelve información de cupos por tropa, no animales específicos
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     console.log('[cupos-lista] Buscando lista de faena activa...')
 

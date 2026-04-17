@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
 // GET - Listar todos los puestos de trabajo
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const activo = searchParams.get('activo')
@@ -45,6 +48,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo puesto de trabajo
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
 
@@ -116,6 +121,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar puesto de trabajo
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
 
@@ -175,6 +182,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar puesto de trabajo
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

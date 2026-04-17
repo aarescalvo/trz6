@@ -1,9 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Especie, TipoAnimal, EstadoTropa, EstadoAnimal } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
+import { checkAdminRole } from '@/lib/auth-helpers'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Verificar que sea administrador
+  const adminError = await checkAdminRole(request)
+  if (adminError) return adminError
+
   try {
     // 1. Verificar si ya existen clientes
     let productor = await db.cliente.findFirst({

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, TipoRotulo } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
 // POST - Subir archivo ZPL y crear rótulo
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar subproductos incomestibles
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo')
@@ -64,6 +67,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo subproducto
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const data = await request.json()
 
@@ -97,6 +102,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar subproducto (para venta/descarte)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const data = await request.json()
 

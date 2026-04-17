@@ -7,6 +7,7 @@ import {
   getTokenCacheInfo 
 } from '@/lib/afip-wsaa'
 import { FEDummy } from '@/lib/afip-wsfe'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener información del token actual
 export async function GET() {
@@ -57,6 +58,9 @@ export async function GET() {
 
 // POST - Obtener/renovar token
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const body = await request.json().catch(() => ({}))
     const { force = false, service = 'wsfe' } = body

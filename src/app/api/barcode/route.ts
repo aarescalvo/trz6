@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateBarcodePNG, generateBarcodeSVG, validateBarcode } from '@/lib/barcode';
+import { checkPermission } from '@/lib/auth-helpers'
 
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   const { searchParams } = new URL(request.url);
   
   const code = searchParams.get('code');
@@ -48,6 +52,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const body = await request.json();
     const { codes, options = {} } = body;

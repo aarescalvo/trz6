@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar formas de pago
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const activos = searchParams.get('activos')
@@ -36,6 +40,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear forma de pago
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
 
@@ -92,6 +99,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar forma de pago
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
 
@@ -155,6 +165,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar forma de pago
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

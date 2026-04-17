@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { TipoMovimientoInsumo } from '@prisma/client';
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar movimientos de insumos
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url);
     const insumoId = searchParams.get('insumoId');
@@ -144,6 +147,8 @@ async function actualizarStock(
 
 // POST - Crear movimiento de insumo (con actualización automática de stock)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const data = await request.json();
     const tipo = data.tipo as TipoMovimientoInsumo;
@@ -260,6 +265,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar movimiento de insumo (solo observaciones)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const data = await request.json();
 
@@ -292,6 +299,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Anular movimiento de insumo (reverso de stock)
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

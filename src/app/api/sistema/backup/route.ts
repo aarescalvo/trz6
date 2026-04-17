@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createBackup, listBackups, restoreBackup, deleteBackup, getBackupStats } from '@/lib/backup'
 import { createLogger } from '@/lib/logger'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const logger = createLogger('API:Backup')
 
@@ -20,6 +21,8 @@ async function checkAdminAuth(request: NextRequest): Promise<boolean> {
 
 // GET - Listar backups o estadísticas
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
@@ -59,6 +62,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear backup manual
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     // Verificar auth
     const isAuth = await checkAdminAuth(request)
@@ -102,6 +107,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Restaurar backup
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     // Verificar auth
     const isAuth = await checkAdminAuth(request)
@@ -154,6 +161,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar backup
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     // Verificar auth
     const isAuth = await checkAdminAuth(request)

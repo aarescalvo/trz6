@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener garrones del día (con estado de pesaje)
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const listaFaenaId = searchParams.get('listaFaenaId')
@@ -116,6 +119,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Intercambiar garrones entre animales de la misma tropa
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { garron1, garron2, listaFaenaId } = body

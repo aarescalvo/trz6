@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import * as XLSX from 'xlsx'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Mapeo de tipos de animal
 const TIPOS_ANIMAL: Record<string, string> = {
@@ -9,6 +10,8 @@ const TIPOS_ANIMAL: Record<string, string> = {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { tropaId } = body

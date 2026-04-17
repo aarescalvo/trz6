@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar plantillas
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
@@ -45,6 +48,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear/actualizar plantilla
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const formData = await request.formData()
     
@@ -141,6 +146,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Eliminar plantilla
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

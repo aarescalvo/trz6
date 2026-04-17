@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
+import { checkPermission } from '@/lib/auth-helpers'
 
 /**
  * API de Autenticación AFIP
@@ -80,6 +81,9 @@ async function generateCMS(
  * GET - Obtener configuración AFIP y estado de autenticación
  */
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     // Obtener configuración AFIP
     let config = await db.aFIPConfig.findFirst()
@@ -132,6 +136,9 @@ export async function GET(request: NextRequest) {
  * POST - Autenticar con AFIP y obtener token
  */
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { service = 'wsfex' } = body
@@ -234,6 +241,9 @@ export async function POST(request: NextRequest) {
  * PUT - Actualizar configuración AFIP
  */
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { actualizarStockCamaraSIGICA } from '@/lib/sigica'
 import { registrarAuditoria } from '@/lib/audit'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST /api/sigica/actualizar-stock - Actualizar stock de cámaras en SIGICA
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { camaraIds, operadorId } = body

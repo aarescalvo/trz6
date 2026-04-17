@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar cámaras
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const camaras = await db.camara.findMany({
       orderBy: { nombre: 'asc' },
@@ -71,6 +74,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear cámara
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { nombre, tipo, capacidad, observaciones } = body
@@ -118,6 +123,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar cámara
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, nombre, tipo, capacidad, observaciones, activo } = body
@@ -150,6 +157,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar cámara
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

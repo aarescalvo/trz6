@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { obtenerEnviosSIGICA, enviarRomaneosSIGICA, actualizarStockCamaraSIGICA } from '@/lib/sigica'
 import { registrarAuditoria } from '@/lib/audit'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET /api/sigica/envios - Listar envíos a SIGICA
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     
@@ -33,6 +36,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/sigica/envios - Crear y enviar un nuevo envío a SIGICA
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // POST - Registrar pesaje de salida para un despacho
+import { checkPermission } from '@/lib/auth-helpers'
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { despachoId, pesoBruto, pesoTara, operadorId } = body

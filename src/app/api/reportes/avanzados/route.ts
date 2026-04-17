@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Tipos de reporte disponibles
 type TipoReporte = 'produccion' | 'rinde-productor' | 'rinde-animal' | 'stock-camaras' | 'despachos' | 'curva-faena'
@@ -72,6 +73,9 @@ interface KPIs {
 
 // GET - Obtener datos de reportes avanzados
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tipo = (searchParams.get('tipo') || 'produccion') as TipoReporte

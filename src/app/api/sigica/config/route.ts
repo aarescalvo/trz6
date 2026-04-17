@@ -6,9 +6,12 @@ import {
   SIGICAConfig 
 } from '@/lib/sigica'
 import { registrarAuditoria } from '@/lib/audit'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET /api/sigica/config - Obtener configuración de SIGICA
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const config = await obtenerConfiguracionSIGICA()
     
@@ -33,6 +36,8 @@ export async function GET() {
 
 // PUT /api/sigica/config - Guardar configuración de SIGICA
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const body = await request.json()
     

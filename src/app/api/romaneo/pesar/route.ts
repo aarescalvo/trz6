@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Registrar pesaje de media res (con transacción para multi-usuario)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { 

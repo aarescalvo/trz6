@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import net from 'net'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const prisma = new PrismaClient()
 
 // POST - Imprimir rótulo (ZPL, DPL o binario)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     const { rotuloId, datos, cantidad = 1, impresoraIp, impresoraPuerto = 9100 } = data
@@ -121,6 +124,8 @@ export async function POST(request: NextRequest) {
 
 // GET - Vista previa del rótulo
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const rotuloId = searchParams.get('rotuloId')

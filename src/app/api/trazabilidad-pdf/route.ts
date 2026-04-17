@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Generar PDF de trazabilidad
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { 
@@ -253,6 +256,8 @@ export async function POST(request: NextRequest) {
 
 // GET - Listar trazabilidad disponible para exportar
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')

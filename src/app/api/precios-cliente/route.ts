@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar precios por cliente
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const clienteId = searchParams.get('clienteId')
@@ -43,6 +47,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear/actualizar precio por cliente
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { clienteId, productoVendibleId, precioEspecial, moneda, fechaHasta } = body
@@ -111,6 +118,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar precio por cliente
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, precioEspecial, moneda, fechaHasta, activo } = body
@@ -148,6 +158,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar/desactivar precio por cliente
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

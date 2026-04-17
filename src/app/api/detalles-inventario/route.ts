@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch detalles de inventario
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const inventarioId = searchParams.get('inventarioId')
@@ -61,6 +64,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new detalle de inventario
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { 
@@ -156,6 +161,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update detalle de inventario
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, cantidadSistema, cantidadFisica, costoUnitario, observaciones, estado } = body
@@ -246,6 +253,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete detalle de inventario
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

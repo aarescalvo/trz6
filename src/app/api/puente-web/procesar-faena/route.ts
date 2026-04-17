@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { puenteWeb } from '@/lib/puente-web';
+import { checkPermission } from '@/lib/auth-helpers'
 
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const body = await request.json();
     const { listaFaenaId } = body;

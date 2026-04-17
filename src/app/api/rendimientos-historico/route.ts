@@ -3,7 +3,11 @@ import { db } from '@/lib/db'
 import { Especie, TipoAnimal } from '@prisma/client'
 
 // GET - Fetch all rendimientos históricos
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const anio = searchParams.get('anio')
@@ -66,6 +70,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new rendimiento histórico
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -152,6 +159,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update rendimiento histórico
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -254,6 +264,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete rendimiento histórico
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeRomaneo')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

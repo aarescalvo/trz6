@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { validarPermiso } from '@/lib/auth-helpers'
+import { validarPermiso, validarRolAdmin } from '@/lib/auth-helpers'
 
 function getOperadorId(request: NextRequest): string | null {
   return request.headers.get('x-operador-id') || new URL(request.url).searchParams.get('operadorId')
@@ -58,13 +58,21 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear operador
+// POST - Crear operador (solo ADMINISTRADOR)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const operadorIdAuth = body.operadorIdAuth || getOperadorId(request)
+    
+    // Verificar permiso de configuración
     const puedeCrear = await validarPermiso(operadorIdAuth, 'puedeConfiguracion')
     if (!puedeCrear) {
+      return NextResponse.json({ success: false, error: 'Sin permisos de configuración' }, { status: 403 })
+    }
+    
+    // Verificar que sea ADMINISTRADOR para crear operadores
+    const isAdmin = await validarRolAdmin(operadorIdAuth)
+    if (!isAdmin) {
       return NextResponse.json({ success: false, error: 'Solo administradores pueden crear operadores' }, { status: 403 })
     }
 
@@ -181,6 +189,12 @@ export async function PUT(request: NextRequest) {
     const operadorIdAuth = body.operadorIdAuth || getOperadorId(request)
     const puedeEditar = await validarPermiso(operadorIdAuth, 'puedeConfiguracion')
     if (!puedeEditar) {
+      return NextResponse.json({ success: false, error: 'Sin permisos de configuración' }, { status: 403 })
+    }
+
+    // Verificar que sea ADMINISTRADOR para editar operadores
+    const isAdminEdit = await validarRolAdmin(operadorIdAuth)
+    if (!isAdminEdit) {
       return NextResponse.json({ success: false, error: 'Solo administradores pueden editar operadores' }, { status: 403 })
     }
 
@@ -262,14 +276,22 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Eliminar operador
+// DELETE - Eliminar operador (solo ADMINISTRADOR)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const operadorIdAuth = searchParams.get('operadorId') || request.headers.get('x-operador-id')
+    
+    // Verificar permiso de configuración
     const puedeEliminar = await validarPermiso(operadorIdAuth, 'puedeConfiguracion')
     if (!puedeEliminar) {
+      return NextResponse.json({ success: false, error: 'Sin permisos de configuración' }, { status: 403 })
+    }
+    
+    // Verificar que sea ADMINISTRADOR para eliminar operadores
+    const isAdmin = await validarRolAdmin(operadorIdAuth)
+    if (!isAdmin) {
       return NextResponse.json({ success: false, error: 'Solo administradores pueden eliminar operadores' }, { status: 403 })
     }
 

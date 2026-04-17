@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { EstadoMediaRes } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Tipos para la respuesta de trazabilidad
 interface TrazabilidadIngreso {
@@ -127,6 +128,8 @@ interface TrazabilidadResponse {
 }
 
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const searchParams = request.nextUrl.searchParams
     

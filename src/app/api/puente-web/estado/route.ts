@@ -1,7 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { puenteWeb } from '@/lib/puente-web';
+import { checkPermission } from '@/lib/auth-helpers'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const estado = await puenteWeb.getEstado();
     const conexion = await puenteWeb.probarConexion();

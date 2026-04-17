@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener preferencias de UI del usuario
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const operadorId = searchParams.get('operadorId')
@@ -52,6 +55,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Guardar preferencias de UI
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { operadorId, ...preferencias } = body
@@ -122,6 +127,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Resetear preferencias a valores por defecto
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const operadorId = searchParams.get('operadorId')

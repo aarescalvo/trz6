@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar todos los tipificadores
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const tipificadores = await db.tipificador.findMany({
       orderBy: { nombre: 'asc' }
@@ -24,6 +27,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo tipificador
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { nombre, apellido, matricula, activo = true } = body

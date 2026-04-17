@@ -9,6 +9,7 @@ import { db } from '@/lib/db'
 import net from 'net'
 import fs from 'fs'
 import path from 'path'
+import { checkPermission } from '@/lib/auth-helpers'
 
 interface PrintRequest {
   tropa: string
@@ -27,6 +28,8 @@ interface PrintRequest {
 const CUARTOS = ['A', 'T', 'D'] as const
 
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body: PrintRequest = await request.json()
 

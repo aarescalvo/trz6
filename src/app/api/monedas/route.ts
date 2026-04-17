@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { seedMonedasDefault } from '@/lib/moneda'
 
 // GET - Obtener todas las monedas
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET() {
   try {
     // Asegurar que existan las monedas por defecto
@@ -29,6 +30,9 @@ export async function GET() {
 
 // POST - Crear nueva moneda
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     
@@ -82,6 +86,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar moneda
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json()
     
@@ -125,6 +132,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar moneda
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

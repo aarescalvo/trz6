@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 // GET - Listar asientos contables
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url);
     const estado = searchParams.get('estado');
@@ -32,6 +36,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear asiento contable
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
+
   try {
     const body = await request.json();
     const { tipoOrigen, origenId, origenDetalle, descripcion, lineas } = body;

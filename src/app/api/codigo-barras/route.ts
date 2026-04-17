@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
+import { checkPermission } from '@/lib/auth-helpers'
 
 const logger = createLogger('API:CodigoBarras')
 
@@ -68,7 +69,9 @@ async function inicializarSiVacio() {
 }
 
 // GET - Listar configuración de códigos
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     await inicializarSiVacio()
     
@@ -94,6 +97,8 @@ export async function GET() {
 
 // POST - Crear nueva configuración
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { tipo, prefijo, formato, descripcion, variables, esDefault } = body
@@ -146,6 +151,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar configuración
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, tipo, prefijo, formato, descripcion, variables, esDefault, activo } = body
@@ -196,6 +203,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar configuración
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

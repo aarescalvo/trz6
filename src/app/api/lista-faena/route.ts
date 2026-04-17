@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch listas de faena
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const listas = await db.listaFaena.findMany({
       include: {
@@ -55,6 +58,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new lista de faena
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { operadorId } = body
@@ -104,6 +109,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Reabrir lista cerrada
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { listaId, listaFaenaId, accion } = body

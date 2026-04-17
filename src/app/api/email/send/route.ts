@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { db } from '@/lib/db'
 import { EstadoEnvioEmail, TipoReporteEmail } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // POST - Enviar email
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const data = await request.json()
     
@@ -163,6 +166,8 @@ export async function POST(request: NextRequest) {
 
 // GET - Obtener historial de envíos
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '50')

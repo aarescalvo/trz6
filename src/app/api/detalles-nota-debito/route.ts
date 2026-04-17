@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Fetch detalles de nota de débito
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const notaDebitoId = searchParams.get('notaDebitoId')
@@ -47,6 +51,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new detalle de nota de débito
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { 
@@ -110,6 +117,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update detalle de nota de débito
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, descripcion, cantidad, precioUnitario } = body
@@ -170,6 +180,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete detalle de nota de débito
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

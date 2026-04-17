@@ -5,6 +5,7 @@ import { Especie, TipoAnimal, EstadoPesaje, TipoPesajeCamion } from '@prisma/cli
 // V3 - Updated: 2025-03-03 - Fixed FK validation
 
 // Función para generar código de tropa
+import { checkPermission } from '@/lib/auth-helpers'
 async function generarCodigoTropa(especie: Especie): Promise<{ codigo: string; numero: number }> {
   const year = new Date().getFullYear()
   const letra = especie === 'BOVINO' ? 'B' : especie === 'EQUINO' ? 'E' : 'O'
@@ -29,6 +30,9 @@ async function generarCodigoTropa(especie: Especie): Promise<{ codigo: string; n
 
 // GET - Fetch pesajes or next tropa code
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedePesajeCamiones')
+  if (authError) return authError
+
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action')
   
@@ -116,6 +120,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new pesaje
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedePesajeCamiones')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     console.log('[POST pesaje-camion] === INICIANDO CREACIÓN DE PESAJE v2 ===')
@@ -477,6 +484,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update pesaje (add tara)
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedePesajeCamiones')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, pesoTara, pesoNeto } = body

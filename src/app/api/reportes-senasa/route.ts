@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { TipoReporteSenasa, EstadoReporteSenasa } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar reportes SENASA
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado') as EstadoReporteSenasa | null
@@ -38,6 +42,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear nuevo reporte SENASA
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -88,6 +95,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar/Enviar reporte SENASA
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, estado, mensajeError, archivoNombre, archivoUrl, datosReporte } = body
@@ -139,6 +149,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar reporte SENASA
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

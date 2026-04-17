@@ -3,11 +3,15 @@ import { db } from '@/lib/db'
 import { EstadoTropa } from '@prisma/client'
 
 // Estados válidos para referencia
+import { checkPermission } from '@/lib/auth-helpers'
 const ESTADOS_VALIDOS = Object.values(EstadoTropa)
 
 // API de Tropas - Actualizado para manejar múltiples estados (v2)
 // GET - Fetch all tropas
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const estadoParam = searchParams.get('estado')
@@ -100,6 +104,9 @@ export async function GET(request: NextRequest) {
 
 // PUT - Update tropa
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, estado, cantidadCabezas, corralId, pesoBruto, pesoTara, pesoNeto, pesoTotalIndividual, observaciones } = body

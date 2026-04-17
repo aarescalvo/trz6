@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar cueros
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -56,6 +60,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear cuero
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -105,6 +112,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar cuero
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, ...data } = body
@@ -137,6 +147,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar cuero
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

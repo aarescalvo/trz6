@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Obtener animales de un corral específico
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const corralId = searchParams.get('corralId')

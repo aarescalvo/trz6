@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generarRomaneoPDF, getDatosRomaneoPorTropa } from '@/lib/pdf/romaneo-tropa'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Genera PDF de Romaneo para una tropa específica
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tropaCodigo = searchParams.get('tropaCodigo')

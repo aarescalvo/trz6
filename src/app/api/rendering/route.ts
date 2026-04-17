@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // GET - Listar registros de rendering
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo')
@@ -64,6 +68,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear registro de rendering
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const {
@@ -118,6 +125,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar registro
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const { id, ...data } = body
@@ -150,6 +160,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar registro
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

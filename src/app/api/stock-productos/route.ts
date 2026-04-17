@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar stock de productos
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -55,6 +58,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear/actualizar stock de producto
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const data = await request.json()
     
@@ -110,6 +115,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar stock
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const data = await request.json()
     const { id, ...updateData } = data
@@ -141,6 +148,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar stock
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

@@ -6,6 +6,11 @@ const globalForPrisma = globalThis as unknown as {
 
 // Singleton: reutilizar instancia en desarrollo (sobrevive a HMR)
 // En producción también funciona correctamente
-export const db = globalForPrisma.prisma ?? new PrismaClient({ log: ['query'] })
+// Solo loguear queries en desarrollo; en producción solo errores
+const logConfig = process.env.NODE_ENV === 'development' 
+  ? ['query', 'error', 'warn'] as const 
+  : ['error'] as const
+
+export const db = globalForPrisma.prisma ?? new PrismaClient({ log: logConfig })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db

@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar configuraciones de balanzas
 export async function GET(request: Request) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const soloActivas = searchParams.get('activas') === 'true'
@@ -37,6 +40,8 @@ export async function GET(request: Request) {
 
 // POST - Crear nueva configuración de balanza
 export async function POST(request: Request) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const {
@@ -130,6 +135,8 @@ export async function POST(request: Request) {
 
 // PUT - Actualizar configuración
 export async function PUT(request: Request) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { id, ...data } = body
@@ -173,6 +180,8 @@ export async function PUT(request: Request) {
 
 // DELETE - Eliminar configuración
 export async function DELETE(request: Request) {
+  const authError = await checkPermission(request, 'puedeConfiguracion')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

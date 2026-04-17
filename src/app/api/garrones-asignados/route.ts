@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener garrones asignados con su estado de pesaje
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const fecha = searchParams.get('fecha')
@@ -67,6 +70,8 @@ export async function GET(request: NextRequest) {
 // - sinIdentificar: true si es animal sin identificar
 // - listaFaenaId: ID de la lista de faena (obligatorio para evitar conflictos entre listas)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeListaFaena')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { garron, animalId, tropaCodigo, sinIdentificar, operadorId, listaFaenaId } = body

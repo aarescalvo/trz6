@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // POST - Mover cantidad de animales de una tropa entre corrales (con transacción)
+import { checkPermission } from '@/lib/auth-helpers'
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMovimientoHacienda')
+  if (authError) return authError
+
   console.log('[MOVER-CANTIDAD] ===== INICIANDO =====')
   
   try {

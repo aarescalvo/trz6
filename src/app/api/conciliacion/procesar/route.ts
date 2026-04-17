@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkPermission } from '@/lib/auth-helpers'
 
 // Algoritmo de matching para conciliación automática
 interface MatchResult {
@@ -123,6 +124,8 @@ function encontrarMejorMatch(
 
 // POST - Procesar conciliación automática
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { conciliacionId, umbralConfianza = 70 } = body
@@ -247,6 +250,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Confirmar conciliación completa
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeStock')
+  if (authError) return authError
   try {
     const body = await request.json()
     const { conciliacionId } = body

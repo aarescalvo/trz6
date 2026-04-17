@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { liquidacionService } from '@/modules/facturacion/services/liquidacion.service'
 import { actualizarItemsSchema, supervisorAuthSchema } from '@/modules/facturacion/types'
+import { checkPermission } from '@/lib/auth-helpers'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { id } = await params
     const data = await liquidacionService.getById(id)
@@ -14,6 +18,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { id } = await params
     const body = await request.json()
@@ -49,6 +56,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { id } = await params
     const data = await liquidacionService.anular(id)

@@ -4,7 +4,11 @@ import { db } from '@/lib/db';
 // GET - Listar proveedores
 // Por ahora, los proveedores son clientes que pueden proveer productos/servicios
 // En el futuro se puede crear un modelo Proveedor separado si es necesario
+import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url);
     const activos = searchParams.get('activos');
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear proveedor (usa Cliente como base)
 export async function POST(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json();
 
@@ -77,6 +84,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar proveedor
 export async function PUT(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const data = await request.json();
 
@@ -114,6 +124,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar proveedor
 export async function DELETE(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
