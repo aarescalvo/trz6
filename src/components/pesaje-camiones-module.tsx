@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { 
   Truck, Scale, Save, CheckCircle, Clock, Printer, FileText,
   ArrowDownToLine, ArrowUpFromLine, Weight, Plus, Eye, Trash2, Beef, AlertCircle,
-  Minus, X, Edit
+  Minus, X, Edit, AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -117,6 +117,11 @@ export function PesajeCamionesModule({ operador, onTropaCreada }: { operador: Op
   // Edit/Delete dialogs
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  
+  // Capacity warning
+  const [capacidadWarningOpen, setCapacidadWarningOpen] = useState(false)
+  const [capacidadWarningInfo, setCapacidadWarningInfo] = useState<any>(null)
+  const [pendingPayload, setPendingPayload] = useState<any>(null)
   const [supervisorPin, setSupervisorPin] = useState('')
   const [supervisorVerificado, setSupervisorVerificado] = useState(false)
   const [pesajeAccion, setPesajeAccion] = useState<any>(null)
@@ -336,7 +341,19 @@ export function PesajeCamionesModule({ operador, onTropaCreada }: { operador: Op
 
       const data = await res.json()
       
+      // Handle capacity warning (409 Conflict)
+      if (res.status === 409 && data.requiresConfirmation) {
+        setCapacidadWarningInfo(data)
+        setPendingPayload(payload)
+        setCapacidadWarningOpen(true)
+        setSaving(false)
+        return
+      }
+      
       if (data.success) {
+        if (data.advertencia) {
+          toast.warning(data.advertencia, { duration: 6000 })
+        }
         if (tipoPesaje === 'INGRESO_HACIENDA') {
           toast.success(`Ticket #${String(data.data.numeroTicket).padStart(6, '0')} creado - Tropa: ${data.data.tropa?.codigo}`, {
             duration: 5000
@@ -387,6 +404,54 @@ export function PesajeCamionesModule({ operador, onTropaCreada }: { operador: Op
       toast.error('Error de conexión')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Forzar capacidad de corral (re-enviar con forzarCapacidad: true)
+  const handleForzarCapacidad = async () => {
+    if (!pendingPayload) return
+    setCapacidadWarningOpen(false)
+    setSaving(true)
+    try {
+      const res = await fetch('/api/pesaje-camion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...pendingPayload, forzarCapacidad: true })
+      })
+      const data = await res.json()
+      if (data.success) {
+        if (data.advertencia) {
+          toast.warning(data.advertencia, { duration: 6000 })
+        }
+        if (tipoPesaje === 'INGRESO_HACIENDA') {
+          toast.success(`Ticket #${String(data.data.numeroTicket).padStart(6, '0')} creado - Tropa: ${data.data.tropa?.codigo}`, {
+            duration: 5000
+          })
+          toast.info('El pesaje quedará abierto hasta registrar la tara')
+        } else {
+          toast.success(`Ticket #${String(data.data.numeroTicket).padStart(6, '0')} creado`)
+        }
+        // Reset form
+        resetForm()
+        // Actualizar listas
+        if (data.data.estado === 'ABIERTO') {
+          setPesajesAbiertos([data.data, ...pesajesAbiertos])
+        } else {
+          setPesajesCerrados([data.data, ...pesajesCerrados])
+          imprimirTicket(data.data, true)
+        }
+        setNextTicket(nextTicket + 1)
+        onTropaCreada?.()
+        fetchNextTropaCode()
+      } else {
+        toast.error(data.error || 'Error al guardar')
+      }
+    } catch {
+      toast.error('Error de conexión')
+    } finally {
+      setSaving(false)
+      setPendingPayload(null)
+      setCapacidadWarningInfo(null)
     }
   }
 
@@ -1326,6 +1391,38 @@ export function PesajeCamionesModule({ operador, onTropaCreada }: { operador: Op
           onOpenChange={(open) => setQuickAddOpen(open ? quickAddOpen : null)}
         />
       )}
+
+      {/* Dialog Advertencia de Capacidad */}
+      <Dialog open={capacidadWarningOpen} onOpenChange={setCapacidadWarningOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" />
+              Advertencia de Capacidad
+            </DialogTitle>
+            <DialogDescription>
+              {capacidadWarningInfo?.error}
+            </DialogDescription>
+          </DialogHeader>
+          {capacidadWarningInfo?.capacidadInfo && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><span className="text-stone-500">Corral:</span> <strong>{capacidadWarningInfo.capacidadInfo.corral}</strong></div>
+                <div><span className="text-stone-500">Capacidad:</span> <strong>{capacidadWarningInfo.capacidadInfo.capacidad}</strong></div>
+                <div><span className="text-stone-500">Stock actual:</span> <strong>{capacidadWarningInfo.capacidadInfo.stockActual}</strong></div>
+                <div><span className="text-stone-500">Disponible:</span> <strong className="text-amber-600">{capacidadWarningInfo.capacidadInfo.disponible}</strong></div>
+                <div><span className="text-stone-500">A ingresar:</span> <strong className="text-red-600">{capacidadWarningInfo.capacidadInfo.cantidadIngresar}</strong></div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCapacidadWarningOpen(false)}>Cancelar</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleForzarCapacidad}>
+              Continuar de todas formas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

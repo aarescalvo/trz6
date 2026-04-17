@@ -359,28 +359,18 @@ export default function FrigorificoApp() {
   const [loginError, setLoginError] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
 
-  // Check for existing session and validate against database
+  // Check for existing session via JWT cookie (no more localStorage)
   useEffect(() => {
     const validateSession = async () => {
-      const savedOperador = localStorage.getItem('operador')
-      if (savedOperador) {
-        try {
-          const parsed = JSON.parse(savedOperador)
-          // Validate that the operator still exists in the database
-          const res = await fetch(`/api/auth?operadorId=${parsed.id}`)
-          const data = await res.json()
-          if (data.success && data.data) {
-            // Operator exists, use the fresh data from DB
-            setOperador(data.data)
-            localStorage.setItem('operador', JSON.stringify(data.data))
-          } else {
-            // Operator not found, clear session
-            console.log('Operador no válido, limpiando sesión')
-            localStorage.removeItem('operador')
-          }
-        } catch {
-          localStorage.removeItem('operador')
+      try {
+        // The GET /api/auth endpoint now reads the JWT from httpOnly cookie
+        const res = await fetch('/api/auth')
+        const data = await res.json()
+        if (data.success && data.data) {
+          setOperador(data.data)
         }
+      } catch {
+        // No valid session cookie
       }
       setLoading(false)
     }
@@ -439,7 +429,7 @@ export default function FrigorificoApp() {
       
       if (data.success) {
         setOperador(data.data)
-        localStorage.setItem('operador', JSON.stringify(data.data))
+        // JWT is already set as httpOnly cookie by the backend
         setUsuario('')
         setPassword('')
         setPin('')
@@ -454,19 +444,13 @@ export default function FrigorificoApp() {
   }
 
   const handleLogout = async () => {
-    if (operador) {
-      try {
-        await fetch('/api/auth', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ operadorId: operador.id })
-        })
-      } catch {
-        // Ignore logout errors
-      }
+    try {
+      // DELETE /api/auth clears the JWT cookie server-side
+      await fetch('/api/auth', { method: 'DELETE' })
+    } catch {
+      // Ignore logout errors
     }
     setOperador(null)
-    localStorage.removeItem('operador')
     setCurrentPage('pesajeCamiones')
   }
 

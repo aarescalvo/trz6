@@ -453,6 +453,7 @@ model Tropa {
   @@index([fechaRecepcion])
   @@index([dte])
   @@index([guia])
+  @@unique([dte, guia], name: "tropa_dte_guia_unique")
 }
 
 // Detalle de tipos de animales por tropa

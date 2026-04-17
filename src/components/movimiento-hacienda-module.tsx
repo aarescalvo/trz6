@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { 
   Beef, Warehouse, Skull, Move, RefreshCw,
-  X, ArrowRight
+  X, ArrowRight, AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -66,6 +66,11 @@ export function MovimientoHaciendaModule({ operador }: { operador: Operador }) {
   const [moverOpen, setMoverOpen] = useState(false)
   const [bajaOpen, setBajaOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  
+  // Capacity warning
+  const [capacidadWarningOpen, setCapacidadWarningOpen] = useState(false)
+  const [capacidadWarningInfo, setCapacidadWarningInfo] = useState<any>(null)
+  const [pendingMoverPayload, setPendingMoverPayload] = useState<any>(null)
   
   // Movimiento
   const [cantidadMover, setCantidadMover] = useState('')
@@ -185,8 +190,26 @@ export function MovimientoHaciendaModule({ operador }: { operador: Operador }) {
 
       const data = await res.json()
       
+      // Handle capacity warning (409 Conflict)
+      if (res.status === 409 && data.requiresConfirmation) {
+        setCapacidadWarningInfo(data)
+        setPendingMoverPayload({
+          tropaId: tropaSeleccionada.tropaId,
+          corralOrigenId: corralSeleccionado.id,
+          corralDestinoId,
+          cantidad,
+          operadorId: operador.id
+        })
+        setCapacidadWarningOpen(true)
+        setSaving(false)
+        return
+      }
+      
       if (data.success) {
-        toast.success(`✅ ${cantidad} animal(es) movido(s) a ${corralDestino?.nombre}`)
+        if (data.advertencia) {
+          toast.warning(data.advertencia, { duration: 6000 })
+        }
+        toast.success(`${cantidad} animal(es) movido(s) a ${corralDestino?.nombre}`)
         setMoverOpen(false)
         setCantidadMover('')
         setCorralDestinoId('')
@@ -202,6 +225,43 @@ export function MovimientoHaciendaModule({ operador }: { operador: Operador }) {
       toast.error('Error de conexión')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Forzar capacidad de corral (re-enviar con forzarCapacidad: true)
+  const handleForzarCapacidadMover = async () => {
+    if (!pendingMoverPayload) return
+    setCapacidadWarningOpen(false)
+    setSaving(true)
+    try {
+      const res = await fetch('/api/animales/mover-cantidad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...pendingMoverPayload, forzarCapacidad: true })
+      })
+      const data = await res.json()
+      if (data.success) {
+        if (data.advertencia) {
+          toast.warning(data.advertencia, { duration: 6000 })
+        }
+        const corralDestino = corrales.find(c => c.id === pendingMoverPayload.corralDestinoId)
+        toast.success(`${pendingMoverPayload.cantidad} animal(es) movido(s) a ${corralDestino?.nombre}`)
+        setMoverOpen(false)
+        setCantidadMover('')
+        setCorralDestinoId('')
+        await fetchCorrales()
+        if (corralSeleccionado) {
+          await fetchTropasCorral(corralSeleccionado.id)
+        }
+      } else {
+        toast.error(data.error || 'Error al mover animales')
+      }
+    } catch {
+      toast.error('Error de conexión')
+    } finally {
+      setSaving(false)
+      setPendingMoverPayload(null)
+      setCapacidadWarningInfo(null)
     }
   }
 
@@ -596,6 +656,38 @@ export function MovimientoHaciendaModule({ operador }: { operador: Operador }) {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Advertencia de Capacidad */}
+      <Dialog open={capacidadWarningOpen} onOpenChange={setCapacidadWarningOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" />
+              Advertencia de Capacidad
+            </DialogTitle>
+            <DialogDescription>
+              {capacidadWarningInfo?.error}
+            </DialogDescription>
+          </DialogHeader>
+          {capacidadWarningInfo?.capacidadInfo && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><span className="text-stone-500">Corral:</span> <strong>{capacidadWarningInfo.capacidadInfo.corral}</strong></div>
+                <div><span className="text-stone-500">Capacidad:</span> <strong>{capacidadWarningInfo.capacidadInfo.capacidad}</strong></div>
+                <div><span className="text-stone-500">Stock actual:</span> <strong>{capacidadWarningInfo.capacidadInfo.stockActual}</strong></div>
+                <div><span className="text-stone-500">Disponible:</span> <strong className="text-amber-600">{capacidadWarningInfo.capacidadInfo.disponible}</strong></div>
+                <div><span className="text-stone-500">A mover:</span> <strong className="text-red-600">{capacidadWarningInfo.capacidadInfo.cantidadIngresar}</strong></div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCapacidadWarningOpen(false)}>Cancelar</Button>
+            <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleForzarCapacidadMover}>
+              Continuar de todas formas
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

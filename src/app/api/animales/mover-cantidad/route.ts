@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[MOVER-CANTIDAD] Body recibido:', JSON.stringify(body, null, 2))
     
-    const { tropaId, corralOrigenId, corralDestinoId, cantidad, operadorId } = body
+    const { tropaId, corralOrigenId, corralDestinoId, cantidad, operadorId, forzarCapacidad } = body
 
     // Validar datos requeridos
     if (!tropaId) {
@@ -55,6 +55,54 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[MOVER-CANTIDAD] Datos validados OK:', { tropaId, corralOrigenId, corralDestinoId, cantidadMover })
+
+    // Verificar capacidad del corral destino ANTES de la transacción
+    const corralDestinoCheck = await db.corral.findUnique({
+      where: { id: corralDestinoId }
+    })
+
+    if (!corralDestinoCheck) {
+      return NextResponse.json(
+        { success: false, error: 'Corral destino no encontrado' },
+        { status: 404 }
+      )
+    }
+
+    // Obtener la tropa para saber la especie
+    const tropaCheck = await db.tropa.findUnique({
+      where: { id: tropaId }
+    })
+
+    if (!tropaCheck) {
+      return NextResponse.json(
+        { success: false, error: 'Tropa no encontrada' },
+        { status: 404 }
+      )
+    }
+
+    // Verificar capacidad
+    const stockActual = tropaCheck.especie === 'BOVINO' ? corralDestinoCheck.stockBovinos : corralDestinoCheck.stockEquinos
+    const disponible = corralDestinoCheck.capacidad - stockActual
+
+    if (disponible < cantidadMover && !forzarCapacidad) {
+      return NextResponse.json({
+        success: false,
+        requiresConfirmation: true,
+        error: `Capacidad insuficiente en corral "${corralDestinoCheck.nombre}". Disponible: ${disponible}, Se requieren: ${cantidadMover}. ¿Desea continuar de todas formas?`,
+        capacidadInfo: {
+          corral: corralDestinoCheck.nombre,
+          capacidad: corralDestinoCheck.capacidad,
+          stockActual,
+          disponible,
+          cantidadIngresar: cantidadMover
+        }
+      }, { status: 409 })
+    }
+
+    let advertenciaCapacidad: string | null = null
+    if (disponible < cantidadMover && forzarCapacidad) {
+      advertenciaCapacidad = `ATENCIÓN: Se excedió la capacidad del corral "${corralDestinoCheck.nombre}".`
+    }
 
     // USAR TRANSACCIÓN para evitar race conditions
     const result = await db.$transaction(async (tx) => {
@@ -158,14 +206,19 @@ export async function POST(request: NextRequest) {
 
     console.log('[MOVER-CANTIDAD] ===== ÉXITO =====')
 
-    return NextResponse.json({
+    const response: any = {
       success: true,
       data: {
         movidos: result.cantidadMover,
         tropa: result.tropa.codigo,
         destino: result.corralDestino.nombre
       }
-    })
+    }
+    if (advertenciaCapacidad) {
+      response.advertencia = advertenciaCapacidad
+    }
+
+    return NextResponse.json(response)
   } catch (error: unknown) {
     console.error('[MOVER-CANTIDAD] ERROR CRÍTICO:', error)
     
