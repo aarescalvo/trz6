@@ -13,6 +13,8 @@ import { Calendar, Download, Beef, Loader2, FileSpreadsheet } from 'lucide-react
 import { exportReport } from '@/lib/reportes-api'
 import { ExportButton } from '@/components/ui/export-button'
 import { ColumnSelector, type ColumnDef } from '@/components/ui/column-selector'
+import { DataTablePagination } from '@/components/ui/data-table-pagination'
+import { usePagination } from '@/hooks/use-pagination'
 import { PDFExporter } from '@/lib/export-pdf'
 
 interface FaenaData {
@@ -56,6 +58,15 @@ export function ReporteFaena() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     FAENA_COLUMNS.filter((c) => c.visible !== false).map((c) => c.key),
   )
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    paginatedData,
+    setPage,
+    setPageSize,
+  } = usePagination(datos)
+
   const [resumen, setResumen] = useState({
     totalAnimales: 0,
     totalPesoVivo: 0,
@@ -267,74 +278,84 @@ export function ReporteFaena() {
               <p>Seleccione un rango de fechas y presione Buscar</p>
             </div>
           ) : (
-            <div className="max-h-96 overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {visibleColumns.map((key) => {
-                      const col = FAENA_COLUMNS.find((c) => c.key === key)
-                      if (!col) return null
-                      const isRight = ['pesoVivo', 'pesoMediaIzq', 'pesoMediaDer', 'pesoTotal', 'rinde'].includes(key)
-                      return (
-                        <TableHead key={key} className={isRight ? 'text-right' : ''}>
-                          {col.label}
-                        </TableHead>
-                      )
-                    })}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {datos.map((row, i) => (
-                    <TableRow key={i}>
+            <>
+              <div className="max-h-96 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
                       {visibleColumns.map((key) => {
-                        switch (key) {
-                          case 'fecha':
-                            return <TableCell key={key} className="font-mono text-xs">{row.fecha}</TableCell>
-                          case 'garron':
-                            return <TableCell key={key} className="font-mono">{row.garron}</TableCell>
-                          case 'tropa':
-                            return <TableCell key={key} className="font-mono">{row.tropa}</TableCell>
-                          case 'numeroAnimal':
-                            return <TableCell key={key}>{row.numeroAnimal}</TableCell>
-                          case 'especie':
-                            return (
-                              <TableCell key={key}>
-                                <Badge variant={row.especie === 'BOVINO' ? 'default' : 'secondary'}>
-                                  {row.especie === 'BOVINO' ? 'B' : 'E'}
-                                </Badge>
-                              </TableCell>
-                            )
-                          case 'tipoAnimal':
-                            return <TableCell key={key}>{row.tipoAnimal}</TableCell>
-                          case 'pesoVivo':
-                            return <TableCell key={key} className="text-right">{row.pesoVivo?.toFixed(1) || '-'}</TableCell>
-                          case 'pesoMediaIzq':
-                            return <TableCell key={key} className="text-right">{row.pesoMediaIzq?.toFixed(1) || '-'}</TableCell>
-                          case 'pesoMediaDer':
-                            return <TableCell key={key} className="text-right">{row.pesoMediaDer?.toFixed(1) || '-'}</TableCell>
-                          case 'pesoTotal':
-                            return <TableCell key={key} className="text-right font-medium">{row.pesoTotal?.toFixed(1) || '-'}</TableCell>
-                          case 'rinde':
-                            return (
-                              <TableCell key={key} className="text-right">
-                                {row.rinde ? (
-                                  <span className={row.rinde >= 50 ? 'text-green-600 font-medium' : ''}>
-                                    {row.rinde.toFixed(1)}%
-                                  </span>
-                                ) : '-'}
-                              </TableCell>
-                            )
-                          case 'tipificacion':
-                            return <TableCell key={key}>{row.tipificacion || '-'}</TableCell>
-                          default:
-                            return null
-                        }
+                        const col = FAENA_COLUMNS.find((c) => c.key === key)
+                        if (!col) return null
+                        const isRight = ['pesoVivo', 'pesoMediaIzq', 'pesoMediaDer', 'pesoTotal', 'rinde'].includes(key)
+                        return (
+                          <TableHead key={key} className={isRight ? 'text-right' : ''}>
+                            {col.label}
+                          </TableHead>
+                        )
                       })}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((row, i) => (
+                      <TableRow key={i}>
+                        {visibleColumns.map((key) => {
+                          switch (key) {
+                            case 'fecha':
+                              return <TableCell key={key} className="font-mono text-xs">{row.fecha}</TableCell>
+                            case 'garron':
+                              return <TableCell key={key} className="font-mono">{row.garron}</TableCell>
+                            case 'tropa':
+                              return <TableCell key={key} className="font-mono">{row.tropa}</TableCell>
+                            case 'numeroAnimal':
+                              return <TableCell key={key}>{row.numeroAnimal}</TableCell>
+                            case 'especie':
+                              return (
+                                <TableCell key={key}>
+                                  <Badge variant={row.especie === 'BOVINO' ? 'default' : 'secondary'}>
+                                    {row.especie === 'BOVINO' ? 'B' : 'E'}
+                                  </Badge>
+                                </TableCell>
+                              )
+                            case 'tipoAnimal':
+                              return <TableCell key={key}>{row.tipoAnimal}</TableCell>
+                            case 'pesoVivo':
+                              return <TableCell key={key} className="text-right">{row.pesoVivo?.toFixed(1) || '-'}</TableCell>
+                            case 'pesoMediaIzq':
+                              return <TableCell key={key} className="text-right">{row.pesoMediaIzq?.toFixed(1) || '-'}</TableCell>
+                            case 'pesoMediaDer':
+                              return <TableCell key={key} className="text-right">{row.pesoMediaDer?.toFixed(1) || '-'}</TableCell>
+                            case 'pesoTotal':
+                              return <TableCell key={key} className="text-right font-medium">{row.pesoTotal?.toFixed(1) || '-'}</TableCell>
+                            case 'rinde':
+                              return (
+                                <TableCell key={key} className="text-right">
+                                  {row.rinde ? (
+                                    <span className={row.rinde >= 50 ? 'text-green-600 font-medium' : ''}>
+                                      {row.rinde.toFixed(1)}%
+                                    </span>
+                                  ) : '-'}
+                                </TableCell>
+                              )
+                            case 'tipificacion':
+                              return <TableCell key={key}>{row.tipificacion || '-'}</TableCell>
+                            default:
+                              return null
+                          }
+                        })}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <DataTablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={datos.length}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            </>
           )}
         </CardContent>
       </Card>
