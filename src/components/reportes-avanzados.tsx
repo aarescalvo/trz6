@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,11 +41,14 @@ import {
   Weight,
   Users,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  BarChart3
 } from 'lucide-react'
 import { ExportButton } from '@/components/ui/export-button'
 import { ExcelExporter } from '@/lib/export-excel'
 import { PDFExporter } from '@/lib/export-pdf'
+import { captureChartAsImage, captureMultipleCharts } from '@/lib/chart-to-image'
+import { exportChartReportToPDF } from '@/lib/export-pdf-charts'
 
 // Types
 interface Operador {
@@ -143,11 +146,13 @@ interface ReportesAvanzadosProps {
 export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
   // State
   const [loading, setLoading] = useState(false)
+  const [exportingChartPdf, setExportingChartPdf] = useState(false)
   const [tipoReporte, setTipoReporte] = useState<TipoReporte>('produccion')
+  const chartsContainerRef = useRef<HTMLDivElement>(null)
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
-  const [especie, setEspecie] = useState<string>('')
-  const [productorId, setProductorId] = useState<string>('')
+  const [especie, setEspecie] = useState<string>('all')
+  const [productorId, setProductorId] = useState<string>('all')
   const [productores, setProductores] = useState<Productor[]>([])
 
   // Data
@@ -193,8 +198,8 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
       params.append('tipo', tipoReporte)
       if (fechaDesde) params.append('fechaDesde', fechaDesde)
       if (fechaHasta) params.append('fechaHasta', fechaHasta)
-      if (especie) params.append('especie', especie)
-      if (productorId) params.append('productor', productorId)
+      if (especie && especie !== 'all') params.append('especie', especie)
+      if (productorId && productorId !== 'all') params.append('productor', productorId)
 
       const res = await fetch(`/api/reportes/avanzados?${params.toString()}`)
       const result = await res.json()
@@ -288,6 +293,62 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
       orientation: 'landscape',
     })
     PDFExporter.downloadPDF(doc, `reporte_${tipoReporte}.pdf`)
+  }
+
+  const handleExportarPDFConGrafico = async () => {
+    if (data.length === 0) {
+      toast.error('No hay datos para exportar')
+      return
+    }
+
+    setExportingChartPdf(true)
+    try {
+      toast.loading('Generando PDF con gráficos...', { id: 'chart-pdf' })
+
+      // Capture all charts from the charts container
+      const chartsContainer = chartsContainerRef.current
+      const chartId = 'reportes-charts-container'
+
+      // First, ensure the element has the ID
+      if (chartsContainer && !chartsContainer.id) {
+        chartsContainer.id = chartId
+      }
+
+      const chartImages = await captureMultipleCharts(chartId)
+
+      if (chartImages.length === 0) {
+        toast.error('No se pudieron capturar los gráficos', { id: 'chart-pdf' })
+        setExportingChartPdf(false)
+        return
+      }
+
+      const { headers, rows } = getHeadersAndRows()
+      const reporteLabel = getReporteLabel()
+
+      const primaryChart = chartImages[0]
+      const additionalCharts = chartImages.slice(1).map((c) => ({
+        image: c.dataUrl,
+        title: c.title,
+      }))
+
+      await exportChartReportToPDF({
+        title: `Reporte de ${reporteLabel}`,
+        subtitle: `Período: ${fechaDesde || 'Inicio'} al ${fechaHasta || 'Hoy'}`,
+        chartImage: primaryChart.dataUrl,
+        dataColumns: headers.map((h) => ({ header: h })),
+        dataRows: rows.map((r) => r.map(String)),
+        additionalCharts: additionalCharts.length > 0 ? additionalCharts : undefined,
+        fileName: `reporte_${tipoReporte}_con_grafico`,
+        orientation: 'landscape',
+      })
+
+      toast.success('PDF con gráficos generado correctamente', { id: 'chart-pdf' })
+    } catch (error) {
+      console.error('Error al exportar PDF con gráfico:', error)
+      toast.error('Error al generar PDF con gráficos', { id: 'chart-pdf' })
+    } finally {
+      setExportingChartPdf(false)
+    }
   }
 
   // Render KPI cards
@@ -878,12 +939,28 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
             <h1 className="text-2xl md:text-3xl font-bold text-stone-800">Reportes Avanzados</h1>
             <p className="text-stone-500 mt-1">Análisis detallado de producción y rendimiento</p>
           </div>
-          <ExportButton
-            onExportExcel={handleExportarExcel}
-            onExportPDF={handleExportarPDF}
-            onPrint={() => window.print()}
-            disabled={loading || data.length === 0}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="default"
+              onClick={handleExportarPDFConGrafico}
+              disabled={loading || data.length === 0 || exportingChartPdf}
+              className="border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              {exportingChartPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <BarChart3 className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline ml-2">PDF con Gráfico</span>
+            </Button>
+            <ExportButton
+              onExportExcel={handleExportarExcel}
+              onExportPDF={handleExportarPDF}
+              onPrint={() => window.print()}
+              disabled={loading || data.length === 0 || exportingChartPdf}
+            />
+          </div>
         </div>
 
         {/* Filters */}
@@ -935,7 +1012,7 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="BOVINO">Bovino</SelectItem>
                     <SelectItem value="EQUINO">Equino</SelectItem>
                   </SelectContent>
@@ -950,7 +1027,7 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     {productores.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nombre}
@@ -967,7 +1044,9 @@ export function ReportesAvanzadosModule({ operador }: ReportesAvanzadosProps) {
         {renderKPICards()}
 
         {/* Charts */}
-        {renderCharts()}
+        <div ref={chartsContainerRef} id="reportes-charts-container">
+          {renderCharts()}
+        </div>
 
         {/* Table */}
         {renderTable()}

@@ -135,3 +135,49 @@
 [data-radix-alert-dialog-content][data-state="closed"] {
   display: none !important;
 }
+
+/* ========== UI PREFERENCES - FONT SIZE ========== */
+:root[data-font-size="small"] { --font-size-base: 14px; }
+:root[data-font-size="normal"] { --font-size-base: 16px; }
+:root[data-font-size="large"] { --font-size-base: 18px; }
+
+html {
+  font-size: var(--font-size-base, 16px);
+}
+
+/* ========== UI PREFERENCES - DENSITY ========== */
+:root[data-density="compact"] {
+  --density-gap: 0.25rem;
+  --density-p: 0.375rem;
+}
+:root[data-density="normal"] {
+  --density-gap: 0.5rem;
+  --density-p: 0.75rem;
+}
+:root[data-density="comfortable"] {
+  --density-gap: 0.75rem;
+  --density-p: 1rem;
+}
+
+/* Table density */
+[data-density="compact"] table { font-size: 0.8rem; }
+[data-density="compact"] table th,
+[data-density="compact"] table td { padding: 0.25rem 0.5rem; }
+[data-density="comfortable"] table th,
+[data-density="comfortable"] table td { padding: 0.75rem 1rem; }
+
+/* Card density adjustments */
+[data-density="compact"] [data-slot="card"] { padding: 0.75rem; }
+[data-density="comfortable"] [data-slot="card"] { padding: 1.25rem; }
+
+/* Button density */
+[data-density="compact"] [data-slot="button"] { height: 1.75rem; padding: 0 0.5rem; font-size: 0.8rem; }
+[data-density="comfortable"] [data-slot="button"] { height: 2.75rem; padding: 0 1rem; }
+
+/* Input density */
+[data-density="compact"] [data-slot="input"] { height: 1.75rem; padding: 0 0.5rem; font-size: 0.8rem; }
+[data-density="comfortable"] [data-slot="input"] { height: 2.75rem; padding: 0.5rem 1rem; }
+
+/* Select trigger density */
+[data-density="compact"] [data-slot="select-trigger"] { height: 1.75rem; padding: 0 0.5rem; font-size: 0.8rem; }
+[data-density="comfortable"] [data-slot="select-trigger"] { height: 2.75rem; padding: 0.5rem 1rem; }

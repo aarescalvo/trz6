@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { applyPreferencesToDOM, cachePreferences } from '@/hooks/use-preferencias-ui'
 
 // Icons mapping
 const Icons = {
@@ -117,6 +118,13 @@ export function PersonalizacionUI({
         setTema(prefs.tema || 'light')
         setTamanoFuente(prefs.tamanoFuente || 'normal')
         setDensidad(prefs.densidad || 'normal')
+
+        // Apply preferences to DOM immediately after loading
+        applyPreferencesToDOM({
+          tamanoFuente: prefs.tamanoFuente || 'normal',
+          densidad: prefs.densidad || 'normal',
+          tema: prefs.tema || 'light',
+        })
       }
     } catch (error) {
       console.error('Error cargando preferencias:', error)
@@ -167,6 +175,11 @@ export function PersonalizacionUI({
       
       if (data.success) {
         toast.success('Preferencias guardadas')
+
+        // Apply preferences to DOM immediately after saving
+        applyPreferencesToDOM({ tema, tamanoFuente, densidad })
+        cachePreferences({ tema, tamanoFuente, densidad })
+
         onPreferenciasChange?.({
           moduloOrden,
           moduloTamano,
