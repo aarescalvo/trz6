@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { Calendar, Download, Beef, Loader2, FileSpreadsheet } from 'lucide-react'
 import { exportReport } from '@/lib/reportes-api'
 import { ExportButton } from '@/components/ui/export-button'
+import { ColumnSelector, type ColumnDef } from '@/components/ui/column-selector'
 import { PDFExporter } from '@/lib/export-pdf'
 
 interface FaenaData {
@@ -30,6 +31,21 @@ interface FaenaData {
   tipificador: string | null
 }
 
+const FAENA_COLUMNS: ColumnDef[] = [
+  { key: 'fecha', label: 'Fecha', fixed: true, order: 0 },
+  { key: 'garron', label: 'Garrón', fixed: true, order: 1 },
+  { key: 'tropa', label: 'Tropa', order: 2 },
+  { key: 'numeroAnimal', label: 'Nº Animal', order: 3 },
+  { key: 'especie', label: 'Especie', order: 4 },
+  { key: 'tipoAnimal', label: 'Tipo', order: 5 },
+  { key: 'pesoVivo', label: 'P. Vivo', order: 6 },
+  { key: 'pesoMediaIzq', label: 'M. Izq', order: 7 },
+  { key: 'pesoMediaDer', label: 'M. Der', order: 8 },
+  { key: 'pesoTotal', label: 'P. Total', order: 9 },
+  { key: 'rinde', label: 'Rinde %', order: 10 },
+  { key: 'tipificacion', label: 'Tipif.', order: 11 },
+]
+
 export function ReporteFaena() {
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -37,6 +53,9 @@ export function ReporteFaena() {
   const [fechaHasta, setFechaHasta] = useState('')
   const [especie, setEspecie] = useState<string>('todas')
   const [datos, setDatos] = useState<FaenaData[]>([])
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(
+    FAENA_COLUMNS.filter((c) => c.visible !== false).map((c) => c.key),
+  )
   const [resumen, setResumen] = useState({
     totalAnimales: 0,
     totalPesoVivo: 0,
@@ -181,6 +200,11 @@ export function ReporteFaena() {
                 disabled={exporting || datos.length === 0}
                 size="default"
               />
+              <ColumnSelector
+                reportId="reporte-faena"
+                columns={FAENA_COLUMNS}
+                onColumnsChange={setVisibleColumns}
+              />
             </div>
           </div>
         </CardContent>
@@ -247,45 +271,65 @@ export function ReporteFaena() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Garrón</TableHead>
-                    <TableHead>Tropa</TableHead>
-                    <TableHead>Nº Animal</TableHead>
-                    <TableHead>Especie</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">P. Vivo</TableHead>
-                    <TableHead className="text-right">M. Izq</TableHead>
-                    <TableHead className="text-right">M. Der</TableHead>
-                    <TableHead className="text-right">P. Total</TableHead>
-                    <TableHead className="text-right">Rinde %</TableHead>
-                    <TableHead>Tipif.</TableHead>
+                    {visibleColumns.map((key) => {
+                      const col = FAENA_COLUMNS.find((c) => c.key === key)
+                      if (!col) return null
+                      const isRight = ['pesoVivo', 'pesoMediaIzq', 'pesoMediaDer', 'pesoTotal', 'rinde'].includes(key)
+                      return (
+                        <TableHead key={key} className={isRight ? 'text-right' : ''}>
+                          {col.label}
+                        </TableHead>
+                      )
+                    })}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {datos.map((row, i) => (
                     <TableRow key={i}>
-                      <TableCell className="font-mono text-xs">{row.fecha}</TableCell>
-                      <TableCell className="font-mono">{row.garron}</TableCell>
-                      <TableCell className="font-mono">{row.tropa}</TableCell>
-                      <TableCell>{row.numeroAnimal}</TableCell>
-                      <TableCell>
-                        <Badge variant={row.especie === 'BOVINO' ? 'default' : 'secondary'}>
-                          {row.especie === 'BOVINO' ? 'B' : 'E'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{row.tipoAnimal}</TableCell>
-                      <TableCell className="text-right">{row.pesoVivo?.toFixed(1) || '-'}</TableCell>
-                      <TableCell className="text-right">{row.pesoMediaIzq?.toFixed(1) || '-'}</TableCell>
-                      <TableCell className="text-right">{row.pesoMediaDer?.toFixed(1) || '-'}</TableCell>
-                      <TableCell className="text-right font-medium">{row.pesoTotal?.toFixed(1) || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        {row.rinde ? (
-                          <span className={row.rinde >= 50 ? 'text-green-600 font-medium' : ''}>
-                            {row.rinde.toFixed(1)}%
-                          </span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>{row.tipificacion || '-'}</TableCell>
+                      {visibleColumns.map((key) => {
+                        switch (key) {
+                          case 'fecha':
+                            return <TableCell key={key} className="font-mono text-xs">{row.fecha}</TableCell>
+                          case 'garron':
+                            return <TableCell key={key} className="font-mono">{row.garron}</TableCell>
+                          case 'tropa':
+                            return <TableCell key={key} className="font-mono">{row.tropa}</TableCell>
+                          case 'numeroAnimal':
+                            return <TableCell key={key}>{row.numeroAnimal}</TableCell>
+                          case 'especie':
+                            return (
+                              <TableCell key={key}>
+                                <Badge variant={row.especie === 'BOVINO' ? 'default' : 'secondary'}>
+                                  {row.especie === 'BOVINO' ? 'B' : 'E'}
+                                </Badge>
+                              </TableCell>
+                            )
+                          case 'tipoAnimal':
+                            return <TableCell key={key}>{row.tipoAnimal}</TableCell>
+                          case 'pesoVivo':
+                            return <TableCell key={key} className="text-right">{row.pesoVivo?.toFixed(1) || '-'}</TableCell>
+                          case 'pesoMediaIzq':
+                            return <TableCell key={key} className="text-right">{row.pesoMediaIzq?.toFixed(1) || '-'}</TableCell>
+                          case 'pesoMediaDer':
+                            return <TableCell key={key} className="text-right">{row.pesoMediaDer?.toFixed(1) || '-'}</TableCell>
+                          case 'pesoTotal':
+                            return <TableCell key={key} className="text-right font-medium">{row.pesoTotal?.toFixed(1) || '-'}</TableCell>
+                          case 'rinde':
+                            return (
+                              <TableCell key={key} className="text-right">
+                                {row.rinde ? (
+                                  <span className={row.rinde >= 50 ? 'text-green-600 font-medium' : ''}>
+                                    {row.rinde.toFixed(1)}%
+                                  </span>
+                                ) : '-'}
+                              </TableCell>
+                            )
+                          case 'tipificacion':
+                            return <TableCell key={key}>{row.tipificacion || '-'}</TableCell>
+                          default:
+                            return null
+                        }
+                      })}
                     </TableRow>
                   ))}
                 </TableBody>
