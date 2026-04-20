@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { checkPermission } from '@/lib/auth-helpers'
 
-// GET - Obtener actividades de operadores
+// GET - Obtener actividades recientes (usa modelo Auditoria)
 export async function GET(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeConfiguracion')
-  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const operadorId = searchParams.get('operadorId')
     const modulo = searchParams.get('modulo')
-    const tipo = searchParams.get('tipo')
-    const fechaDesde = searchParams.get('fechaDesde')
-    const fechaHasta = searchParams.get('fechaHasta')
     const limite = parseInt(searchParams.get('limite') || '100')
 
     const where: Record<string, unknown> = {}
@@ -23,20 +17,8 @@ export async function GET(request: NextRequest) {
     if (modulo) {
       where.modulo = modulo
     }
-    if (tipo) {
-      where.tipo = tipo
-    }
-    if (fechaDesde || fechaHasta) {
-      where.fecha = {}
-      if (fechaDesde) {
-        where.fecha = { ...where.fecha as object, gte: new Date(fechaDesde) }
-      }
-      if (fechaHasta) {
-        where.fecha = { ...where.fecha as object, lte: new Date(fechaHasta) }
-      }
-    }
 
-    const actividades = await db.actividadOperador.findMany({
+    const actividades = await db.auditoria.findMany({
       where,
       include: {
         operador: {
@@ -54,66 +36,21 @@ export async function GET(request: NextRequest) {
       take: limite
     })
 
-    // Estadísticas
-    const estadisticas = await db.actividadOperador.groupBy({
-      by: ['operadorId'],
-      where: operadorId ? { operadorId } : {},
-      _count: {
-        id: true
-      },
-      orderBy: {
-        _count: {
-          id: 'desc'
-        }
-      }
-    })
-
-    // Obtener nombres de operadores para estadísticas
-    const operadorIds = estadisticas.map(e => e.operadorId).filter(Boolean) as string[]
-    const operadores = await db.operador.findMany({
-      where: { id: { in: operadorIds } },
-      select: { id: true, nombre: true, usuario: true, rol: true }
-    })
-
-    const estadisticasConOperador = estadisticas.map(e => ({
-      operador: operadores.find(o => o.id === e.operadorId),
-      totalActividades: e._count.id
+    // Mapear al formato esperado por el frontend
+    const data = actividades.map(a => ({
+      id: a.id,
+      tipo: a.accion,
+      modulo: a.modulo,
+      descripcion: a.descripcion,
+      entidad: a.entidad,
+      entidadId: a.entidadId,
+      fecha: a.fecha.toISOString(),
+      operador: a.operador
     }))
-
-    // Actividades por módulo
-    const porModulo = await db.actividadOperador.groupBy({
-      by: ['modulo'],
-      _count: {
-        id: true
-      },
-      orderBy: {
-        _count: {
-          id: 'desc'
-        }
-      }
-    })
-
-    // Actividades por tipo
-    const porTipo = await db.actividadOperador.groupBy({
-      by: ['tipo'],
-      _count: {
-        id: true
-      },
-      orderBy: {
-        _count: {
-          id: 'desc'
-        }
-      }
-    })
 
     return NextResponse.json({
       success: true,
-      data: actividades,
-      estadisticas: {
-        porOperador: estadisticasConOperador,
-        porModulo: porModulo.map(m => ({ modulo: m.modulo, total: m._count.id })),
-        porTipo: porTipo.map(t => ({ tipo: t.tipo, total: t._count.id }))
-      }
+      data
     })
   } catch (error) {
     console.error('Error al obtener actividades:', error)
@@ -124,10 +61,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Registrar nueva actividad
+// POST - Registrar nueva actividad (usa modelo Auditoria)
 export async function POST(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeConfiguracion')
-  if (authError) return authError
   try {
     const body = await request.json()
     const {
@@ -139,29 +74,27 @@ export async function POST(request: NextRequest) {
       entidadId,
       datos,
       ip,
-      userAgent,
-      sessionId
+      userAgent
     } = body
 
-    if (!operadorId || !tipo || !modulo || !descripcion) {
+    if (!tipo || !modulo || !descripcion) {
       return NextResponse.json(
-        { success: false, error: 'Faltan campos requeridos: operadorId, tipo, modulo, descripcion' },
+        { success: false, error: 'Faltan campos requeridos: tipo, modulo, descripcion' },
         { status: 400 }
       )
     }
 
-    const actividad = await db.actividadOperador.create({
+    const actividad = await db.auditoria.create({
       data: {
-        operadorId,
-        tipo,
+        operadorId: operadorId || null,
+        accion: tipo,
         modulo,
-        descripcion,
-        entidad,
+        entidad: entidad || modulo,
         entidadId,
-        datos: datos ? JSON.stringify(datos) : null,
-        ip,
-        userAgent,
-        sessionId
+        descripcion,
+        datosAntes: null,
+        datosDespues: datos ? JSON.stringify(datos) : null,
+        ip
       }
     })
 
