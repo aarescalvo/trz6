@@ -47,14 +47,15 @@ interface Props {
   operador: { id: string; nombre: string; nivel: string }
 }
 
+// Valores coinciden con enum TipoProveedor del schema Prisma (UPPERCASE)
 const TIPOS_PROVEEDOR = [
-  'Insumos',
-  'Servicios',
-  'Equipos',
-  'Empaques',
-  'Limpieza',
-  'Veterinarios',
-  'Otros',
+  { value: 'INSUMOS', label: 'Insumos' },
+  { value: 'SERVICIOS', label: 'Servicios' },
+  { value: 'EQUIPOS', label: 'Equipos' },
+  { value: 'EMPAQUES', label: 'Empaques' },
+  { value: 'LIMPIEZA', label: 'Limpieza' },
+  { value: 'VETERINARIOS', label: 'Veterinarios' },
+  { value: 'OTROS', label: 'Otros' },
 ]
 
 export function Proveedores({ operador }: Props) {
@@ -83,7 +84,7 @@ export function Proveedores({ operador }: Props) {
       const res = await fetch('/api/proveedores')
       if (res.ok) {
         const data = await res.json()
-        setProveedores(data)
+        setProveedores(data.success ? data.data : data)
       }
     } catch (error) {
       console.error('Error al cargar proveedores:', error)
@@ -195,7 +196,7 @@ export function Proveedores({ operador }: Props) {
                 <TableRow key={proveedor.id}>
                   <TableCell className="font-medium">{proveedor.nombre}</TableCell>
                   <TableCell>{proveedor.cuit || '-'}</TableCell>
-                  <TableCell>{proveedor.tipo || '-'}</TableCell>
+                  <TableCell>{TIPOS_PROVEEDOR.find(t => t.value === proveedor.tipo)?.label || '-'}</TableCell>
                   <TableCell>{proveedor.contacto || '-'}</TableCell>
                   <TableCell>{proveedor.telefono || '-'}</TableCell>
                   <TableCell>
@@ -259,7 +260,7 @@ export function Proveedores({ operador }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     {TIPOS_PROVEEDOR.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                      <SelectItem key={tipo.value} value={tipo.value}>{tipo.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

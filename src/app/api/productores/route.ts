@@ -25,10 +25,10 @@ export async function GET(request: NextRequest) {
       orderBy: { nombre: 'asc' }
     });
 
-    return NextResponse.json(productores);
+    return NextResponse.json({ success: true, data: productores });
   } catch (error) {
     console.error('Error al obtener productores:', error);
-    return NextResponse.json({ error: 'Error al obtener productores' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error al obtener productores' }, { status: 500 });
   }
 }
 
@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(productor);
+    return NextResponse.json({ success: true, data: productor });
   } catch (error) {
     console.error('Error al crear productor:', error);
-    return NextResponse.json({ error: 'Error al crear productor' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error al crear productor' }, { status: 500 });
   }
 }
 
@@ -94,10 +94,10 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(productor);
+    return NextResponse.json({ success: true, data: productor });
   } catch (error) {
     console.error('Error al actualizar productor:', error);
-    return NextResponse.json({ error: 'Error al actualizar productor' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error al actualizar productor' }, { status: 500 });
   }
 }
 
@@ -121,6 +121,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error al eliminar productor:', error);
-    return NextResponse.json({ error: 'Error al eliminar productor' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error al eliminar productor' }, { status: 500 });
   }
 }

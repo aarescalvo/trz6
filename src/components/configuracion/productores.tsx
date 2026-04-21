@@ -85,7 +85,7 @@ export function Productores({ operador }: Props) {
       const res = await fetch('/api/productores')
       if (res.ok) {
         const data = await res.json()
-        setProductores(data)
+        setProductores(data.success ? data.data : data)
       }
     } catch (error) {
       console.error('Error al cargar productores:', error)
