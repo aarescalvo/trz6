@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Listar proveedores
-import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeFacturacion')
   if (authError) return authError
@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
         direccion: true,
         telefono: true,
         email: true,
+        tipo: true,
+        contacto: true,
+        observaciones: true,
         activo: true,
         createdAt: true,
       }
@@ -52,6 +55,13 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
 
+    if (!data.nombre) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'El nombre es requerido' 
+      }, { status: 400 });
+    }
+
     const proveedor = await db.proveedor.create({
       data: {
         nombre: data.nombre,
@@ -59,6 +69,9 @@ export async function POST(request: NextRequest) {
         direccion: data.direccion || null,
         telefono: data.telefono || null,
         email: data.email || null,
+        tipo: data.tipo || 'OTROS',
+        contacto: data.contacto || null,
+        observaciones: data.observaciones || null,
         activo: data.activo ?? true,
       }
     });
@@ -91,16 +104,23 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    const updateData: Record<string, unknown> = {
+      nombre: data.nombre,
+      cuit: data.cuit,
+      direccion: data.direccion,
+      telefono: data.telefono,
+      email: data.email,
+      activo: data.activo,
+    }
+
+    // Solo actualizar tipo/contacto/observaciones si se proporcionan
+    if (data.tipo !== undefined) updateData.tipo = data.tipo
+    if (data.contacto !== undefined) updateData.contacto = data.contacto
+    if (data.observaciones !== undefined) updateData.observaciones = data.observaciones
+
     const proveedor = await db.proveedor.update({
       where: { id: data.id },
-      data: {
-        nombre: data.nombre,
-        cuit: data.cuit,
-        direccion: data.direccion,
-        telefono: data.telefono,
-        email: data.email,
-        activo: data.activo,
-      }
+      data: updateData
     });
 
     return NextResponse.json({

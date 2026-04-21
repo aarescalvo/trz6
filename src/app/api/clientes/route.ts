@@ -6,13 +6,25 @@ function getOperadorId(request: NextRequest): string | null {
   return request.headers.get('x-operador-id')
 }
 
-// GET - Fetch clientes
+// GET - Fetch clientes (con filtro opcional por tipo)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const tipo = searchParams.get('tipo')
+    const activos = searchParams.get('activos')
 
-    // Filters removed: esProductor and esUsuarioFaena no longer exist on Cliente model
+    const where: Record<string, unknown> = {}
+
+    if (tipo) {
+      where.tipo = tipo
+    }
+
+    if (activos === 'true') {
+      where.activo = true
+    }
+
     const clientes = await db.cliente.findMany({
+      where: Object.keys(where).length > 0 ? where : undefined,
       orderBy: { nombre: 'asc' }
     })
     
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Sin permisos de facturación' }, { status: 403 })
     }
     const {
-      nombre, dni, cuit, matricula, direccion, localidad, provincia, 
+      nombre, tipo, dni, cuit, matricula, direccion, localidad, provincia, 
       telefono, telefonoAlternativo, email, razonSocial, condicionIva, 
       puntoVenta, observaciones 
     } = body
@@ -71,6 +83,7 @@ export async function POST(request: NextRequest) {
     const cliente = await db.cliente.create({
       data: {
         nombre,
+        tipo: tipo || 'USUARIO_FAENA',
         dni: dni || null,
         cuit: cuit || null,
         matricula: matricula || null,
@@ -110,7 +123,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Sin permisos de facturación' }, { status: 403 })
     }
     const {
-      id, nombre, dni, cuit, matricula, direccion, localidad, provincia, 
+      id, nombre, tipo, dni, cuit, matricula, direccion, localidad, provincia, 
       telefono, telefonoAlternativo, email, razonSocial, condicionIva, 
       puntoVenta, observaciones, activo 
     } = body
@@ -143,6 +156,7 @@ export async function PUT(request: NextRequest) {
     // Build data object with only provided fields
     const data: Record<string, unknown> = {}
     if (nombre !== undefined) data.nombre = nombre
+    if (tipo !== undefined) data.tipo = tipo
     if (dni !== undefined) data.dni = dni || null
     if (cuit !== undefined) data.cuit = cuit || null
     if (matricula !== undefined) data.matricula = matricula || null

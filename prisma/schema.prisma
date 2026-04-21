@@ -274,11 +274,26 @@ model Operador {
   @@index([usuario])
 }
 
-// ==================== CLIENTES / PROVEEDORES ====================
+// ==================== CLIENTES / USUARIOS DE FAENA ====================
+
+/// Tipo de cliente: distingue el rol dentro del sistema
+enum TipoCliente {
+  USUARIO_FAENA    // Matarife - trae hacienda para faena
+  COMPRADOR        // Comprador de carne/productos
+  PROVEEDOR_TERCE  // Proveedor de carne de terceros (ingresos de terceros)
+}
+
+/// Tipo de productor/consignatario
+enum TipoProductor {
+  PRODUCTOR
+  CONSIGNATARIO
+  AMBOS
+}
 
 model Cliente {
   id              String   @id @default(cuid())
   nombre          String
+  tipo            TipoCliente @default(USUARIO_FAENA) // Rol del cliente en el sistema
   
   // Identificación
   dni             String?  // DNI número
@@ -306,7 +321,10 @@ model Cliente {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
-  // El Cliente es quien compra carne, recibe facturas y es el "usuario faena"
+  // Relaciones
+  // USUARIO_FAENA: trae hacienda para faena (Tropa.usuarioFaenaId)
+  // COMPRADOR: recibe facturas, despachos, liquidaciones
+  // PROVEEDOR_TERCE: provee carne de terceros (IngresoTercero.clienteId)
   tropasComoUsuarioFaena Tropa[]    @relation("UsuarioFaenaTropas")
   facturas               Factura[]
   reclamos               ReclamoCliente[]
@@ -318,7 +336,7 @@ model Cliente {
   historicoTarifas       HistoricoTarifa[]
   c2Expediciones        C2ExpedicionOrden[]
   observacionesUsuario   ObservacionUsuario[]
-  ingresosTercero      IngresoTercero[]
+  ingresosTercero      IngresoTercero[]  @relation("IngresoTerceroProveedor")
   preciosCliente        PrecioCliente[]
   preciosHistorico HistoricoPrecioProducto[]
 
@@ -4108,7 +4126,7 @@ model ProductorConsignatario {
   direccion              String?
   telefono               String?
   email                  String?
-  tipo                   String   @default("PRODUCTOR")
+  tipo                   TipoProductor @default(PRODUCTOR)
   numeroRenspa           String?
   numeroEstablecimiento  String?
   localidad              String?
@@ -4326,6 +4344,17 @@ model RecepcionCompra {
 
 // ==================== PROVEEDOR ====================
 
+/// Tipo de proveedor para clasificar rubro
+enum TipoProveedor {
+  INSUMOS
+  SERVICIOS
+  EQUIPOS
+  EMPAQUES
+  LIMPIEZA
+  VETERINARIOS
+  OTROS
+}
+
 model Proveedor {
   id            String   @id @default(cuid())
   nombre        String
@@ -4333,6 +4362,9 @@ model Proveedor {
   direccion     String?
   telefono      String?
   email         String?
+  tipo          TipoProveedor @default(OTROS)
+  contacto      String?  // Persona de contacto
+  observaciones  String?
   activo        Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -4817,7 +4849,7 @@ model IngresoTercero {
   id               String    @id @default(cuid())
   codigo           String    @unique
   proveedorId      String
-  proveedor        Cliente   @relation(fields: [proveedorId], references: [id])
+  proveedor        Cliente   @relation("IngresoTerceroProveedor", fields: [proveedorId], references: [id])
   tipoCuarto       String    @default("ASADO")
   tipificacion     String?
   especie          String    @default("EQUINO")

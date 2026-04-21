@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Plus, Edit, Trash2, Save, X, AlertTriangle, Phone, MapPin, Mail, UserCheck, CreditCard, FileText, IdCard } from 'lucide-react'
+import { Users, Plus, Edit, Trash2, Save, X, AlertTriangle, Phone, MapPin, Mail, UserCheck, CreditCard, IdCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 
+// Condiciones fiscales mapeadas al campo condicionIva del modelo Cliente
 const CONDICIONES_FISCALES = [
-  { id: 'RESPONSABLE_INSCRIPTO', label: 'Responsable Inscripto' },
-  { id: 'MONOTRIBUTO', label: 'Monotributo' },
-  { id: 'CONSUMIDOR_FINAL', label: 'Consumidor Final' },
-  { id: 'EXENTO', label: 'Exento' },
+  { id: 'RI', label: 'Responsable Inscripto' },
+  { id: 'MT', label: 'Monotributo' },
+  { id: 'CF', label: 'Consumidor Final' },
+  { id: 'EX', label: 'Exento' },
 ]
 
 const PROVINCIAS = [
@@ -26,24 +27,25 @@ const PROVINCIAS = [
   'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'
 ]
 
+// Interface alineada con el modelo Prisma Cliente
 interface Usuario {
   id: string
+  tipo?: string
   nombre: string
   dni?: string
   cuit?: string
+  matricula?: string        // Numero de matricula (matarifes)
   direccion?: string
   localidad?: string
   provincia?: string
-  codigoPostal?: string
   telefono?: string
-  contactoAlternativo?: string
+  telefonoAlternativo?: string
   email?: string
-  condicionFiscal?: string
-  razonSocialFacturacion?: string
-  domicilioFacturacion?: string
-  cuitFacturacion?: string
-  inicioActividades?: string
-  numeroMatricula?: string
+  razonSocial?: string
+  condicionIva?: string
+  puntoVenta?: string
+  observaciones?: string
+  activo?: boolean
 }
 
 interface Operador {
@@ -62,23 +64,22 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
   const [editando, setEditando] = useState<Usuario | null>(null)
   const [showFacturacion, setShowFacturacion] = useState(false)
   
+  // formData alineado con campos del modelo Prisma Cliente
   const [formData, setFormData] = useState({
     nombre: '',
     dni: '',
     cuit: '',
+    matricula: '',
     direccion: '',
     localidad: '',
     provincia: '',
-    codigoPostal: '',
     telefono: '',
-    contactoAlternativo: '',
+    telefonoAlternativo: '',
     email: '',
-    condicionFiscal: '',
-    razonSocialFacturacion: '',
-    domicilioFacturacion: '',
-    cuitFacturacion: '',
-    inicioActividades: '',
-    numeroMatricula: ''
+    condicionIva: '',
+    razonSocial: '',
+    puntoVenta: '',
+    observaciones: ''
   })
 
   useEffect(() => {
@@ -87,7 +88,8 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
 
   const fetchUsuarios = async () => {
     try {
-      const res = await fetch('/api/clientes')
+      // Filtrar solo USUARIO_FAENA
+      const res = await fetch('/api/clientes?tipo=USUARIO_FAENA')
       const data = await res.json()
       if (data.success) {
         setUsuarios(data.data)
@@ -106,43 +108,39 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
       nombre: '', 
       dni: '',
       cuit: '', 
+      matricula: '',
       direccion: '', 
       localidad: '',
       provincia: '',
-      codigoPostal: '',
       telefono: '', 
-      contactoAlternativo: '',
+      telefonoAlternativo: '',
       email: '',
-      condicionFiscal: '',
-      razonSocialFacturacion: '',
-      domicilioFacturacion: '',
-      cuitFacturacion: '',
-      inicioActividades: '',
-      numeroMatricula: ''
+      condicionIva: '',
+      razonSocial: '',
+      puntoVenta: '',
+      observaciones: ''
     })
     setDialogOpen(true)
   }
 
   const handleEditar = (u: Usuario) => {
     setEditando(u)
-    setShowFacturacion(!!(u.condicionFiscal || u.razonSocialFacturacion))
+    setShowFacturacion(!!(u.condicionIva || u.razonSocial))
     setFormData({
       nombre: u.nombre,
       dni: u.dni || '',
       cuit: u.cuit || '',
+      matricula: u.matricula || '',
       direccion: u.direccion || '',
       localidad: u.localidad || '',
       provincia: u.provincia || '',
-      codigoPostal: u.codigoPostal || '',
       telefono: u.telefono || '',
-      contactoAlternativo: u.contactoAlternativo || '',
+      telefonoAlternativo: u.telefonoAlternativo || '',
       email: u.email || '',
-      condicionFiscal: u.condicionFiscal || '',
-      razonSocialFacturacion: u.razonSocialFacturacion || '',
-      domicilioFacturacion: u.domicilioFacturacion || '',
-      cuitFacturacion: u.cuitFacturacion || '',
-      inicioActividades: u.inicioActividades ? u.inicioActividades.split('T')[0] : '',
-      numeroMatricula: u.numeroMatricula || ''
+      condicionIva: u.condicionIva || '',
+      razonSocial: u.razonSocial || '',
+      puntoVenta: u.puntoVenta || '',
+      observaciones: u.observaciones || ''
     })
     setDialogOpen(true)
   }
@@ -162,6 +160,7 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
     try {
       const body = {
         ...formData,
+        tipo: 'USUARIO_FAENA', // Forzar tipo al guardar
         id: editando?.id
       }
 
@@ -259,9 +258,9 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">{u.nombre}</TableCell>
                       <TableCell>
-                        {u.numeroMatricula ? (
+                        {u.matricula ? (
                           <Badge className="bg-blue-100 text-blue-700 font-mono">
-                            {u.numeroMatricula}
+                            {u.matricula}
                           </Badge>
                         ) : '-'}
                       </TableCell>
@@ -275,6 +274,7 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
                       <TableCell>
                         <div className="text-sm">
                           {u.telefono && <div>{u.telefono}</div>}
+                          {u.telefonoAlternativo && <div className="text-stone-500 text-xs">{u.telefonoAlternativo}</div>}
                           {u.email && <div className="text-stone-500 text-xs">{u.email}</div>}
                           {!u.telefono && !u.email && '-'}
                         </div>
@@ -333,10 +333,10 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Número de Matrícula *</Label>
+                    <Label>Número de Matrícula</Label>
                     <Input
-                      value={formData.numeroMatricula}
-                      onChange={(e) => setFormData({ ...formData, numeroMatricula: e.target.value })}
+                      value={formData.matricula}
+                      onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
                       placeholder="Ej: 1234"
                     />
                   </div>
@@ -376,10 +376,10 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Contacto Alternativo</Label>
+                    <Label>Teléfono Alternativo</Label>
                     <Input
-                      value={formData.contactoAlternativo}
-                      onChange={(e) => setFormData({ ...formData, contactoAlternativo: e.target.value })}
+                      value={formData.telefonoAlternativo}
+                      onChange={(e) => setFormData({ ...formData, telefonoAlternativo: e.target.value })}
                       placeholder="Otro teléfono"
                     />
                   </div>
@@ -456,8 +456,8 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
                 {showFacturacion && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-stone-50 rounded-lg">
                     <div className="space-y-2">
-                      <Label>Condición Fiscal</Label>
-                      <Select value={formData.condicionFiscal} onValueChange={(v) => setFormData({ ...formData, condicionFiscal: v })}>
+                      <Label>Condición IVA</Label>
+                      <Select value={formData.condicionIva} onValueChange={(v) => setFormData({ ...formData, condicionIva: v })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar" />
                         </SelectTrigger>
@@ -469,35 +469,19 @@ export function UsuariosFaenaModule({ operador }: { operador: Operador }) {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Inicio de Actividades</Label>
+                      <Label>Punto de Venta</Label>
                       <Input
-                        type="date"
-                        value={formData.inicioActividades}
-                        onChange={(e) => setFormData({ ...formData, inicioActividades: e.target.value })}
+                        value={formData.puntoVenta}
+                        onChange={(e) => setFormData({ ...formData, puntoVenta: e.target.value })}
+                        placeholder="Ej: 0001"
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label>Razón Social para Facturación</Label>
+                      <Label>Razón Social</Label>
                       <Input
-                        value={formData.razonSocialFacturacion}
-                        onChange={(e) => setFormData({ ...formData, razonSocialFacturacion: e.target.value })}
+                        value={formData.razonSocial}
+                        onChange={(e) => setFormData({ ...formData, razonSocial: e.target.value })}
                         placeholder="Si es diferente al nombre"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>CUIT para Facturación</Label>
-                      <Input
-                        value={formData.cuitFacturacion}
-                        onChange={(e) => setFormData({ ...formData, cuitFacturacion: e.target.value })}
-                        placeholder="Si es diferente al CUIT"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Domicilio para Facturación</Label>
-                      <Input
-                        value={formData.domicilioFacturacion}
-                        onChange={(e) => setFormData({ ...formData, domicilioFacturacion: e.target.value })}
-                        placeholder="Si es diferente a la dirección"
                       />
                     </div>
                   </div>

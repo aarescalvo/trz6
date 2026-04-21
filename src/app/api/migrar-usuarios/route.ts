@@ -24,7 +24,6 @@ interface ResultadoMigracion {
 
 // GET - Mostrar estado de la migración (solo ADMINISTRADOR)
 export async function GET(request: NextRequest) {
-  // Verificar que sea administrador
   const adminError = await checkAdminRole(request)
   if (adminError) return adminError
 
@@ -43,10 +42,10 @@ export async function GET(request: NextRequest) {
         id: true,
         nombre: true,
         cuit: true,
-        celular: true,
-        emails: true,
+        telefono: true,
+        email: true,
         createdAt: true
-      } as any
+      }
     })
 
     return NextResponse.json({
@@ -68,7 +67,6 @@ export async function GET(request: NextRequest) {
 
 // POST - Ejecutar migración (solo ADMINISTRADOR)
 export async function POST(request: NextRequest) {
-  // Verificar que sea administrador
   const adminError = await checkAdminRole(request)
   if (adminError) return adminError
 
@@ -92,14 +90,12 @@ export async function POST(request: NextRequest) {
       path.join(process.cwd(), '..', 'upload', fileName),
     ]
     
-    let filePath = ''
     let fileBuffer: Buffer | null = null
     
     for (const p of possiblePaths) {
       try {
         if (fs.existsSync(p)) {
           fileBuffer = fs.readFileSync(p)
-          filePath = p
           break
         }
       } catch (e) {
@@ -119,7 +115,6 @@ export async function POST(request: NextRequest) {
     
     let workbook
     try {
-      // Leer desde buffer con ExcelJS
       workbook = new ExcelJS.Workbook()
       await workbook.xlsx.load(fileBuffer)
     } catch (readError) {
@@ -159,8 +154,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // También intentar mapear con el espacio final que usa la interfaz original
-    // 'TITULAR ' tiene un espacio al final en la interfaz
+    // También intentar mapear con el espacio final
     for (const key of Object.keys(colMap)) {
       if (!colMap[key + ' ']) {
         colMap[key + ' '] = colMap[key]
@@ -195,7 +189,6 @@ export async function POST(request: NextRequest) {
         const nombre = row['TITULAR ']?.trim() || ''
         const cuit = String(row['CUIT'] || '').trim()
         const mail = row['MAIL']?.trim() || ''
-        const contactoNombre = row['NOMBRE Y APELLIGO']?.trim() || ''
         const celular = row['CELULAR']?.trim() || ''
 
         // Omitir filas de encabezado o vacías
@@ -213,15 +206,17 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Crear cliente - usar campo 'email' (singular) pero guardar múltiples emails
+        // Crear cliente como USUARIO_FAENA - mapeo correcto al modelo Cliente
+        // celular del Excel → telefono del modelo
+        // mail del Excel → email del modelo
         const cliente = await db.cliente.create({
           data: {
             nombre,
             cuit,
-            email: mail || null,  // Campo email (singular) con múltiples emails separados por ;
-            celular: celular || null,
-            modalidadRetiro: true,
-          } as any
+            tipo: 'USUARIO_FAENA',
+            email: mail || null,
+            telefono: celular || null,
+          }
         })
 
         resultado.creados++
