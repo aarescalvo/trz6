@@ -46,6 +46,40 @@ export async function validarPermiso(operadorId: string | null | undefined, perm
 }
 
 /**
+ * Valida que un operador tenga al menos uno de los permisos indicados.
+ * ADMINISTRADOR tiene todos los permisos automáticamente.
+ * Útil para endpoints compartidos entre múltiples módulos (ej: lectura de balanza).
+ *
+ * @param request - Request del Next.js
+ * @param permisos - Lista de permisos, se aprueba si tiene alguno
+ * @returns null si autorizado, o NextResponse de error si no
+ */
+export async function checkAnyPermission(
+  request: NextRequest,
+  permisos: string[]
+): Promise<NextResponse | null> {
+  const operadorId = request.headers.get('x-operador-id')
+
+  if (!operadorId) {
+    return NextResponse.json(
+      { success: false, error: 'No autenticado' },
+      { status: 401 }
+    )
+  }
+
+  for (const permiso of permisos) {
+    const hasPermission = await validarPermiso(operadorId, permiso)
+    if (hasPermission) return null
+  }
+
+  logger.warn('Permiso denegado (ninguno coincide)', { operadorId, permisos })
+  return NextResponse.json(
+    { success: false, error: 'Sin permisos suficientes' },
+    { status: 403 }
+  )
+}
+
+/**
  * Valida que un operador tenga permiso de facturación.
  * Si no tiene, devuelve una respuesta de error.
  */

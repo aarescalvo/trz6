@@ -5,8 +5,6 @@ import { checkRateLimit, generateRateLimitKey, RATE_LIMIT_CONFIGS, type RateLimi
 // Rutas públicas que no requieren autenticación
 const PUBLIC_ROUTES = [
   '/api/auth',
-  '/api/seed',
-  '/api/migrar-usuarios',
   '/api/sistema/status',
 ]
 

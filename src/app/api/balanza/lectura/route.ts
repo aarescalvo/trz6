@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { checkPermission } from '@/lib/auth-helpers'
+import { checkAnyPermission } from '@/lib/auth-helpers'
+
+// Permisos válidos para leer la balanza (usada por múltiples módulos operativos)
+const BALANZA_PERMISOS = [
+  'puedePesajeIndividual',
+  'puedeRomaneo',
+  'puedeCuarteo',
+  'puedeEmpaque',
+  'puedeDesposte',
+] as const
 
 // Simulador de peso para testing
 function simularPeso() {
@@ -18,7 +27,7 @@ function simularPeso() {
 
 // GET - Lectura de peso en tiempo real
 export async function GET(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedePesajeIndividual')
+  const authError = await checkAnyPermission(request, [...BALANZA_PERMISOS])
   if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
