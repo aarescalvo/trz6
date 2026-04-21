@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Devolver el PDF como respuesta
-    return new NextResponse(pdfBuffer as any, {
+    return new NextResponse(pdfBuffer as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

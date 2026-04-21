@@ -40,19 +40,20 @@ export class PuenteWebService {
     if (this.config) return this.config;
 
     // Load from database
-    const configAFIP = await db.configuracionAFIP?.findFirst() as any;
-    const configSIGICA = await db.configuracionSIGICA?.findFirst() as any;
+    const configAFIP = await db.configuracionAFIP?.findFirst();
+    const configSIGICA = await db.configuracionSIGICA?.findFirst();
 
     this.config = {
       afip: {
-        habilitado: configAFIP?.habilitado ?? false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        habilitado: (configAFIP as any)?.habilitado ?? false,
         cuit: configAFIP?.cuit ?? '',
         razonSocial: configAFIP?.razonSocial ?? '',
-        puntoVenta: configAFIP?.puntoVenta ?? 1,
+        puntoVenta: (configAFIP as any)?.puntoVenta ?? 1,
         inicioActividades: configAFIP?.inicioActividades ?? new Date(),
-        certificado: configAFIP?.certificado ?? '',
-        clavePrivada: configAFIP?.clavePrivada ?? '',
-        modoTest: configAFIP?.modoTest ?? true,
+        certificado: (configAFIP as any)?.certificado ?? '',
+        clavePrivada: (configAFIP as any)?.clavePrivada ?? '',
+        modoTest: (configAFIP as any)?.modoTest ?? true,
       },
       sigica: {
         habilitado: configSIGICA?.habilitado ?? false,

@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { BalanzaConfigButton } from '@/components/balanza-config-button'
 
 const DIENTES = ['0', '2', '4', '6', '8']
 const SIGLAS = ['A', 'T', 'D']
@@ -931,6 +932,7 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
 
   return (
     <div className="h-screen bg-gradient-to-br from-stone-50 to-stone-100 flex flex-col overflow-hidden">
+      <BalanzaConfigButton />
       {/* Header fijo */}
       <div className="flex-shrink-0 p-2 pb-0.5">
         <div className="flex items-center justify-between">

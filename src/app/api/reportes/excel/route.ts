@@ -53,7 +53,7 @@ async function exportarConPlantilla(codigo: string, datos: Record<string, any>) 
   // Decodificar archivo base64
   const buffer = Buffer.from(plantilla.archivoContenido, 'base64')
   const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.load(buffer as any)
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer)
   
   // Obtener hoja de datos
   const worksheet = workbook.getWorksheet(plantilla.hojaDatos || 'Datos') || workbook.worksheets[0]

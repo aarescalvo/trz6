@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
     let resultado = stockItems;
     if (bajoMinimo === 'true') {
       resultado = stockItems.filter(item => {
-        const minimo = item.cantidadMinima ?? (item as any).insumo?.stockMinimo;
-        return minimo !== null && item.cantidad < minimo;
+        const minimo = item.cantidadMinima ?? (item.insumo as Record<string, unknown> | null)?.stockMinimo;
+        return minimo != null && item.cantidad < Number(minimo);
       });
     }
 

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         balanza: true,
         impresora: true
       },
-      orderBy: { nombre: 'asc' as any }
+      orderBy: { nombre: 'asc' as const }
     })
     
     return NextResponse.json({ success: true, data: terminales })

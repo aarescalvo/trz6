@@ -413,7 +413,7 @@ export function EditorDragDrop({ rotulo, onChange, onSave, guardando }: Props) {
               fontWeight: elemento.negrita ? 'bold' : 'normal',
               fontStyle: elemento.cursiva ? 'italic' : 'normal',
               textDecoration: elemento.subrayado ? 'underline' : 'none',
-              textAlign: (elemento.alineacion || 'izquierda') as any,
+              textAlign: (elemento.alineacion || 'izquierda') as React.CSSProperties['textAlign'],
               color: elemento.colorTexto || rotulo.colorTexto,
               padding: '2px 4px',
               whiteSpace: 'pre-wrap',
@@ -437,7 +437,7 @@ export function EditorDragDrop({ rotulo, onChange, onSave, guardando }: Props) {
               fontWeight: elemento.negrita ? 'bold' : 'normal',
               fontStyle: elemento.cursiva ? 'italic' : 'normal',
               textDecoration: elemento.subrayado ? 'underline' : 'none',
-              textAlign: (elemento.alineacion || 'izquierda') as any,
+              textAlign: (elemento.alineacion || 'izquierda') as React.CSSProperties['textAlign'],
               color: elemento.colorTexto || rotulo.colorTexto,
               padding: '2px 4px',
               whiteSpace: 'pre-wrap',
@@ -1080,10 +1080,10 @@ export function EditorDragDrop({ rotulo, onChange, onSave, guardando }: Props) {
                 <Label className="text-xs mb-2 block">Elementos ({rotulo.elementos.length})</Label>
                 <ScrollArea className="h-48">
                   <div className="space-y-1">
-                    {rotulo.elementos.map((el, i) => (
+                    {(rotulo.elementos as ElementoRotulo[]).map((el: ElementoRotulo, i) => (
                       <div
                         key={el.id}
-                        className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-stone-100 ${(elementoSeleccionado as any)?.id === el.id ? 'bg-amber-50' : ''}`}
+                        className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-stone-100 ${elementoSeleccionado ? 'selected' : ''}`}
                         onClick={() => setElementoSeleccionado(el)}
                       >
                         <div className="flex items-center gap-2">

@@ -134,7 +134,7 @@ export function ReporteFaena() {
     try {
       const archivo = await exportReport({
         tipo: 'faena',
-        datos: datos as any,
+        datos: datos as unknown as Array<Record<string, unknown>>,
         resumen,
         fechaDesde,
         fechaHasta

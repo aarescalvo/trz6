@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { CondicionIva } from '@prisma/client'
 import { checkPermission } from '@/lib/auth-helpers'
 import { createLogger } from '@/lib/logger'
 const log = createLogger('app.api.facturacion.despacho.route')
+
+interface DetalleFacturaInput {
+  tipoServicioId?: string
+  tipoProducto: string
+  descripcion: string
+  cantidad: number
+  unidad: string
+  precioUnitario: number
+  subtotal: number
+  despachoId?: string
+}
 
 // POST - Crear factura desde despacho
 export async function POST(request: NextRequest) {
@@ -48,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Agrupar items por usuario/cliente
-    const itemsPorUsuario: Record<string, any[]> = {}
+    const itemsPorUsuario: Record<string, typeof despacho.items[0][]> = {}
     
     for (const item of despacho.items) {
       const usuarioId = item.usuarioId || item.mediaRes?.usuarioFaenaId
@@ -68,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear una factura por cada usuario
-    const facturasCreadas: any[] = []
+    const facturasCreadas: Awaited<ReturnType<typeof db.factura.create>>[] = []
 
     for (const [usuarioId, items] of Object.entries(itemsPorUsuario)) {
       // Obtener datos del cliente
@@ -127,7 +139,7 @@ export async function POST(request: NextRequest) {
       const numero = String(numerador.ultimoNumero).padStart(8, '0')
 
       // Crear detalles de factura
-      const detalles: any[] = []
+      const detalles: DetalleFacturaInput[] = []
       let subtotal = 0
 
       // Detalle de faena por kg
@@ -165,7 +177,7 @@ export async function POST(request: NextRequest) {
           clienteId: usuarioId,
           clienteNombre: cliente.razonSocial || cliente.nombre,
           clienteCuit: cliente.cuit,
-          clienteCondicionIva: cliente.condicionIva as any,
+          clienteCondicionIva: cliente.condicionIva as CondicionIva | null,
           clienteDireccion: cliente.direccion,
           fecha: new Date(),
           subtotal,
@@ -179,6 +191,7 @@ export async function POST(request: NextRequest) {
           despachoId,
           operadorId,
           detalles: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             create: detalles as any
           }
         },
@@ -188,7 +201,7 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      facturasCreadas.push(factura as any)
+      facturasCreadas.push(factura)
     }
 
     return NextResponse.json({

@@ -379,7 +379,7 @@ export async function POST(request: NextRequest) {
     const facturaActualizada = await db.factura.update({
       where: { id: facturaId },
       data: {
-        tipoComprobante: tipoComprobante as any,
+        tipoComprobante: tipoComprobante as unknown as import('@prisma/client').TipoComprobante,
         numeroComprobante: numeroComprobanteStr,
         cae,
         fechaVencimientoCAE,

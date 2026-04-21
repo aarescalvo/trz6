@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { TextoEditable } from '@/components/ui/editable-screen'
+import { BalanzaConfigButton } from '@/components/balanza-config-button'
 
 // Importar componentes modularizados
 import { TipoAnimalCounterGrid } from './pesaje-camiones/TipoAnimalCounterGrid'
@@ -623,6 +624,8 @@ export function PesajeCamionesModule({ operador, onTropaCreada }: { operador: Op
             </Badge>
           </div>
         </div>
+
+        <BalanzaConfigButton />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">

@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     // Buscar la media res y su información relacionada
     // MediaRes has: romaneo, camara, usuarioFaena relations
     // No fechaFaena, no fechaVencimiento
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mediaRes: any = null
     if (mediaResId) {
       mediaRes = await db.mediaRes.findUnique({
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar movimientos de cámara relacionados
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const movimientos = await db.movimientoCamara.findMany({
       where: {
         OR: [
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
         camaraDestino: true
       },
       orderBy: { fecha: 'asc' }
-    }) as any[]
+    }) as Array<Record<string, unknown>>
 
     // Buscar despachos
     const despachoItems = await db.despachoItem.findMany({
@@ -79,10 +81,10 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    }) as any[]
+    }) as Array<Record<string, unknown>>
 
     // Crear PDF
-    const doc = new jsPDF() as any
+    const doc = new jsPDF() as jsPDF & { lastAutoTable: { finalY: number } }
     const pageWidth = doc.internal.pageSize.getWidth()
     
     // Título
@@ -129,7 +131,7 @@ export async function POST(request: NextRequest) {
       margin: { left: 15, right: 15 }
     })
 
-    yPos = (doc as any).lastAutoTable.finalY + 10
+    yPos = doc.lastAutoTable.finalY + 10
 
     // ==================== DATOS DEL ROMANEO ====================
     if (mediaRes.romaneo) {
@@ -168,7 +170,7 @@ export async function POST(request: NextRequest) {
         margin: { left: 15, right: 15 }
       })
 
-      yPos = (doc as any).lastAutoTable.finalY + 10
+      yPos = doc.lastAutoTable.finalY + 10
     }
 
     // ==================== MOVIMIENTOS DE CÁMARA ====================
@@ -179,11 +181,11 @@ export async function POST(request: NextRequest) {
       yPos += 8
 
       const movimientosData = movimientos.map(m => [
-        new Date(m.fecha).toLocaleDateString('es-AR'),
-        m.camaraOrigen?.nombre || '-',
-        m.camaraDestino?.nombre || '-',
+        new Date(m.fecha as string | Date).toLocaleDateString('es-AR'),
+        (m.camaraOrigen as Record<string, unknown> | undefined)?.nombre || '-',
+        (m.camaraDestino as Record<string, unknown> | undefined)?.nombre || '-',
         m.producto || '-',
-        m.peso ? `${m.peso.toFixed(1)} kg` : '-',
+        m.peso ? `${Number(m.peso).toFixed(1)} kg` : '-',
         m.observaciones || '-'
       ])
 
@@ -196,7 +198,7 @@ export async function POST(request: NextRequest) {
         margin: { left: 15, right: 15 }
       })
 
-      yPos = (doc as any).lastAutoTable.finalY + 10
+      yPos = doc.lastAutoTable.finalY + 10
     }
 
     // ==================== DESPACHOS ====================
@@ -206,11 +208,12 @@ export async function POST(request: NextRequest) {
       doc.text('DESPACHOS', 15, yPos)
       yPos += 8
 
-      const despachosData = despachoItems.map(d => [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const despachosData = despachoItems.map((d: any) => [
         d.despacho?.numero?.toString() || '-',
         d.despacho?.cliente?.nombre || '-',
-        d.despacho?.fecha ? new Date(d.despacho.fecha).toLocaleDateString('es-AR') : '-',
-        `${d.peso.toFixed(1)} kg`,
+        d.despacho?.fecha ? new Date(d.despacho.fecha as string | Date).toLocaleDateString('es-AR') : '-',
+        `${Number(d.peso).toFixed(1)} kg`,
         d.despacho?.estado || '-'
       ])
 
@@ -264,7 +267,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    const where: any = {}
+    const where: { OR?: Array<{ codigo: { contains: string; mode: 'insensitive' } }> } = {}
     
     if (search) {
       where.OR = [

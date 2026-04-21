@@ -58,7 +58,7 @@ interface EditableLayoutProps {
     botones?: BotonConfig[]
     editMode: boolean
     moveBloque: (id: string, direction: 'up' | 'down') => void
-    getBloqueProps: (id: string) => any
+    getBloqueProps: (id: string) => { tamano: string; visible: boolean; orden: number; props: Record<string, unknown> }
   }) => React.ReactNode
 }
 
@@ -117,7 +117,7 @@ export function EditableLayout({
             const bloquesGuardados = layoutData.bloques.items
             setBloques(prev => 
               prev.map(b => {
-                const guardado = bloquesGuardados.find((g: any) => g.id === b.id)
+                const guardado = bloquesGuardados.find((g: { id: string }) => g.id === b.id)
                 return guardado ? { ...b, ...guardado } : b
               }).sort((a, b) => a.orden - b.orden)
             )
@@ -392,7 +392,7 @@ export function EditableLayout({
                     {/* Tamaño */}
                     <Select
                       value={bloque.tamano}
-                      onValueChange={(v) => updateBloque(bloque.id, { tamano: v as any })}
+                      onValueChange={(v) => updateBloque(bloque.id, { tamano: v as BloqueConfig['tamano'] })}
                     >
                       <SelectTrigger className="w-24 h-8">
                         <SelectValue />
@@ -466,7 +466,7 @@ export function EditableLayout({
                       {/* Tamaño */}
                       <Select
                         value={boton.tamano}
-                        onValueChange={(v) => updateBoton(boton.id, { tamano: v as any })}
+                        onValueChange={(v) => updateBoton(boton.id, { tamano: v as BotonConfig['tamano'] })}
                       >
                         <SelectTrigger className="w-24 h-8">
                           <SelectValue />

@@ -445,7 +445,7 @@ export function ConfigImpresorasModule({ operador }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Marca</Label>
-                <Select value={formData.marca} onValueChange={(v) => setFormData({...formData, marca: v as any, modelo: ''})}>
+                <Select value={formData.marca} onValueChange={(v) => setFormData({...formData, marca: v as Impresora['marca'], modelo: ''})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {MARCAS.map(m => <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>)}
@@ -465,7 +465,7 @@ export function ConfigImpresorasModule({ operador }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select value={formData.tipo} onValueChange={(v) => setFormData({...formData, tipo: v as any})}>
+                <Select value={formData.tipo} onValueChange={(v) => setFormData({...formData, tipo: v as Impresora['tipo']})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ETIQUETA">Etiqueta</SelectItem>

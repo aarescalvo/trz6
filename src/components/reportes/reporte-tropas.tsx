@@ -95,7 +95,7 @@ export function ReporteTropas() {
     try {
       const archivo = await exportReport({
         tipo: 'tropas',
-        datos: datos as any,
+        datos: datos as unknown as Record<string, unknown>[],
         resumen,
         fechaDesde,
         fechaHasta

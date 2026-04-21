@@ -222,6 +222,7 @@ export async function GET(request: NextRequest) {
       }
     } else if (codigoBarras) {
       // Buscar por código de barras (media res)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mediaRes = await db.mediaRes.findFirst({
         where: {
           codigo: { contains: codigoBarras }
@@ -229,13 +230,22 @@ export async function GET(request: NextRequest) {
         include: {
           romaneo: {
             include: {
-            } as any,
-          },
+              tipificador: true,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              listaFaena: {
+                include: {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  tropas: { include: { tropa: { select: { id: true } } } } as any
+                }
+              } as any
+            },
+          } as any,
         }
       })
       
       // Obtener la tropa del romaneo
-      const romaneoData = (mediaRes as any)?.romaneo as { listaFaena?: { tropas?: Array<{ tropa: { id: string } }> } } | null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const romaneoData = mediaRes?.romaneo as any
       const tropaId = romaneoData?.listaFaena?.tropas?.[0]?.tropa?.id
       if (tropaId) {
         tropaEncontrada = await db.tropa.findUnique({
@@ -437,7 +447,11 @@ async function construirTrazabilidad(tropa: Record<string, unknown>): Promise<Tr
   })
   
   if (listaFaenaTropas.length > 0) {
-    const lf = (listaFaenaTropas[0] as any).listaFaena
+    const lfTropa = listaFaenaTropas[0]
+    const lf = (await db.listaFaena.findUnique({
+      where: { id: lfTropa.listaFaenaId },
+      include: { tropas: true }
+    }))!
     listaFaena = {
       numero: lf.numero,
       fecha: lf.fecha,

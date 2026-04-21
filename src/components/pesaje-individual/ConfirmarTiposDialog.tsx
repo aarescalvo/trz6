@@ -96,7 +96,7 @@ function ConfirmarTiposDialogContent({ tropa, onConfirm, loading, onClose }: {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-stone-500">DTE:</span>
-            <span className="font-mono">{(tropa as any)?.dte || '-'}</span>
+            <span className="font-mono">{(tropa as unknown as { dte?: string })?.dte || '-'}</span>
           </div>
         </div>
 

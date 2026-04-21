@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         D: cuartos.filter(c => c.sigla === 'D').reduce((acc, c) => acc + c.peso, 0),
         T: cuartos.filter(c => c.sigla === 'T').reduce((acc, c) => acc + c.peso, 0)
       },
-      alertasVencimiento: [] as any[]
+      alertasVencimiento: [] as { tipo: string; tropaCodigo: string; dias: number }[]
     }
 
     // Agrupar por cámara

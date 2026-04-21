@@ -77,12 +77,12 @@ export class LiquidacionService {
   /**
    * Agregar/quitar conceptos adicionales al borrador
    */
-  async actualizarItems(liquidacionId: string, items: any[]) {
+  async actualizarItems(liquidacionId: string, items: Array<Record<string, unknown>>) {
     const liq = await liquidacionRepository.findById(liquidacionId)
     if (!liq) throw new Error('Liquidación no encontrada')
     if (liq.estado !== 'BORRADOR') throw new Error('Solo se pueden editar borradores')
     
-    return liquidacionRepository.updateItems(liquidacionId, items)
+    return liquidacionRepository.updateItems(liquidacionId, items as any)
   }
   
   /**

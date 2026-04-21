@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils'
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Progress } from '@/components/ui/progress'
+import { BalanzaConfigButton } from '@/components/balanza-config-button'
 
 const TIPOS_ANIMALES: Record<string, { codigo: string; label: string }[]> = {
   BOVINO: [
@@ -1328,6 +1329,7 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
 
   return (
     <div className={`h-screen bg-stone-100 flex flex-col overflow-hidden ${productionMode ? '' : ''}`}>
+      <BalanzaConfigButton />
       {/* PI3: Enhanced flash feedback overlay with checkmark */}
       {flashFeedback && (
         <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">

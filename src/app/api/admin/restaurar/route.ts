@@ -173,7 +173,8 @@ export async function GET(request: NextRequest) {
         valid = content.includes('-- Backup') || content.includes('CREATE TABLE') || content.includes('INSERT INTO')
       } else if (fileName.endsWith('.zip')) {
         // Verificar que es un ZIP válido
-        const header = Buffer.from(fs.readFileSync(filePath, { encoding: null, flag: 'r' } as any).slice(0, 4) as any) as Buffer
+        const raw = fs.readFileSync(filePath, { encoding: null, flag: 'r' }) as unknown as Buffer
+        const header = Buffer.from(raw.slice(0, 4))
         valid = header[0] === 0x50 && header[1] === 0x4B // PK signature
       }
     } catch {

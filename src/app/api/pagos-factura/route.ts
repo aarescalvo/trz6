@@ -15,15 +15,15 @@ export async function GET(request: NextRequest) {
     const desde = searchParams.get('desde')
     const hasta = searchParams.get('hasta')
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (facturaId) where.facturaId = facturaId
     if (metodoPago) where.metodoPago = metodoPago
     
     if (desde || hasta) {
-      where.fecha = {}
-      if (desde) where.fecha.gte = new Date(desde)
-      if (hasta) where.fecha.lte = new Date(hasta + 'T23:59:59')
+      (where as Record<string, unknown>).fecha = {}
+      if (desde) (where as Record<string, { gte?: Date; lte?: Date }>).fecha.gte = new Date(desde)
+      if (hasta) (where as Record<string, { gte?: Date; lte?: Date }>).fecha.lte = new Date(hasta + 'T23:59:59')
     }
 
     // Si se busca por cliente, hay que join con factura

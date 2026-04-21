@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -46,10 +47,10 @@ export async function GET(request: NextRequest) {
 
     // Obtener romaneos de la tropa
     const romaneos = await db.romaneo.findMany({
-      where: { 
+      where: {
         tropaCodigo: tropa.codigo,
         estado: 'CONFIRMADO'
-      } as any,
+      } as Prisma.RomaneoWhereInput,
       include: {
         tipificador: true,
         mediasRes: true
@@ -203,8 +204,8 @@ export async function GET(request: NextRequest) {
         romaneo.garron.toString(),
         (romaneo.numeroAnimal || 0).toString(),
         formatRaza(romaneo.raza),
-        formatTipoDenticion(romaneo.denticion as any, (romaneo as any).categoria),
-        (romaneo as any).caravana || '',
+        formatTipoDenticion((romaneo.denticion ?? null) as unknown as number | null, (romaneo as typeof romaneo & { categoria?: string | null }).categoria ?? null),
+        (romaneo as typeof romaneo & { caravana?: string | null }).caravana || '',
         pesoEntrada.toFixed(0),
         kgMediaA.toFixed(0),
         kgMediaB.toFixed(0),

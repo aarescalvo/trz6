@@ -29,7 +29,7 @@ export function generateBarcodeSVG(code: string, options: BarcodeOptions = {}): 
   try {
     // Create a mock canvas for server-side rendering
     const canvas = createCanvas(400, 150);
-    JsBarcode(canvas as any, code, {
+    JsBarcode(canvas as unknown as HTMLCanvasElement, code, {
       format: opts.format,
       width: opts.width,
       height: opts.height,
@@ -38,7 +38,8 @@ export function generateBarcodeSVG(code: string, options: BarcodeOptions = {}): 
       margin: opts.margin,
     });
     
-    return canvas.toBuffer('image/svg+xml' as any).toString('utf-8');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (canvas as any).toBuffer('image/svg+xml').toString('utf-8');
   } catch (error) {
     throw new Error(`Error generando código de barras: ${error}`);
   }
@@ -52,7 +53,7 @@ export function generateBarcodeDataURL(code: string, options: BarcodeOptions = {
   
   try {
     const canvas = createCanvas(400, 150);
-    JsBarcode(canvas as any, code, {
+    JsBarcode(canvas as unknown as HTMLCanvasElement, code, {
       format: opts.format,
       width: opts.width,
       height: opts.height,
@@ -75,7 +76,7 @@ export function generateBarcodePNG(code: string, options: BarcodeOptions = {}): 
   
   try {
     const canvas = createCanvas(400, 150);
-    JsBarcode(canvas as any, code, {
+    JsBarcode(canvas as unknown as HTMLCanvasElement, code, {
       format: opts.format,
       width: opts.width,
       height: opts.height,

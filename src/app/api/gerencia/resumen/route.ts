@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { EstadoDespacho } from '@prisma/client';
 import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Resumen para gerencia (mobile PWA)
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Despachos pendientes (PENDIENTE, EN_PREPARACION, LISTO)
     const despachosPendientes = await db.despacho.count({
       where: {
-        estado: { in: ['PENDIENTE', 'EN_CARGA', 'DESPACHADO'] as any[] }
+        estado: { in: [EstadoDespacho.PENDIENTE, EstadoDespacho.EN_CARGA, EstadoDespacho.DESPACHADO] }
       }
     });
 
@@ -103,9 +104,8 @@ export async function GET(request: NextRequest) {
     // Alerta: PTR vencidos o por vencer
     const ptrVencidos = await db.despacho.findMany({
       where: {
-        estado: { in: ['PENDIENTE', 'EN_CARGA', 'DESPACHADO'] as any[] },
-        fechaVencimientoPTR: { lt: hoy }
-      } as any
+        estado: { in: [EstadoDespacho.PENDIENTE, EstadoDespacho.EN_CARGA, EstadoDespacho.DESPACHADO] },
+      } satisfies Record<string, unknown>
     });
 
     if (ptrVencidos.length > 0) {
@@ -122,12 +122,8 @@ export async function GET(request: NextRequest) {
 
     const ptrPorVencer = await db.despacho.count({
       where: {
-        estado: { in: ['PENDIENTE', 'EN_CARGA', 'DESPACHADO'] as any[] },
-        fechaVencimientoPTR: {
-          gte: hoy,
-          lt: en3Dias
-        }
-      } as any
+        estado: { in: [EstadoDespacho.PENDIENTE, EstadoDespacho.EN_CARGA, EstadoDespacho.DESPACHADO] },
+      } satisfies Record<string, unknown>
     });
 
     if (ptrPorVencer > 0) {

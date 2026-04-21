@@ -26,13 +26,13 @@ export class TarifasService {
     }
     
     // Prioridad de resolución (más específico primero)
-    const prioridades = [
-      (t: any) => t.clienteId === clienteId && t.especie === especie && t.categoria === categoria,
-      (t: any) => t.clienteId === clienteId && t.especie === especie && !t.categoria,
-      (t: any) => t.clienteId === clienteId && !t.especie,
-      (t: any) => !t.clienteId && t.especie === especie && t.categoria === categoria,
-      (t: any) => !t.clienteId && t.especie === especie && !t.categoria,
-      (t: any) => !t.clienteId && !t.especie,
+    const prioridades: Array<(t: { clienteId: string | null; especie: string | null; categoria: string | null }) => boolean> = [
+      (t) => t.clienteId === clienteId && t.especie === especie && t.categoria === categoria,
+      (t) => t.clienteId === clienteId && t.especie === especie && !t.categoria,
+      (t) => t.clienteId === clienteId && !t.especie,
+      (t) => !t.clienteId && t.especie === especie && t.categoria === categoria,
+      (t) => !t.clienteId && t.especie === especie && !t.categoria,
+      (t) => !t.clienteId && !t.especie,
     ]
     
     for (const prioridad of prioridades) {

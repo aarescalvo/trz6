@@ -85,7 +85,7 @@ export function ReporteRendimiento() {
     try {
       const archivo = await exportReport({
         tipo: 'rendimiento',
-        datos: datos as any,
+        datos: datos as unknown as Record<string, unknown>[],
         resumen,
         fechaDesde,
         fechaHasta

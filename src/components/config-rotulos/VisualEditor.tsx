@@ -211,7 +211,7 @@ export function VisualEditor({
                 variant="outline"
                 size="sm"
                 className="justify-start text-xs"
-                onClick={() => agregarElemento(t.tipo as any)}
+                onClick={() => agregarElemento(t.tipo as RotuloElement['tipo'])}
               >
                 <t.icon className={`w-3 h-3 mr-1 ${t.color} text-white p-0.5 rounded`} />
                 {t.nombre}

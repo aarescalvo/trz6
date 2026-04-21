@@ -12,7 +12,18 @@ export async function GET(request: NextRequest) {
     if (authError) return authError
 
     const hoy = new Date()
-    const items: any[] = []
+    const items: Array<{
+      id: string
+      tipo: string
+      codigo: string
+      producto: string
+      peso: number
+      fechaIngreso: string
+      fechaVencimiento: string
+      diasRestantes: number
+      camara?: string
+      prioridad: 'CRITICA' | 'ALTA' | 'MEDIA' | 'BAJA'
+    }> = []
 
     // Medias de res en cámara
     const medias = await db.mediaRes.findMany({
@@ -22,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     for (const media of medias) {
       // Calcular días en cámara
-      const ingresoDate = (media as any).ingresoCamaraAt || media.createdAt
+      const ingresoDate = media.createdAt
       const diasEnCamara = Math.floor((hoy.getTime() - new Date(ingresoDate).getTime()) / (1000 * 60 * 60 * 24))
       // Vencimiento estimado: 30 días desde ingreso a cámara (configurable)
       const diasVencimiento = 30
@@ -39,8 +50,8 @@ export async function GET(request: NextRequest) {
       items.push({
         id: media.id,
         tipo: 'MEDIA_RES',
-        codigo: (media as any).codigoBarra || media.id.slice(0, 8),
-        producto: `Media Res ${media.lado || ''} - ${(media as any).especie || 'Bovino'}`,
+        codigo: media.codigo || media.id.slice(0, 8),
+        producto: `Media Res ${media.lado || ''} - Bovino`,
         peso: media.peso || 0,
         fechaIngreso: ingresoDate instanceof Date ? ingresoDate.toISOString() : new Date(ingresoDate).toISOString(),
         fechaVencimiento: fechaVencimiento.toISOString(),
@@ -52,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Cajas de empaque disponibles
     const cajas = await db.cajaEmpaque.findMany({
-      where: { estado: 'ARMADA' as any },
+      where: { estado: 'ARMADA' },
       include: { producto: { select: { nombre: true } } }
     })
 
@@ -74,7 +85,7 @@ export async function GET(request: NextRequest) {
         id: caja.id,
         tipo: 'CAJA',
         codigo: caja.codigoBarras || caja.id.slice(0, 8),
-        producto: (caja as any).producto?.nombre || 'Caja Empaque',
+        producto: caja.producto?.nombre || 'Caja Empaque',
         peso: caja.pesoNeto || 0,
         fechaIngreso: caja.createdAt.toISOString(),
         fechaVencimiento: fechaVencimiento.toISOString(),

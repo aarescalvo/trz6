@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
 
     const config = await db.configuracionFrigorifico.findFirst()
 
-    const PdfPrinter = ((await import('pdfmake')).default || (await import('pdfmake'))) as any
+    // @ts-expect-error pdfmake/src/printer types not available
+    const PdfPrinter = ((await import('pdfmake')).default || (await import('pdfmake'))) as unknown as typeof import('pdfmake/src/printer')
     const printer = new PdfPrinter(fonts)
 
     const docDefinition = generarNotaPDF(nota, config)

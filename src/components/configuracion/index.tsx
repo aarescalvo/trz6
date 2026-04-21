@@ -222,10 +222,10 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
             <Clientes operador={operador} />
           </TabsContent>
           <TabsContent value="tiposServicio">
-            <TiposServicioConfig operador={{ ...operador, rol: (operador as any).rol || 'ADMINISTRADOR' } } />
+            <TiposServicioConfig operador={{ ...operador, rol: ('rol' in operador ? operador.rol : 'ADMINISTRADOR') as string } } />
           </TabsContent>
           <TabsContent value="preciosServicio">
-            <PreciosServicioConfig operador={{ ...operador, rol: (operador as any).rol || 'ADMINISTRADOR' } } />
+            <PreciosServicioConfig operador={{ ...operador, rol: ('rol' in operador ? operador.rol : 'ADMINISTRADOR') as string } } />
           </TabsContent>
           <TabsContent value="transportistas">
             <Transportistas operador={operador} />

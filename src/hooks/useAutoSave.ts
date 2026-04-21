@@ -80,7 +80,7 @@ export function useAutoSave({
   // Guardar manualmente (útil para guardar antes de navegar)
   const saveNow = useCallback(async () => {
     const result = await executeSave()
-    const success = typeof result === 'boolean' ? result : (result as any)?.success
+    const success = typeof result === 'boolean' ? result : ((result as unknown) as { success?: boolean })?.success
     if (success) {
       toast.success(`Borrador de ${moduleName} guardado`)
     } else {

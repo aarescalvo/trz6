@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.ProductoVendibleWhereInput = {}
 
     if (categoria) {
-      where.categoria = categoria as any
+      where.categoria = categoria
     }
 
     if (activo !== null && activo !== undefined) {

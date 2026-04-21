@@ -203,7 +203,7 @@ export async function PUT(request: NextRequest) {
     
     const pesaje = await db.pesajeInterno.update({
       where: { id: existente.id },
-      data: updateData as any
+      data: updateData as Record<string, unknown>
     })
     
     return NextResponse.json({

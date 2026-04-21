@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     if (tipoProducto) where.tipoProducto = tipoProducto as 'MEDIA_RES' | 'CUARTO_DELANTERO' | 'CUARTO_TRASERO' | 'MENUDENCIA' | 'OTRO'
 
     const historico = await db.historicoPrecio.findMany({
-      where: where as any,
+      where: where as Prisma.HistoricoPrecioWhereInput,
       orderBy: { fechaVigencia: 'desc' },
       take: 50
     })
@@ -54,10 +55,10 @@ export async function POST(request: NextRequest) {
       data: {
         clienteId,
         tipoProducto,
-        precio,
+        precioNuevo: precio,
         observaciones,
         registradoPor
-      } as any
+      } as unknown as Prisma.HistoricoPrecioCreateInput
     })
 
     return NextResponse.json({

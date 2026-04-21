@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     }
 
     const feRequest = {
-      tipoComprobante,
+      tipoComprobante: Number(tipoComprobante),
       puntoVenta: config.puntoVenta,
       fecha: fechaFormateada,
       concepto: CONCEPTO.PRODUCTO,
@@ -151,7 +151,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Solicitar CAE a AFIP
-    const resultado = await FECAESolicitar(feRequest as any, config)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resultado = await FECAESolicitar(feRequest, config)
 
     if (!resultado.success) {
       return NextResponse.json({

@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         contenido: contenidoZPL,
         variables: JSON.stringify(variablesDetectadas),
         nombreArchivo: file.name,
-        elementos: '[]' as any, // Vacío para plantillas ZPL
+        elementos: JSON.stringify([]) as any, // Vacío para plantillas ZPL
         diasConsumo,
         activo: true,
         esDefault: false

@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      animal = animalesDisponibles[0] as any
+      animal = animalesDisponibles[0]
     }
 
     // Create assignment

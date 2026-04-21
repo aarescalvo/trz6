@@ -159,9 +159,9 @@ export class LiquidacionRepository {
     }
     
     // Recalculate totals
-    const subtotalNeto = createdItems.filter((i: any) => !(i as any).esDescuento).reduce((s: number, i: any) => s + (i as any).subtotal, 0)
-    const descuentos = createdItems.filter((i: any) => (i as any).esDescuento).reduce((s: number, i: any) => s + (i as any).subtotal, 0)
-    const totalIVA = createdItems.filter((i: any) => !(i as any).esDescuento).reduce((s: number, i: any) => s + (i as any).importeIVA, 0)
+    const subtotalNeto = createdItems.filter((i) => !i.esDescuento).reduce((s, i) => s + i.subtotal, 0)
+    const descuentos = createdItems.filter((i) => i.esDescuento).reduce((s, i) => s + i.subtotal, 0)
+    const totalIVA = createdItems.filter((i) => !i.esDescuento).reduce((s, i) => s + i.importeIVA, 0)
     const totalFinal = subtotalNeto - descuentos + totalIVA
     
     return db.liquidacionFaena.update({

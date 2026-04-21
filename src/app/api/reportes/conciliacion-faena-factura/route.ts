@@ -13,15 +13,16 @@ export async function GET(request: NextRequest) {
     const tropaCodigo = searchParams.get('tropaCodigo')
 
     // Build where clause for ListasFaena
-    const listaFaenaWhere: any = {}
+    const listaFaenaWhere: Record<string, unknown> = {}
     if (fechaDesde || fechaHasta) {
-      listaFaenaWhere.fecha = {}
-      if (fechaDesde) listaFaenaWhere.fecha.gte = new Date(fechaDesde)
+      const fechaFilter: Record<string, unknown> = {}
+      if (fechaDesde) fechaFilter.gte = new Date(fechaDesde)
       if (fechaHasta) {
         const hasta = new Date(fechaHasta)
         hasta.setHours(23, 59, 59, 999)
-        listaFaenaWhere.fecha.lte = hasta
+        fechaFilter.lte = hasta
       }
+      listaFaenaWhere.fecha = fechaFilter
     }
 
     // Find all ListasFaena in the date range
@@ -39,29 +40,32 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-      } as any,
+      } as Record<string, unknown>,
       orderBy: { fecha: 'desc' }
     })
 
     // If tropaCodigo filter is specified, filter the results
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filteredListas = tropaCodigo
-      ? listasFaena.map((lf: any) => ({
+      ? (listasFaena as any[]).map((lf: any) => ({
           ...lf,
-          tropas: (lf.tropas || []).filter((t: any) => (t.tropa?.codigo || '').toLowerCase().includes(tropaCodigo.toLowerCase()))
+          tropas: (lf.tropas || []).filter((t: any) => ((t.tropa as any)?.codigo || '').toLowerCase().includes(tropaCodigo.toLowerCase()))
         })).filter((lf: any) => (lf.tropas || []).length > 0)
       : listasFaena
 
     // Build the result array - one row per tropa
-    const result: any[] = []
+    const result: Array<Record<string, unknown>> = []
 
-    for (const lista of filteredListas) {
-      for (const listaTropa of (lista as any).tropas || []) {
-        const tropa = (listaTropa as any).tropa
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const lista of filteredListas as any[]) {
+      for (const listaTropa of lista.tropas || []) {
+        const tropa = listaTropa.tropa
 
         // Get romaneos for this tropa via asignaciones
-        const romaneosDeTropa = ((lista as any).asignaciones || [])
-          .filter(a => a.tropaCodigo === tropa.codigo)
-          .map(a => a.romaneoRef)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const romaneosDeTropa = ((lista.asignaciones || []) as any[])
+          .filter((a: any) => a.tropaCodigo === tropa.codigo)
+          .map((a: any) => a.romaneoRef)
           .filter(Boolean)
 
         // Also fetch romaneos directly by tropaCodigo
@@ -83,18 +87,21 @@ export async function GET(request: NextRequest) {
             })
 
         // Get all medias for this tropa
-        const allMedias = romaneos.flatMap((r: any) => r.mediasRes || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allMedias = (romaneos as any[]).flatMap((r: any) => r.mediasRes || [])
 
         const totalMedias = allMedias.length
-        const mediasDespachadas = allMedias.filter((m: any) => m.estado === 'DESPACHADO').length
-        const mediasEnCamara = allMedias.filter((m: any) => m.estado === 'EN_CAMARA').length
-        const mediasFacturadas = allMedias.filter((m: any) => m.facturado).length
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mediasDespachadas = (allMedias as any[]).filter((m: any) => m.estado === 'DESPACHADO').length
+        const mediasEnCamara = (allMedias as any[]).filter((m: any) => m.estado === 'EN_CAMARA').length
+        const mediasFacturadas = (allMedias as any[]).filter((m: any) => m.facturado).length
 
-        const totalKgFaenados = allMedias.reduce((sum: number, m: any) => sum + (m.peso || 0), 0)
-        const totalKgDespachados = allMedias
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const totalKgFaenados = (allMedias as any[]).reduce((sum: number, m: any) => sum + (m.peso || 0), 0)
+        const totalKgDespachados = (allMedias as any[])
           .filter((m: any) => m.estado === 'DESPACHADO')
           .reduce((sum: number, m: any) => sum + (m.peso || 0), 0)
-        const totalKgFacturados = allMedias
+        const totalKgFacturados = (allMedias as any[])
           .filter((m: any) => m.facturado)
           .reduce((sum: number, m: any) => sum + (m.peso || 0), 0)
 
@@ -131,8 +138,9 @@ export async function GET(request: NextRequest) {
           new Map(allFacturas.map((f: any) => [f.id, f])).values()
         )
 
-        const montoFacturado = uniqueFacturas.reduce((sum: number, f: any) => sum + (f.total || 0), 0)
-        const montoCobrado = uniqueFacturas
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const montoFacturado = (uniqueFacturas as any[]).reduce((sum: number, f: any) => sum + (f.total || 0), 0)
+        const montoCobrado = (uniqueFacturas as any[])
           .filter((f: any) => f.estado === 'PAGADA')
           .reduce((sum: number, f: any) => sum + (f.total || 0), 0)
 
@@ -157,7 +165,7 @@ export async function GET(request: NextRequest) {
           montoFacturado: Math.round(montoFacturado * 100) / 100,
           montoCobrado: Math.round(montoCobrado * 100) / 100,
           porcentajeCicloCerrado,
-          facturas: uniqueFacturas.map((f: any) => ({
+          facturas: (uniqueFacturas as any[]).map((f: any) => ({
             id: f.id,
             numero: f.numero,
             estado: f.estado,

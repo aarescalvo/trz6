@@ -92,7 +92,7 @@ export async function updateBackupConfig(data: Partial<BackupConfig>): Promise<B
     if (!existing) return null
 
     // Update DB fields that exist in schema
-    const dbData: any = {}
+    const dbData: Record<string, unknown> = {}
     if (data.activo !== undefined) dbData.activo = data.activo
     if (data.backupDiario !== undefined) dbData.backupDiario = data.backupDiario
     if (data.horaBackup !== undefined) dbData.horaBackup = data.horaBackup
@@ -399,7 +399,7 @@ export async function cleanupOldBackups(): Promise<{ deleted: number; freedMB: n
             where: { nombreArchivo: file.name }
           })
         } catch (deleteError) {
-          log.warn(`No se pudo eliminar backup antiguo ${file.name}`, { error: deleteError } as any)
+          log.warn(`No se pudo eliminar backup antiguo ${file.name}`, { error: deleteError } as Record<string, unknown>)
         }
       }
     }

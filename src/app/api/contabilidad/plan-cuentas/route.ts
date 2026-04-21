@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Construir árbol jerárquico
-    const cuentasMap = new Map<string, any>(cuentas.map(c => [c.id, { ...c, hijos: [] as any[] }]));
+    const cuentasMap = new Map<string, { id: string; codigo: string; nombre: string; tipo: string; imputable: boolean; activo: boolean; padreId: string | null; hijos: typeof raices }>(cuentas.map(c => [c.id, { ...c, hijos: [] }]))
     const raices: any[] = [];
 
     for (const cuenta of cuentas) {

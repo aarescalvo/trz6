@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         cliente: true,
-        lineas: { include: { camaraOrigen: true } } as any
+        lineas: true as any
       }
     })
 

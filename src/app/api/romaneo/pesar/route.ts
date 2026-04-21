@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { TipoAnimal } from '@prisma/client'
 import { checkPermission } from '@/lib/auth-helpers'
 import { createLogger } from '@/lib/logger'
 const log = createLogger('app.api.romaneo.pesar.route')
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
             garron: parseInt(garron),
             tropaCodigo: animal?.tropa?.codigo || asignacion?.tropaCodigo || null,
             numeroAnimal: animal?.numero || asignacion?.animalNumero || null,
-            tipoAnimal: (animal?.tipoAnimal || asignacion?.tipoAnimal) as any || null,
+            tipoAnimal: (animal?.tipoAnimal || asignacion?.tipoAnimal) as TipoAnimal | null || null,
             pesoVivo: animal?.pesoVivo || animal?.pesajeIndividual?.peso || asignacion?.pesoVivo || null,
             denticion: denticion || null,
             tipificadorId: validTipificadorId,

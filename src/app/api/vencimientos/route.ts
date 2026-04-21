@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Obtener medias reses por vencer/vencidas
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
     fechaAlerta.setDate(fechaAlerta.getDate() + diasAlerta)
 
     // Construir filtro
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       estado: 'EN_CAMARA' // Solo medias reses en cámara
     }
@@ -49,12 +51,13 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         fechaIngreso: 'asc'
-      } as any
+      } as Prisma.MediaResOrderByWithRelationInput
     })
 
     // Calcular días restantes para cada media res
-    const mediasConDias = mediasRes.map(mr => {
-      const fechaVenc = (mr as any).fechaVencimiento ? new Date((mr as any).fechaVencimiento) : null
+    const mediasConDias = mediasRes.map((mr) => {
+      const mrExt = mr as typeof mr & { fechaVencimiento?: Date | null }
+      const fechaVenc = mrExt.fechaVencimiento ? new Date(mrExt.fechaVencimiento) : null
       const diasRestantes = fechaVenc 
         ? Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
         : null
@@ -112,7 +115,7 @@ export async function POST(request: NextRequest) {
       where: { id: mediaResId },
       data: {
         fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null
-      } as any
+      } as Prisma.MediaResUncheckedUpdateInput
     })
 
     return NextResponse.json({

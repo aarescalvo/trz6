@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Si se proporciona código de producto, buscar por código
     let productoVendibleIdFinal = productoVendibleId
-    let producto: any = null
+    let producto: Awaited<ReturnType<typeof db.productoVendible.findUnique>> | null = null
     if (codigoProducto && !productoVendibleIdFinal) {
       producto = await db.productoVendible.findUnique({
         where: { codigo: codigoProducto }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     if (!producto) {
       producto = await db.productoVendible.findUnique({
         where: { id: productoVendibleIdFinal! }
-      }) as any
+      })
     }
 
     if (!producto) {
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: { factura: { fecha: 'desc' } }
-    }) as any
+    })
 
     if (ultimoPrecioFacturado) {
       return NextResponse.json({
@@ -137,12 +137,12 @@ export async function GET(request: NextRequest) {
     }
 
     // PRIORIDAD 4: Precio base directo del producto
-    if ((producto as any).precioBase) {
+    if (producto.precioBase) {
       return NextResponse.json({
         success: true,
         data: {
-          precio: (producto as any).precioBase,
-          moneda: (producto as any).moneda,
+          precio: producto.precioBase,
+          moneda: producto.moneda,
           fuente: 'PRECIO_BASE',
           fuenteDescripcion: 'Precio base del producto'
         }

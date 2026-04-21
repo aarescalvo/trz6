@@ -947,9 +947,9 @@ export default function FrigorificoApp() {
       case 'pesajeCamiones':
         return wrapModule('pesajeCamiones', <PesajeCamionesModule operador={operador as any} onTropaCreada={fetchTropas} />)
       case 'pesajeIndividual':
-        return wrapModule('pesajeIndividual', <PesajeIndividualModule operador={operador} />)
+        return wrapModule('pesajeIndividual', <PesajeIndividualModule operador={operador as any} />)
       case 'movimientoHacienda':
-        return wrapModule('movimientoHacienda', <MovimientoHaciendaModule operador={operador} />)
+        return wrapModule('movimientoHacienda', <MovimientoHaciendaModule operador={operador as any} />)
       case 'listaFaena':
         return wrapModule('listaFaena', <ListaFaenaModule operador={operador as any} />)
       case 'romaneo':
@@ -961,13 +961,13 @@ export default function FrigorificoApp() {
       case 'stockUnificada':
         return wrapModule('stockUnificada', <StockUnificada operador={operador as any} />)
       case 'stocksCorrales':
-        return wrapModule('stocksCorrales', <StocksCorralesModule operador={operador} />)
+        return wrapModule('stocksCorrales', <StocksCorralesModule operador={operador as any} />)
       case 'reportes':
-        return wrapModule('reportes', <ReportesModule operador={operador} />)
+        return wrapModule('reportes', <ReportesModule operador={operador as any} />)
       case 'planilla01':
-        return wrapModule('planilla01', <Planilla01Module operador={operador} />)
+        return wrapModule('planilla01', <Planilla01Module operador={operador as any} />)
       case 'rindesTropa':
-        return wrapModule('rindesTropa', <RindesTropaModule operador={operador} />)
+        return wrapModule('rindesTropa', <RindesTropaModule operador={operador as any} />)
       case 'busquedaFiltro':
         return wrapModule('busquedaFiltro', <BusquedaFiltroModule operador={operador} />)
       case 'cortesDespostada':

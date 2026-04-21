@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
 
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
           indicadorId,
           fecha: new Date(fecha)
         }
-      } as any
+      } as unknown as Prisma.ValorIndicadorWhereUniqueInput
     })
 
     if (existente) {
@@ -231,7 +232,7 @@ export async function PUT(request: NextRequest) {
               indicadorId: nuevoIndicadorId,
               fecha: nuevaFecha
             }
-          } as any
+          } as unknown as Prisma.ValorIndicadorWhereUniqueInput
         })
 
         if (existente && existente.id !== id) {

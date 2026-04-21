@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { Especie, TipoAnimal } from '@prisma/client'
+import { Especie, TipoAnimal, Prisma } from '@prisma/client'
 
 // GET - Fetch all rendimientos históricos
 import { checkPermission } from '@/lib/auth-helpers'
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           especie: especie as Especie,
           tipoAnimal: tipoAnimal as TipoAnimal
         }
-      } as any
+      } as unknown as Prisma.RendimientoHistoricoWhereUniqueInput
     })
 
     if (existente) {
@@ -218,7 +218,7 @@ export async function PUT(request: NextRequest) {
               especie: nuevaEspecie,
               tipoAnimal: nuevoTipoAnimal
             }
-          } as any
+          } as unknown as Prisma.RendimientoHistoricoWhereUniqueInput
         })
 
         if (existente && existente.id !== id) {

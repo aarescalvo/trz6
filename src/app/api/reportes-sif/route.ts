@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const desde = fechaDesde ? new Date(fechaDesde) : new Date(new Date().setHours(0, 0, 0, 0))
     const hasta = fechaHasta ? new Date(fechaHasta + 'T23:59:59') : new Date()
 
-    let data: any = {}
+    let data: Record<string, unknown> & { _meta?: { formato: string; disponibleExportacion: boolean; endpointExportacion: string } } = {}
 
     switch (tipo) {
       case 'faena-diaria': {
@@ -131,7 +131,7 @@ async function generarReporteFaenaDiaria(
       tipificador: { select: { matricula: true, nombre: true, apellido: true } }
     },
     orderBy: { fecha: 'asc' }
-  }) as any[]
+  })
 
   // Agrupar por tropa (using tropaCodigo string field)
   const porTropa = new Map<string, any>()
@@ -199,7 +199,7 @@ async function generarReporteRendimiento(
       pesoVivo: { gt: 0 }
     },
     orderBy: { fecha: 'asc' }
-  }) as any[]
+  })
 
   // Agrupar por tropa y calcular rendimientos
   const porTropa = new Map<string, any>()
@@ -279,10 +279,10 @@ async function generarReporteDesposte(
       fecha: { gte: desde, lte: hasta }
     },
     orderBy: { fecha: 'desc' }
-  }) as any[]
+  })
 
-  // Generar reporte básico con available fields
-  const detalleDesposte = despostadas.map(d => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const detalleDesposte = despostadas.map((d: any) => ({
     id: d.id,
     fecha: d.fecha,
     tropa: d.tropaCodigo || '',
@@ -387,7 +387,7 @@ async function generarReporteDecomisos(
       fecha: { gte: desde, lte: hasta }
     },
     orderBy: { fecha: 'desc' }
-  }) as any[]
+  })
 
   // Agrupar por motivo
   const porMotivo = new Map<string, { motivo: string; cantidad: number; peso: number }>()
@@ -442,7 +442,7 @@ async function generarReporteMovimientoHacienda(
       corral: { select: { nombre: true } }
     },
     orderBy: { fechaRecepcion: 'desc' }
-  }) as any[]
+  })
 
   // Agrupar por especie
   const porEspecie = new Map<string, { especie: string; cantidad: number; cabezas: number }>()
@@ -502,7 +502,7 @@ async function generarReporteExpedicion(
       operador: { select: { nombre: true } }
     },
     orderBy: { fecha: 'desc' }
-  }) as any[]
+  })
 
   return {
     titulo: 'Reporte de Expedición - SIF',

@@ -148,12 +148,12 @@ export async function POST(request: NextRequest) {
     })
 
     // Verificar alerta de rinde
-    let alertaRinde = null
+    let alertaRinde: string | null = null
     if (romaneo) {
       const pesoVivo = animal.pesoVivo || animal.pesajeIndividual?.peso || 0
       const nuevoRinde = pesoVivo > 0 ? ((romaneo.pesoTotal || 0) / pesoVivo) * 100 : 0
       if (nuevoRinde > 70) {
-        alertaRinde = `Rinde ${nuevoRinde.toFixed(1)}% supera el 70%` as any
+        alertaRinde = `Rinde ${nuevoRinde.toFixed(1)}% supera el 70%`
       }
     }
 

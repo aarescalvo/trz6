@@ -81,6 +81,7 @@ model Camara {
   stockCamara            StockCamara[]
   stockCamaraSIGICA      StockCamaraSIGICA?
   ingresosTerceroDestino IngresoTercero[]
+  alertas                AlertaStock[]
 }
 
 enum TipoCamara {
@@ -270,6 +271,7 @@ model Operador {
   recepcionesCompra                RecepcionCompra[]
   actividades                      ActividadOperador[]
   asientosContables                AsientoContable[]
+  alertasResueltas                 AlertaStock[]             @relation("AlertasResueltas")
 
   @@index([usuario])
 }
@@ -5253,6 +5255,44 @@ model StockCamara {
   updatedAt  DateTime @updatedAt
 
   @@index([productoId])
+  @@index([camaraId])
+}
+
+// ==================== ALERTAS DE STOCK ====================
+
+model AlertaStock {
+  id          String   @id @default(cuid())
+  tipo        String   // STOCK_BAJO, STOCK_CRITICO, VENCIMIENTO_PROXIMO, VENCIMIENTO_VENCIDO
+  entidad     String   // PRODUCTO, MEDIA_RES, CAJA, INSUMO
+  entidadId   String?
+  entidadNombre String
+
+  // Valores
+  stockActual  Float
+  stockMinimo  Float?
+  stockDeseado Float?
+
+  // Ubicacion
+  camaraId     String?
+  camara       Camara?  @relation(fields: [camaraId], references: [id])
+
+  // Prioridad y estado
+  prioridad    String   @default("MEDIA") // BAJA, MEDIA, ALTA, CRITICA
+  estado       String   @default("ACTIVA") // ACTIVA, DESCARTADA, RESUELTA
+
+  // Resolucion
+  fechaResolucion DateTime?
+  resueltaPor    String?
+  operadorResolucion Operador? @relation("AlertasResueltas", fields: [resueltaPor], references: [id])
+
+  // Auditoria
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tipo])
+  @@index([prioridad])
+  @@index([estado])
+  @@index([entidad])
   @@index([camaraId])
 }
 

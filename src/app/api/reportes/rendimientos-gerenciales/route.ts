@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     for (const r of romaneos) {
       const cod = r.tropaCodigo || `Sin-Tropa-${r.id}`
       if (!tropasData.has(cod)) {
-        const tropa = tropaMap.get(r.tropaCodigo || '') as any
+        const tropa = tropaMap.get(r.tropaCodigo || '')
         tropasData.set(cod, {
           tropaCodigo: cod,
           productor: tropa?.productor?.nombre || 'Sin productor',

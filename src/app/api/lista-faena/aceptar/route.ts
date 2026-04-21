@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
     const updatedLista = await db.listaFaena.update({
       where: { id: listaFaenaId },
       data: {
-        estado: EstadoListaFaena.ABIERTA as any,
+        estado: EstadoListaFaena.ABIERTA,
         supervisorId: supervisorId,
-      } as any,
+      },
       include: {
         tropas: {
           include: {

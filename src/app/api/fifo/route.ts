@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       include: {
         romaneo: { select: { tropaCodigo: true, garron: true } }
       }
-    }) as any[]
+    }) as Array<Record<string, unknown>>
 
     if (mediasRes.length === 0) {
       return NextResponse.json(
@@ -294,17 +294,18 @@ export async function POST(request: NextRequest) {
         numero: nuevoNumero,
         destino: 'Despacho FIFO automático',
         clienteId,
-        kgTotal: mediasRes.reduce((acc, m) => acc + m.peso, 0),
+        kgTotal: mediasRes.reduce((acc, m) => acc + Number(m.peso), 0),
         cantidadMedias: mediasRes.length,
         operadorId,
         estado: 'PENDIENTE',
         items: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           create: mediasRes.map(m => ({
             mediaResId: m.id,
-            tropaCodigo: m.romaneo?.tropaCodigo,
-            garron: m.romaneo?.garron,
+            tropaCodigo: (m.romaneo as Record<string, unknown> | undefined)?.tropaCodigo,
+            garron: (m.romaneo as Record<string, unknown> | undefined)?.garron,
             peso: m.peso
-          }))
+          })) as any
         }
       },
       include: { items: true }
@@ -312,7 +313,7 @@ export async function POST(request: NextRequest) {
 
     // Marcar medias como despachadas
     await db.mediaRes.updateMany({
-      where: { id: { in: mediasRes.map(m => m.id) } },
+      where: { id: { in: mediasRes.map(m => m.id as string) } },
       data: { estado: 'DESPACHADO' }
     })
 

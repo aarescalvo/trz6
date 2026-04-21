@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Agregar campo numero calculado si no existe
     const listasConNumero = listas.map((lista, index) => ({
       ...lista,
-      numero: (lista as any).numero || (listas.length - index)
+      numero: ('numero' in lista ? lista.numero : undefined) || (listas.length - index)
     }))
 
     return NextResponse.json({ success: true, data: listasConNumero })
@@ -167,7 +167,7 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    const numeroLista = (lista as any).numero || 'N/A'
+    const numeroLista = ('numero' in lista ? lista.numero : 'N/A')
 
     return NextResponse.json({ 
       success: true, 

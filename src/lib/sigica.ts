@@ -643,10 +643,10 @@ export class SIGICAService {
     const where: Prisma.EnvioSIGICAWhereInput = {}
     
     if (filtros?.tipo) {
-      where.tipo = filtros.tipo as any
+      where.tipo = filtros.tipo as 'ROMANEO' | 'STOCK_CAMARA'
     }
     if (filtros?.estado) {
-      where.estado = filtros.estado as any
+      where.estado = filtros.estado as 'ENVIANDO' | 'EXITOSO' | 'ERROR' | 'PENDIENTE'
     }
     if (filtros?.desde || filtros?.hasta) {
       where.fechaEnvio = {}

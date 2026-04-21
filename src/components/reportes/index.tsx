@@ -423,7 +423,7 @@ export function ReportesModule({ operador }: { operador: Operador }) {
         ]
       })
       
-      const finalY = (doc as any).lastAutoTable.finalY + 20
+      const finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable!.finalY + 20
       doc.text('_________________________', 50, finalY)
       doc.text('_________________________', 170, finalY)
       doc.setFontSize(8)

@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
             operadorId: operadorId || null
           }
         })
-        movimientos.push(movimiento as any)
+        movimientos.push(movimiento)
 
         // Registrar auditoría
         for (const animal of animalesGrupo) {

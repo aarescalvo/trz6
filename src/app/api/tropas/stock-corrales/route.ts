@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { EstadoAnimal } from '@prisma/client'
 
 // GET - Obtener stock de animales por tropa y corral
 import { checkPermission } from '@/lib/auth-helpers'
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Obtener todos los animales agrupados por tropa y corral
     const animales = await db.animal.findMany({
       where: {
-        estado: { in: estados as any }
+        estado: { in: estados as EstadoAnimal[] }
       },
       include: {
         tropa: {

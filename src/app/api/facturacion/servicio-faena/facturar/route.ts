@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { CondicionIva } from '@prisma/client'
 import { validarPermiso } from '@/lib/auth-helpers'
 
 // POST - Generar facturas desde tropas de servicio faena
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
           clienteId,
           clienteNombre: cliente.razonSocial || cliente.nombre,
           clienteCuit: cliente.cuit,
-          clienteCondicionIva: cliente.condicionIva as any,
+          clienteCondicionIva: cliente.condicionIva as CondicionIva,
           clienteDireccion: cliente.direccion,
           fecha: new Date(),
           subtotal,

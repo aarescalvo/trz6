@@ -28,18 +28,18 @@ export async function GET(
 
     if (!envio) {
       return NextResponse.json(
-        { success: false, error: 'Envío no encontrado' } as any,
+        { success: false, error: 'Envío no encontrado' },
         { status: 404 }
       )
     }
 
     // Parsear datos enviados si existen
-    let datosEnviados = null
+    let datosEnviados: Record<string, unknown> | unknown = null
     if (envio.datosEnviados) {
       try {
-        datosEnviados = JSON.parse(envio.datosEnviados)
+        datosEnviados = JSON.parse(envio.datosEnviados) as Record<string, unknown>
       } catch {
-        datosEnviados = envio.datosEnviados as any
+        datosEnviados = envio.datosEnviados
       }
     }
 
@@ -128,7 +128,7 @@ export async function DELETE(
 
     if (!envio) {
       return NextResponse.json(
-        { success: false, error: 'Envío no encontrado' } as any,
+        { success: false, error: 'Envío no encontrado' },
         { status: 404 }
       )
     }

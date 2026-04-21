@@ -217,7 +217,7 @@ export function Planilla01Module({ operador }: Props) {
       })
       
       // Firmas
-      const finalY = (doc as any).lastAutoTable.finalY + 20
+      const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20
       doc.text('_________________________', 50, finalY)
       doc.text('_________________________', 170, finalY)
       doc.setFontSize(8)

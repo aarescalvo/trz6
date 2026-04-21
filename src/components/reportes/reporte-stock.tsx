@@ -82,9 +82,9 @@ export function ReporteStock() {
     try {
       const archivo = await exportReport({
         tipo: 'stock',
-        datos: datos as any,
+        datos: datos as unknown as Record<string, unknown>[],
         resumen,
-        camaras: camaras as any,
+        camaras: camaras as unknown as Record<string, unknown>[],
       })
 
       window.open(archivo, '_blank')

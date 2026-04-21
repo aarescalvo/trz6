@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
         })
 
         if (existente) {
-          await (db as any).rotulo.update({
+          await db.rotulo.update({
             where: { codigo: rotulo.codigo },
             data: {
               contenido: rotulo.contenido,
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
           })
           actualizados++
         } else {
-          await db.rotulo.create({ data: rotulo as any })
+          await db.rotulo.create({ data: rotulo as unknown as Parameters<typeof db.rotulo.create>[0]['data'] })
           creados++
         }
       } catch (e) {

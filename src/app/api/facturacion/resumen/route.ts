@@ -60,12 +60,13 @@ export async function GET(request: NextRequest) {
     let totalKgGancho = 0
 
     for (const factura of facturas) {
-      for (const detalle of ((factura as any).detalles || [])) {
-        totalServicioFaena += (detalle as any).servicioFaena || 0
-        totalServicioDespostada += (detalle as any).servicioDespostada || 0
-        totalVentasExtras += ((detalle as any).ventaMenudencia || 0) + ((detalle as any).ventaHueso || 0) + ((detalle as any).ventaGrasa || 0) + ((detalle as any).ventaCuero || 0)
-        totalCabezas += (detalle as any).cantidadAnimales || 0
-        totalKgGancho += (detalle as any).kgGancho || 0
+      for (const detalle of (factura.detalles || [])) {
+        const d = detalle as unknown as Record<string, number | undefined>
+        totalServicioFaena += d.servicioFaena || 0
+        totalServicioDespostada += d.servicioDespostada || 0
+        totalVentasExtras += (d.ventaMenudencia || 0) + (d.ventaHueso || 0) + (d.ventaGrasa || 0) + (d.ventaCuero || 0)
+        totalCabezas += d.cantidadAnimales || 0
+        totalKgGancho += d.kgGancho || 0
       }
     }
 
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     // Resumen por cliente
     const porCliente: Record<string, {
-      cliente: any
+      cliente: { id: string; nombre: string } | null
       facturas: number
       total: number
       pagado: number
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
       const clienteId = factura.clienteId
       if (!porCliente[clienteId]) {
         porCliente[clienteId] = {
-          cliente: (factura as any).cliente,
+          cliente: factura.cliente,
           facturas: 0,
           total: 0,
           pagado: 0,
@@ -102,14 +103,22 @@ export async function GET(request: NextRequest) {
       } else if (factura.estado === 'PENDIENTE') {
         porCliente[clienteId].pendiente += factura.total
       }
-      for (const detalle of ((factura as any).detalles || [])) {
-        porCliente[clienteId].cabezas += (detalle as any).cantidadAnimales || 0
-        porCliente[clienteId].kgGancho += (detalle as any).kgGancho || 0
+      for (const detalle of (factura.detalles || [])) {
+        const d = detalle as unknown as Record<string, number | undefined>
+        porCliente[clienteId].cabezas += d.cantidadAnimales || 0
+        porCliente[clienteId].kgGancho += d.kgGancho || 0
       }
     }
 
     // Obtener resumen de los últimos 12 meses
-    const resumenAnual: any[] = []
+    const resumenAnual: Array<{
+      mes: number
+      anio: number
+      nombreMes: string
+      totalFacturado: number
+      totalPagado: number
+      cantidadFacturas: number
+    }> = []
     for (let m = 0; m < 12; m++) {
       const fechaInicioMes = new Date(anioActual, mesActual - 1 - m, 1)
       const fechaFinMes = new Date(anioActual, mesActual - m, 0, 23, 59, 59)
@@ -127,10 +136,10 @@ export async function GET(request: NextRequest) {
         mes: fechaInicioMes.getMonth() + 1,
         anio: fechaInicioMes.getFullYear(),
         nombreMes: fechaInicioMes.toLocaleDateString('es-AR', { month: 'long' }),
-        totalFacturado: facturasMes.reduce((sum: number, f: any) => sum + (f.total || 0), 0),
-        totalPagado: facturasMes.filter((f: any) => f.estado === 'PAGADA').reduce((sum: number, f: any) => sum + (f.total || 0), 0),
+        totalFacturado: facturasMes.reduce((sum, f) => sum + (f.total || 0), 0),
+        totalPagado: facturasMes.filter((f) => f.estado === 'PAGADA').reduce((sum, f) => sum + (f.total || 0), 0),
         cantidadFacturas: facturasMes.length
-      } as any)
+      })
     }
 
     // Invertir para mostrar de más antiguo a más reciente

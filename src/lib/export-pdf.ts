@@ -611,7 +611,7 @@ export class PDFExporter {
     });
 
     // Totales
-    const finalY = (doc as any).lastAutoTable?.finalY || y + 50;
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y + 50;
     y = finalY + 5;
 
     doc.setFontSize(10);
@@ -763,7 +763,7 @@ export class PDFExporter {
     });
 
     // Total
-    const finalY = (doc as any).lastAutoTable?.finalY || y + 50;
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y + 50;
     y = finalY + 5;
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -877,7 +877,7 @@ export class PDFExporter {
     });
 
     // Totales
-    const finalY = (doc as any).lastAutoTable?.finalY || y + 50;
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y + 50;
     y = finalY + 5;
 
     doc.setFontSize(10);
@@ -1059,7 +1059,7 @@ export class PDFExporter {
     });
 
     // Saldo final
-    const finalY = (doc as any).lastAutoTable?.finalY || y + 50;
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y + 50;
     y = finalY + 5;
     doc.setFillColor(250, 250, 250);
     doc.rect(14, y, pageWidth - 28, 12, 'F');

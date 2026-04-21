@@ -3,6 +3,7 @@
 
 import crypto from 'crypto'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export interface CertificateInfo {
   valid: boolean
@@ -176,8 +177,8 @@ export async function storeCertificate(
           clavePrivadaPath: privateKey,
           puntoVenta,
           entorno: ambiente,
-          fechaVencimiento: validation.info?.notAfter
-        } as any
+          fechaVencimiento: validation.info?.notAfter ?? null
+        } as Prisma.AFIPConfigUncheckedUpdateInput
       })
     } else {
       // Create new
@@ -187,8 +188,8 @@ export async function storeCertificate(
           clavePrivadaPath: privateKey,
           puntoVenta,
           entorno: ambiente,
-          fechaVencimiento: validation.info?.notAfter
-        } as any
+          fechaVencimiento: validation.info?.notAfter ?? null
+        } as Prisma.AFIPConfigUncheckedCreateInput
       })
     }
     
@@ -216,6 +217,7 @@ export async function getCertificateConfig(): Promise<{
   inicioActividades: string | null
 } | null> {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config = await db.aFIPConfig.findFirst() as any
     
     if (!config) {
@@ -302,7 +304,7 @@ export async function deleteCertificates(): Promise<boolean> {
           certificadoPath: null,
           clavePrivadaPath: null,
           fechaVencimiento: null
-        } as any
+        } as Prisma.AFIPConfigUncheckedUpdateInput
       })
     }
     

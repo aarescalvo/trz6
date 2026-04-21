@@ -177,8 +177,8 @@ export function PersonalizacionUI({
         toast.success('Preferencias guardadas')
 
         // Apply preferences to DOM immediately after saving
-        applyPreferencesToDOM({ tema, tamanoFuente, densidad } as any)
-        cachePreferences({ tema, tamanoFuente, densidad } as any)
+        applyPreferencesToDOM({ tema, tamanoFuente, densidad } as Parameters<typeof applyPreferencesToDOM>[0])
+        cachePreferences({ tema, tamanoFuente, densidad } as Parameters<typeof cachePreferences>[0])
 
         onPreferenciasChange?.({
           moduloOrden,

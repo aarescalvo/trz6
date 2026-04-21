@@ -44,18 +44,20 @@ export async function GET(request: NextRequest) {
           const producto = await db.productoVendible.findFirst({
             where: {
               categoria: 'PRODUCTO_CARNICO',
-              especie: (item.mediaRes as any)?.romaneo?.tropa?.codigo?.startsWith('B') ? 'BOVINO' : 'EQUINO'
+              especie: (item.mediaRes?.romaneo as Record<string, unknown> | null)?.tropa != null
+                ? String((item.mediaRes?.romaneo as Record<string, unknown>).tropa).startsWith('B') ? 'BOVINO' : 'EQUINO'
+                : 'BOVINO'
             }
           })
 
           let precioSugerido = 0
           let fuentePrecio = 'SIN_PRECIO'
 
-          if (producto && (despacho as any).clienteId) {
+          if (producto && despacho.clienteId) {
             // Buscar precio sugerido
             const precioCliente = await db.precioCliente.findFirst({
               where: {
-                clienteId: (despacho as any).clienteId,
+                clienteId: despacho.clienteId,
                 productoVendibleId: producto.id,
                 activo: true
               }
@@ -95,7 +97,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Listar despachos pendientes de facturar
-    const where: any = { facturado: false } as any
+    const where: { facturado: boolean; clienteId?: string } = { facturado: false }
     if (clienteId) {
       where.clienteId = clienteId
     }
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     // Calcular totales
     let subtotal = 0
-    const detallesData: any[] = []
+    const detallesData: Record<string, unknown>[] = []
 
     // Procesar items principales
     for (const item of items || []) {
@@ -178,7 +180,7 @@ export async function POST(request: NextRequest) {
         garron: item.garron,
         mediaResId: item.mediaResId,
         despachoId: item.despachoId,
-      } as any)
+      })
     }
 
     // Procesar servicios adicionales
@@ -193,7 +195,7 @@ export async function POST(request: NextRequest) {
         unidad: servicio.unidad || 'UN',
         precioUnitario: servicio.precioUnitario,
         subtotal: subtotalServicio,
-      } as any)
+      })
     }
 
     // Calcular IVA (21% por defecto)
@@ -215,7 +217,7 @@ export async function POST(request: NextRequest) {
         observaciones,
         operadorId,
         detalles: {
-          create: detallesData as any
+          create: detallesData as any[]
         }
       },
       include: {
@@ -245,7 +247,7 @@ export async function POST(request: NextRequest) {
             productoVendibleId: item.productoVendibleId,
             precioNuevo: item.precioUnitario,
             motivo: `Facturado en ${numero}`,
-          } as any
+          }
         })
       }
     }

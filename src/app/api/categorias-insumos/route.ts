@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const categorias = await db.categoriaInsumo.findMany({
       where,
-      orderBy: { nombre: 'asc' as any },
+      orderBy: { nombre: 'asc' as const },
     });
 
     return NextResponse.json(categorias);

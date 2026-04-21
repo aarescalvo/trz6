@@ -437,7 +437,7 @@ export function EditorRotulosFullScreen({ rotuloInicial, onGuardar, onVolver }: 
                   variant="outline"
                   size="sm"
                   className="justify-start text-xs h-8"
-                  onClick={() => agregarElemento(t.tipo as any)}
+                  onClick={() => agregarElemento(t.tipo as RotuloElement['tipo'])}
                 >
                   <t.icon className={`w-3 h-3 mr-1 ${t.color} text-white p-0.5 rounded`} />
                   {t.nombre}

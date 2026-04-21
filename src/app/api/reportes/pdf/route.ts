@@ -136,7 +136,7 @@ async function generarDefinicionPDF(tipo: string, filtros: Record<string, any>):
           }
         },
         orderBy: { createdAt: 'asc' }
-      }) as any[]
+      }) as Array<Record<string, unknown>>
       tableBody = [
         [{ text: 'Tropa', style: 'tableHeader' }, { text: 'Productor', style: 'tableHeader' },
         { text: 'Media', style: 'tableHeader' }, { text: 'Peso', style: 'tableHeader' },

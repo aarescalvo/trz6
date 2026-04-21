@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const romaneos = await db.romaneo.findMany({
       where: { 
         tropaCodigo: tropa.codigo,
-        estado: 'CONFIRMADO'
+        estado: 'CONFIRMADO' as any
       } as any,
       include: {
         tipificador: true,
@@ -184,7 +184,8 @@ export async function GET(request: NextRequest) {
 
     // Preparar datos de la tabla
     const tableData = romaneos.map((romaneo) => {
-      const tipoDent = formatTipoDenticion((romaneo.denticion as any), (romaneo as any).categoria)
+      const romaneoExt = romaneo as typeof romaneo & { categoria?: string | null; caravana?: string }
+      const tipoDent = formatTipoDenticion((romaneoExt.denticion ?? null) as unknown as number | null, romaneoExt.categoria ?? null)
       const pesoEntrada = romaneo.pesoVivo || 0
       const kgMediaA = romaneo.pesoMediaIzq || 0
       const kgMediaB = romaneo.pesoMediaDer || 0
@@ -196,7 +197,7 @@ export async function GET(request: NextRequest) {
         (romaneo.numeroAnimal || 0).toString(),
         formatRaza(romaneo.raza),
         tipoDent,
-        (romaneo as any).caravana || '',
+        romaneoExt.caravana || '',
         pesoEntrada.toFixed(0),
         kgMediaA.toFixed(0),
         kgMediaB.toFixed(0),
@@ -268,7 +269,7 @@ export async function GET(request: NextRequest) {
     // Contar por categoría
     const categorias: Record<string, { count: number; pesoTotal: number; pesoVivo: number }> = {}
     romaneos.forEach(r => {
-      const cat = (r as any).categoria || 'NT'
+      const cat = (r as typeof r & { categoria?: string | null }).categoria || 'NT'
       if (!categorias[cat]) {
         categorias[cat] = { count: 0, pesoTotal: 0, pesoVivo: 0 }
       }

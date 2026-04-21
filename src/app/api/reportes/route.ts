@@ -61,7 +61,8 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { fecha: 'desc' },
       take: 500
-    }) as any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as Array<any>
 
     // RESUMEN - Estadísticas generales
     const totalAnimalesFaenados = romaneos.length
@@ -188,10 +189,11 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: 'desc' },
       take: 100
-    }) as any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as Array<any>
 
     // Obtener todos los romaneos que corresponden a estas tropas para calcular pesos reales
-    const tropaCodigos = tropasConRomaneo.map((t: any) => t.codigo)
+    const tropaCodigos = tropasConRomaneo.map((t: any) => t.codigo as string)
     const romaneosTropas = await db.romaneo.findMany({
       where: {
         tropaCodigo: { in: tropaCodigos }

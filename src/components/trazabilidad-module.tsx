@@ -274,7 +274,7 @@ export function TrazabilidadModule({ operador }: Props) {
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 }, 1: { cellWidth: 120 } },
         margin: { left: 20 },
       })
-      y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+      y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
 
       // Pesaje Camion
       if (data.pesajeCamion) {
@@ -296,7 +296,7 @@ export function TrazabilidadModule({ operador }: Props) {
           columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 } },
           margin: { left: 20 },
         })
-        y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+        y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
       }
 
       // Pesaje Individual
@@ -314,7 +314,7 @@ export function TrazabilidadModule({ operador }: Props) {
           alternateRowStyles: { fillColor: [250, 250, 250] },
           margin: { left: 14, right: 14 },
         })
-        y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+        y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
       }
 
       // Lista de Faena
@@ -335,7 +335,7 @@ export function TrazabilidadModule({ operador }: Props) {
           columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 } },
           margin: { left: 20 },
         })
-        y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+        y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
       }
 
       // Garrones
@@ -354,7 +354,7 @@ export function TrazabilidadModule({ operador }: Props) {
           alternateRowStyles: { fillColor: [250, 250, 250] },
           margin: { left: 14, right: 14 },
         })
-        y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+        y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
       }
 
       // Romaneo
@@ -373,7 +373,7 @@ export function TrazabilidadModule({ operador }: Props) {
           alternateRowStyles: { fillColor: [250, 250, 250] },
           margin: { left: 14, right: 14 },
         })
-        y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+        y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
       }
 
       // Camara
@@ -391,7 +391,7 @@ export function TrazabilidadModule({ operador }: Props) {
           alternateRowStyles: { fillColor: [250, 250, 250] },
           margin: { left: 14, right: 14 },
         })
-        y = (doc as any).lastAutoTable?.finalY + 6 || y + 30
+        y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 0) + 6 || y + 30
       }
 
       // Despacho

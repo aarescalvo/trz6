@@ -95,7 +95,7 @@ export function ReportePesajes() {
     try {
       const archivo = await exportReport({
         tipo: 'pesajes',
-        datos: datos as any,
+        datos: datos as unknown as Array<Record<string, unknown>>,
         resumen,
         fechaDesde,
         fechaHasta

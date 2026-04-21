@@ -126,11 +126,11 @@ export async function GET(request: NextRequest) {
       if (!romaneo) continue
 
       // Check if already in camera
-      const enCamara = romaneo.mediasRes.some((m: any) => m.camaraId)
+      const enCamara = romaneo.mediasRes.some((m) => m.camaraId != null)
       if (enCamara) continue
 
-      if (!tropasMap.has((tropa as any).id)) {
-        tropasMap.set((tropa as any).id, {
+      if (!tropasMap.has(tropa.id)) {
+        tropasMap.set(tropa.id, {
           tropaId: tropa.id,
           tropaCodigo: tropa.codigo,
           especie: tropa.especie,
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      const tropaData = tropasMap.get((tropa as any).id)!
+      const tropaData = tropasMap.get(tropa.id)!
       tropaData.animales.push({
         id: animal.id,
         codigo: animal.codigo,
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
       return `${año}${mes}${dia}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
     }
 
-    const mediasCreadas = []
+    const mediasCreadas: Awaited<ReturnType<typeof db.mediaRes.create>>[] = []
 
     // Media Izquierda
     if (romaneo.pesoMediaIzq) {
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
           }
         })
       }
-      (mediasCreadas as any[]).push(mediaIzq)
+      mediasCreadas.push(mediaIzq)
     }
 
     // Media Derecha
@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
           }
         })
       }
-      (mediasCreadas as any[]).push(mediaDer)
+      mediasCreadas.push(mediaDer)
     }
 
     // Update or create stock

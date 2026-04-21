@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
     const parsed = crearLiquidacionSchema.safeParse(body)
     
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: (parsed.error as any).issues?.map((e: any) => e.message).join(', ') || 'Validation error' }, { status: 400 })
+      const zodError = parsed.error as { issues?: Array<{ message: string }> } | undefined
+      return NextResponse.json({ success: false, error: zodError?.issues?.map((e) => e.message).join(', ') || 'Validation error' }, { status: 400 })
     }
     
     const data = await liquidacionService.crearDesdeRomaneo(parsed.data.tropaId, parsed.data.operadorId)

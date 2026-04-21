@@ -579,7 +579,7 @@ export function imprimirTicketPesajeA4({ tropa, animales, choferNombre, patente 
         </div>
         <div class="dato-box">
           <div class="label">DTE</div>
-          <div class="value font-mono">${(tropa as any).dte || '-'}</div>
+          <div class="value font-mono">${(tropa as unknown as { dte?: string }).dte || '-'}</div>
         </div>
         <div class="dato-box">
           <div class="label">Corral</div>

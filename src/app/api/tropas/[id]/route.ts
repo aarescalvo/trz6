@@ -20,7 +20,8 @@ export async function GET(
         usuarioFaena: true,
         tiposAnimales: true,
         animales: {
-          orderBy: { numero: 'asc' }
+          orderBy: { numero: 'asc' },
+          include: { corral: { select: { id: true, nombre: true } } }
         }
       }
     })
@@ -45,7 +46,7 @@ export async function GET(
           raza: a.raza,
           pesoVivo: a.pesoVivo,
           estado: a.estado,
-          corral: (a as any).corral,
+          corral: a.corral ? { id: a.corral.id, nombre: a.corral.nombre } : null,
           fechaBaja: a.fechaBaja,
           motivoBaja: a.motivoBaja
         }))
