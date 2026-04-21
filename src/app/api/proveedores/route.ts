@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 // GET - Listar proveedores
-// Por ahora, los proveedores son clientes que pueden proveer productos/servicios
-// En el futuro se puede crear un modelo Proveedor separado si es necesario
 import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeFacturacion')
@@ -18,9 +16,7 @@ export async function GET(request: NextRequest) {
       where.activo = true;
     }
 
-    // Por ahora retornamos clientes como proveedores potenciales
-    // TODO: Crear modelo Proveedor si se necesita funcionalidad específica
-    const proveedores = await db.cliente.findMany({
+    const proveedores = await db.proveedor.findMany({
       where,
       orderBy: { nombre: 'asc' },
       select: {
@@ -48,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear proveedor (usa Cliente como base)
+// POST - Crear proveedor
 export async function POST(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeFacturacion')
   if (authError) return authError
@@ -56,15 +52,13 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
 
-    const proveedor = await db.cliente.create({
+    const proveedor = await db.proveedor.create({
       data: {
         nombre: data.nombre,
         cuit: data.cuit || null,
         direccion: data.direccion || null,
         telefono: data.telefono || null,
         email: data.email || null,
-        esProductor: false,
-        esUsuarioFaena: false,
         activo: data.activo ?? true,
       }
     });
@@ -97,7 +91,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const proveedor = await db.cliente.update({
+    const proveedor = await db.proveedor.update({
       where: { id: data.id },
       data: {
         nombre: data.nombre,
@@ -138,7 +132,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
 
-    await db.cliente.delete({
+    await db.proveedor.delete({
       where: { id }
     });
 

@@ -78,39 +78,11 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Fallback: legacy operadorId query param (for transition period)
-    const { searchParams } = new URL(request.url)
-    const operadorId = searchParams.get('operadorId')
-    
-    if (!operadorId) {
-      return NextResponse.json(
-        { success: false, error: 'No hay sesión activa' },
-        { status: 401 }
-      )
-    }
-    
-    const operador = await db.operador.findUnique({
-      where: { id: operadorId }
-    })
-    
-    if (!operador || !operador.activo) {
-      return NextResponse.json(
-        { success: false, error: 'Operador no encontrado o inactivo' },
-        { status: 404 }
-      )
-    }
-    
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: operador.id,
-        nombre: operador.nombre,
-        usuario: operador.usuario,
-        rol: operador.rol,
-        email: operador.email,
-        permisos: buildPermisos(operador)
-      }
-    })
+    // LEGACY AUTH REMOVIDO - Solo se acepta JWT via cookie session_token
+    return NextResponse.json(
+      { success: false, error: 'No hay sesión activa' },
+      { status: 401 }
+    )
   } catch (error) {
     logger.error('Error validando operador', error)
     return NextResponse.json(
@@ -346,14 +318,8 @@ export async function DELETE(request: NextRequest) {
       }
     }
     
-    // Fallback: legacy header
-    if (!operadorId) {
-      const body = await request.json().catch(() => ({}))
-      operadorId = body.operadorId || null
-    }
-    
+    // Registrar logout en auditoría si hay operador identificado
     if (operadorId) {
-      // Registrar logout en auditoría
       await db.auditoria.create({
         data: {
           operadorId,

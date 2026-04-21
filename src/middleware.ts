@@ -228,6 +228,91 @@ function getClientIp(request: NextRequest): string {
   )
 }
 
+/**
+ * Validar Origin/Referer para protección CSRF en operaciones de escritura.
+ * Se asegura que las peticiones mutating (POST/PUT/DELETE/PATCH) provengan
+ * del dominio legítimo de la aplicación, evitando ataques CSRF cross-origin.
+ * En desarrollo se permite localhost y la URL configurada.
+ */
+function isOriginAllowed(request: NextRequest): boolean {
+  // Los GET son safe methods, no necesitan validación CSRF
+  const method = request.method
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    return true
+  }
+
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+  const host = request.headers.get('host')
+
+  // Orígenes permitidos (sin protocolo)
+  const allowedHosts: string[] = []
+
+  // Agregar la URL configurada de la app
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  if (appUrl) {
+    try {
+      const parsed = new URL(appUrl)
+      allowedHosts.push(parsed.host)
+    } catch {
+      // Ignorar si la URL es inválida
+    }
+  }
+
+  // En desarrollo, siempre permitir localhost
+  if (process.env.NODE_ENV === 'development') {
+    allowedHosts.push('localhost:3000', 'localhost:3001', '127.0.0.1:3000', '127.0.0.1:3001')
+  }
+
+  // Si no hay Origin ni Referer, verificar si el Host coincide
+  if (!origin && !referer) {
+    // En desarrollo, permitir requests sin origin (ej: Postman, fetch directo)
+    if (process.env.NODE_ENV === 'development') {
+      return true
+    }
+    // En producción, si el host está en la lista permitida, confiar
+    if (host && allowedHosts.includes(host)) {
+      return true
+    }
+    return false
+  }
+
+  // Verificar Origin (header prioritario para CORS/CSRF)
+  if (origin) {
+    try {
+      const originHost = new URL(origin).host
+      if (allowedHosts.includes(originHost)) {
+        return true
+      }
+      // Permitir si el origin coincide con el host del request (same-origin)
+      if (host && originHost === host) {
+        return true
+      }
+    } catch {
+      // Origin inválido
+      return false
+    }
+  }
+
+  // Fallback: verificar Referer
+  if (referer) {
+    try {
+      const refererHost = new URL(referer).host
+      if (allowedHosts.includes(refererHost)) {
+        return true
+      }
+      if (host && refererHost === host) {
+        return true
+      }
+    } catch {
+      // Referer inválido
+      return false
+    }
+  }
+
+  return false
+}
+
 function getRateLimitType(pathname: string, method: string): RateLimitType {
   // Auth routes get stricter limits to prevent brute force
   if (pathname.startsWith('/api/auth')) {
@@ -294,6 +379,16 @@ export async function middleware(request: NextRequest) {
           'X-RateLimit-Reset': String(Math.ceil(rateLimitResult.resetAt / 1000)),
         },
       }
+    )
+  }
+
+  // ========================================
+  // CSRF PROTECTION (Origin validation for mutating requests)
+  // ========================================
+  if (!isOriginAllowed(request)) {
+    return NextResponse.json(
+      { success: false, error: 'Origen no permitido - posible ataque CSRF' },
+      { status: 403 }
     )
   }
 

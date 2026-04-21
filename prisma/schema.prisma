@@ -269,6 +269,7 @@ model Operador {
   ordenCompra           OrdenCompra[]
   recepcionesCompra     RecepcionCompra[]
   actividades           ActividadOperador[]
+  asientosContables     AsientoContable[]
 
   @@index([usuario])
 }
@@ -3728,6 +3729,7 @@ model CuentaBancaria {
 
   cheques               Cheque[]
   conciliaciones         ConciliacionBancaria[]
+  cajas                  Caja[]
 }
 
 // ==================== CHEQUES ====================
@@ -3758,13 +3760,15 @@ model Cheque {
 // ==================== CAJA ====================
 
 model Caja {
-  id          String   @id @default(cuid())
-  nombre      String
-  tipo        String
-  saldoActual Float    @default(0)
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String          @id @default(cuid())
+  nombre            String
+  tipo              String
+  saldoActual       Float           @default(0)
+  cuentaBancariaId  String?
+  cuentaBancaria    CuentaBancaria? @relation(fields: [cuentaBancariaId], references: [id])
+  activo            Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   movimientos MovimientoCaja[]
   arqueos     ArqueoCaja[]
@@ -5206,4 +5210,113 @@ model StockCamara {
 
   @@index([productoId])
   @@index([camaraId])
+}
+
+// ==================== CONTABILIDAD ====================
+
+enum TipoPlanCuenta {
+  ACTIVO
+  PASIVO
+  PATRIMONIO
+  INGRESO
+  EGRESO
+}
+
+enum TipoAsientoContable {
+  INGRESO
+  EGRESO
+  AJUSTE
+  APERTURA
+  CIERRE
+}
+
+enum EstadoAsientoContable {
+  BORRADOR
+  CONFIRMADO
+  ANULADO
+}
+
+model PlanCuenta {
+  id            String         @id @default(cuid())
+  codigo        String         @unique             // Código jerárquico: "1", "1.1", "1.1.01"
+  nombre        String
+  descripcion   String?
+  tipo          TipoPlanCuenta                      // ACTIVO, PASIVO, PATRIMONIO, INGRESO, EGRESO
+  imputable     Boolean        @default(true)       // Si admite movimientos (hojas del árbol)
+  
+  // Jerarquía (self-relation)
+  padreId       String?
+  padre         PlanCuenta?    @relation("PlanCuentaJerarquia", fields: [padreId], references: [id])
+  hijos         PlanCuenta[]   @relation("PlanCuentaJerarquia")
+  nivel         Int            @default(0)          // Nivel en el árbol (0 = raíz)
+
+  activo        Boolean        @default(true)
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relaciones
+  lineasAsiento AsientoContableLinea[]
+
+  @@index([codigo])
+  @@index([tipo])
+  @@index([activo])
+  @@index([padreId])
+}
+
+model AsientoContable {
+  id              String                @id @default(cuid())
+  numero          String                @unique         // N° correlativo del asiento
+  fecha           DateTime              @default(now())
+  concepto        String                @default("")    // Descripción / glosa del asiento
+  tipoOrigen      TipoAsientoContable   @default(AJUSTE) // INGRESO, EGRESO, AJUSTE, APERTURA, CIERRE
+  estado          EstadoAsientoContable @default(BORRADOR) // BORRADOR, CONFIRMADO, ANULADO
+  
+  // Trazabilidad: qué originó este asiento
+  origenId        String?                               // ID de la entidad origen (Factura, Pago, etc.)
+  origenDetalle   String?                               // Descripción del origen
+  
+  // Operador que creó el asiento
+  operadorId      String?
+  operador        Operador?             @relation(fields: [operadorId], references: [id])
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  // Relaciones
+  lineas          AsientoContableLinea[]
+
+  @@index([fecha])
+  @@index([estado])
+  @@index([tipoOrigen])
+  @@index([operadorId])
+}
+
+model AsientoContableLinea {
+  id              String          @id @default(cuid())
+  asientoId       String
+  asiento         AsientoContable @relation(fields: [asientoId], references: [id], onDelete: Cascade)
+  
+  // Cuenta contable
+  cuentaId        String?
+  cuenta          PlanCuenta?     @relation(fields: [cuentaId], references: [id])
+  codigoCuenta    String          // Código denormalizado de la cuenta
+  nombreCuenta    String          // Nombre denormalizado de la cuenta
+  
+  // Valores contables
+  debe            Float           @default(0)
+  haber           Float           @default(0)
+  
+  // Auxiliar opcional (centro de costo, tercero, etc.)
+  auxiliarCodigo  String?
+  auxiliarNombre  String?
+  
+  concepto        String?                         // Concepto específico de la línea
+  orden           Int             @default(0)     // Orden de la línea en el asiento
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([asientoId])
+  @@index([cuentaId])
 }

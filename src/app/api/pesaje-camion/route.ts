@@ -395,7 +395,6 @@ export async function POST(request: NextRequest) {
             }))
         : []
       
-      // === EJECUTAR TODO EN UNA TRANSACCIÓN ===
       log.info('[POST pesaje-camion] === EJECUTANDO EN TRANSACCIÓN ===')
       
       const result = await db.$transaction(async (tx) => {

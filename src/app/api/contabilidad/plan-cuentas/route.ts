@@ -1,31 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createLogger } from '@/lib/logger';
+import { checkPermission } from '@/lib/auth-helpers';
+
+const logger = createLogger('API:PlanCuentas');
 
 // GET - Listar plan de cuentas
-import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeConfiguracion')
-  if (authError) return authError
+  if (authError) return authError;
 
   try {
     const { searchParams } = new URL(request.url);
     const tipo = searchParams.get('tipo');
     const imputable = searchParams.get('imputable');
-    
-    const where: any = { activo: true };
+
+    const where: Record<string, unknown> = { activo: true };
     if (tipo) where.tipo = tipo;
     if (imputable !== null) where.imputable = imputable === 'true';
-    
-    // TODO: model PlanCuenta no existe en schema - crear el modelo cuando se implemente contabilidad
-    const cuentas = await (db as any).planCuenta.findMany({
+
+    const cuentas = await db.planCuenta.findMany({
       where,
       orderBy: { codigo: 'asc' }
     });
-    
+
     // Construir árbol jerárquico
     const cuentasMap = new Map<string, any>(cuentas.map(c => [c.id, { ...c, hijos: [] as any[] }]));
     const raices: any[] = [];
-    
+
     for (const cuenta of cuentas) {
       const nodo = cuentasMap.get(cuenta.id)!;
       if (cuenta.padreId && cuentasMap.has(cuenta.padreId)) {
@@ -34,10 +36,10 @@ export async function GET(request: NextRequest) {
         raices.push(nodo);
       }
     }
-    
+
     return NextResponse.json({ plano: cuentas, jerarquico: raices });
   } catch (error) {
-    console.error('Error al obtener plan de cuentas:', error);
+    logger.error('Error al obtener plan de cuentas', error);
     return NextResponse.json({ error: 'Error al obtener plan de cuentas' }, { status: 500 });
   }
 }
@@ -58,20 +60,19 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // TODO: model PlanCuenta no existe en schema - crear el modelo cuando se implemente contabilidad
-    const cuenta = await (db as any).planCuenta.create({
+    const cuenta = await db.planCuenta.create({
       data: {
         codigo,
         nombre,
-        tipo, // ACTIVO, PASIVO, PATRIMONIO, RESULTADO
+        tipo,
         imputable: imputable ?? true,
         padreId
       }
     });
-    
+
     return NextResponse.json(cuenta, { status: 201 });
   } catch (error) {
-    console.error('Error al crear cuenta:', error);
+    logger.error('Error al crear cuenta', error);
     return NextResponse.json({ error: 'Error al crear cuenta' }, { status: 500 });
   }
 }

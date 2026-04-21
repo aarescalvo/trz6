@@ -135,8 +135,7 @@ export async function POST(request: NextRequest) {
         })
         
         // Crear movimiento de ajuste en caja
-        // TODO: model Caja no tiene campo cuentaBancariaId en el schema - revisar la relación con cuentas bancarias
-        const caja = await (db as any).caja.findFirst({
+        const caja = await db.caja.findFirst({
           where: { cuentaBancariaId: detalle.conciliacion.cuentaBancariaId }
         })
         

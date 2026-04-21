@@ -1,36 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createLogger } from '@/lib/logger';
+import { checkPermission } from '@/lib/auth-helpers';
+
+const logger = createLogger('API:AsientosContable');
 
 // GET - Listar asientos contables
-import { checkPermission } from '@/lib/auth-helpers'
 export async function GET(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeConfiguracion')
-  if (authError) return authError
+  if (authError) return authError;
 
   try {
     const { searchParams } = new URL(request.url);
     const estado = searchParams.get('estado');
     const desde = searchParams.get('desde');
     const hasta = searchParams.get('hasta');
-    
-    const where: any = {};
+
+    const where: Record<string, unknown> = {};
     if (estado) where.estado = estado;
     if (desde || hasta) {
-      where.fecha = {};
-      if (desde) where.fecha.gte = new Date(desde);
-      if (hasta) where.fecha.lte = new Date(hasta);
+      where.fecha = {} as Record<string, unknown>;
+      if (desde) (where.fecha as Record<string, unknown>).gte = new Date(desde);
+      if (hasta) (where.fecha as Record<string, unknown>).lte = new Date(hasta);
     }
-    
-    // TODO: model AsientoContable no existe en schema - crear el modelo cuando se implemente contabilidad
-    const asientos = await (db as any).asientoContable.findMany({
+
+    const asientos = await db.asientoContable.findMany({
       where,
       include: { lineas: true },
       orderBy: { fecha: 'desc' }
     });
-    
+
     return NextResponse.json(asientos);
   } catch (error) {
-    console.error('Error al obtener asientos:', error);
+    logger.error('Error al obtener asientos', error);
     return NextResponse.json({ error: 'Error al obtener asientos' }, { status: 500 });
   }
 }
@@ -62,13 +64,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // TODO: model AsientoContable no existe en schema - crear el modelo cuando se implemente contabilidad
-    const asiento = await (db as any).asientoContable.create({
+    const asiento = await db.asientoContable.create({
       data: {
         tipoOrigen: tipoOrigen || 'AJUSTE',
         origenId,
         origenDetalle,
-        descripcion,
+        concepto: descripcion,
         lineas: {
           create: lineas.map((l: any, index: number) => ({
             codigoCuenta: l.codigoCuenta,
@@ -83,10 +84,10 @@ export async function POST(request: NextRequest) {
       },
       include: { lineas: true }
     });
-    
+
     return NextResponse.json(asiento, { status: 201 });
   } catch (error) {
-    console.error('Error al crear asiento:', error);
+    logger.error('Error al crear asiento', error);
     return NextResponse.json({ error: 'Error al crear asiento' }, { status: 500 });
   }
 }
