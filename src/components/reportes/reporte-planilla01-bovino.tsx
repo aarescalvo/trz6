@@ -31,7 +31,7 @@ interface TropaCompleta {
   dte: string
   guia: string
   observaciones?: string
-  productor?: { id: string; nombre: string; cuit?: string; renspsa?: string; domicilio?: string; localidad?: string; provincia?: string }
+  productor?: { id: string; nombre: string; cuit?: string; numeroRenspa?: string; direccion?: string; localidad?: string; provincia?: string }
   usuarioFaena?: { id: string; nombre: string; cuit?: string }
   corral?: { id: string; nombre: string }
   pesajeCamion?: {
@@ -169,10 +169,10 @@ export function ReportePlanilla01Bovino() {
         ['', ''],
         ['Nombre Productor', tropa.productor?.nombre || tropa.usuarioFaena?.nombre || '-'],
         ['CUIT', tropa.productor?.cuit || tropa.usuarioFaena?.cuit || '-'],
-        ['Origen', tropa.productor?.domicilio || '-'],
+        ['Origen', tropa.productor?.direccion || '-'],
         ['Localidad', tropa.productor?.localidad || '-'],
         ['Provincia', tropa.productor?.provincia || '-'],
-        ['N RENSPA', tropa.productor?.renspsa || '-'],
+        ['N RENSPA', tropa.productor?.numeroRenspa || '-'],
         ['', ''],
         ['Nombre Transporte', tropa.pesajeCamion?.transportista?.nombre || '-'],
         ['CUIT Transporte', tropa.pesajeCamion?.transportista?.cuit || '-'],
@@ -302,7 +302,7 @@ export function ReportePlanilla01Bovino() {
       doc.setFont('helvetica', 'bold')
       doc.text('Origen:', rightCol, y)
       doc.setFont('helvetica', 'normal')
-      doc.text(tropa.productor?.domicilio || '-', rightCol + 35, y)
+      doc.text(tropa.productor?.direccion || '-', rightCol + 35, y)
       y += rowH
 
       // Fila 4
@@ -335,7 +335,7 @@ export function ReportePlanilla01Bovino() {
       doc.setFont('helvetica', 'bold')
       doc.text('N RENSPA:', rightCol, y)
       doc.setFont('helvetica', 'normal')
-      doc.text(tropa.productor?.renspsa || '-', rightCol + 35, y)
+      doc.text(tropa.productor?.numeroRenspa || '-', rightCol + 35, y)
       y += rowH + 2
 
       // Línea separadora
@@ -737,7 +737,7 @@ export function ReportePlanilla01Bovino() {
                     </div>
                     <div>
                       <span className="text-stone-500">Origen:</span>
-                      <span className="ml-2 font-medium">{tropa.productor?.domicilio || '-'}</span>
+                      <span className="ml-2 font-medium">{tropa.productor?.direccion || '-'}</span>
                     </div>
                     <div>
                       <span className="text-stone-500">Localidad:</span>
@@ -749,7 +749,7 @@ export function ReportePlanilla01Bovino() {
                     </div>
                     <div className="col-span-2">
                       <span className="text-stone-500">N RENSPA:</span>
-                      <span className="ml-2 font-medium">{tropa.productor?.renspsa || '-'}</span>
+                      <span className="ml-2 font-medium">{tropa.productor?.numeroRenspa || '-'}</span>
                     </div>
                   </div>
                 </div>
