@@ -4442,3 +4442,92 @@ Stage Summary:
 - **Nuevo helper checkAnyPermission()** para permisos compartidos ✅
 - **Revisión integral**: 0 reportes afectados, 0 referencias rotas ✅
 - **0 errores TS** ✅
+
+---
+Task ID: REFACTOR-CLIENTE-PRODUCTOR-PROVEEDOR
+Agent: main
+Task: Separar entidades Cliente/Productor/Proveedor con enums y corregir bugs de field names
+
+Work Log:
+
+#### 1. Análisis completo de entidades
+Se mapearon 3 modelos existentes y sus relaciones:
+- **Cliente** (20 FK entrantes) — sobrecargado: usuarios de faena + compradores + proveedores de terceros
+- **ProductorConsignatario** (2 FK entrantes) — productores/consignatarios de hacienda, bien separado
+- **Proveedor** (1 FK entrante) — proveedores de insumos, bien separado pero minimalista
+
+#### 2. Cambios en Schema Prisma (commit 1d2340c)
+
+**Nuevos enums:**
+- `TipoCliente`: USUARIO_FAENA, COMPRADOR, PROVEEDOR_TERCE
+- `TipoProductor`: PRODUCTOR, CONSIGNATARIO, AMBOS (reemplaza String)
+- `TipoProveedor`: INSUMOS, SERVICIOS, EQUIPOS, EMPAQUES, LIMPIEZA, VETERINARIOS, OTROS
+
+**Modelo Cliente:**
+- Campo `tipo TipoCliente @default(USUARIO_FAENA)` — permite clasificar cada registro
+- Relación `ingresosTercero` con nombre explícito "IngresoTerceroProveedor"
+
+**Modelo ProductorConsignatario:**
+- Campo `tipo` cambiado de `String` a `TipoProductor` enum
+
+**Modelo Proveedor:**
+- Campo `tipo TipoProveedor @default(OTROS)` — clasifica rubro
+- Campo `contacto String?` — persona de contacto
+- Campo `observaciones String?`
+
+#### 3. Bug crítico corregido: UsuariosFaenaModule field names rotos
+**Archivo:** `src/components/configuracion/usuarios-faena.tsx`
+
+El componente usaba 7 field names que NO existían en el modelo Cliente:
+| Field usado (incorrecto) | Campo correcto del modelo |
+|---|---|
+| `numeroMatricula` | `matricula` |
+| `condicionFiscal` | `condicionIva` |
+| `razonSocialFacturacion` | `razonSocial` |
+| `cuitFacturacion` | `cuit` |
+| `domicilioFacturacion` | `direccion` |
+| `contactoAlternativo` | `telefonoAlternativo` |
+| `inicioActividades` | (eliminado, no existe) |
+| `codigoPostal` | (eliminado, no existe) |
+
+Consecuencia: los datos de facturación nunca se guardaban correctamente.
+Fix: reescrito completamente con interface y formData alineados al modelo Prisma.
+Ahora filtra con `?tipo=USUARIO_FAENA` para mostrar solo matarifes.
+
+#### 4. Bug corregido: migrar-usuarios con `as any`
+**Archivo:** `src/app/api/migrar-usuarios/route.ts`
+
+- Eliminado `as any` en `db.cliente.create()`
+- Eliminados campos inexistentes: `celular`, `modalidadRetiro`
+- Mapeo correcto: `celular` del Excel → `telefono` del modelo, `mail` → `email`
+- Agregado `tipo: 'USUARIO_FAENA'` al crear registros migrados
+- Eliminado `as any` en `select` del GET
+
+#### 5. API clientes mejorada
+**Archivo:** `src/app/api/clientes/route.ts`
+- GET: soporta filtro `?tipo=USUARIO_FAENA` y `?activos=true`
+- POST/PUT: acepta y persiste campo `tipo`
+- Sin breaking changes: sin filtro devuelve todos los tipos
+
+#### 6. API proveedores mejorada
+**Archivo:** `src/app/api/proveedores/route.ts`
+- GET: incluye campos `tipo`, `contacto`, `observaciones` en select
+- POST: persiste `tipo`, `contacto`, `observaciones`
+- PUT: actualiza nuevos campos si se proporcionan
+
+#### 7. Verificación
+- `prisma validate`: OK (solo error DATABASE_URL por no tener .env local)
+- `prisma generate`: OK
+- `tsc --noEmit`: 0 errores TypeScript
+- Búsqueda de referencias rotas en src/: 0 encontradas
+- Commit: `1d2340c`
+- Push a GitHub: OK
+
+Stage Summary:
+- **3 enums nuevos** para tipar entidades correctamente ✅
+- **Campo tipo en Cliente** con default USUARIO_FAENA ✅
+- **7 field names rotos corregidos** en UsuariosFaenaModule ✅
+- **as any eliminado** de migrar-usuarios ✅
+- **APIs mejoradas** con filtros y campos nuevos ✅
+- **0 errores TypeScript** ✅
+- **Subido a GitHub** ✅
