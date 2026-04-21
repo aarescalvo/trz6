@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useCallback } from 'react'
@@ -212,7 +211,7 @@ export function VisualEditor({
                 variant="outline"
                 size="sm"
                 className="justify-start text-xs"
-                onClick={() => agregarElemento(t.tipo)}
+                onClick={() => agregarElemento(t.tipo as any)}
               >
                 <t.icon className={`w-3 h-3 mr-1 ${t.color} text-white p-0.5 rounded`} />
                 {t.nombre}
@@ -255,7 +254,7 @@ export function VisualEditor({
                   }}
                   onClick={() => {
                     if (selectedElementData) {
-                      actualizarElemento(selectedElement, { campo: v.id, textoFijo: undefined })
+                      actualizarElemento(selectedElement!, { campo: v.id || '', textoFijo: undefined })
                       toast.success(`Variable {{${v.id}}} asignada`)
                     } else {
                       toast.info('Seleccione un elemento primero')

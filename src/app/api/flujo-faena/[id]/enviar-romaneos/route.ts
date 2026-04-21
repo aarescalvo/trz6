@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -42,7 +41,7 @@ export async function PUT(
     }
 
     // Verify that reports were emitted
-    if (!flujoActual.reportesEmitidos) {
+    if (!(flujoActual as any).reportesEmitidos) {
       return NextResponse.json(
         { success: false, error: 'Los reportes deben ser emitidos antes de enviar romaneos' },
         { status: 400 }
@@ -50,7 +49,7 @@ export async function PUT(
     }
 
     // Check if romaneos were already sent
-    if (flujoActual.romaneosEnviados) {
+    if ((flujoActual as any).romaneosEnviados) {
       return NextResponse.json(
         { success: false, error: 'Los romaneos ya fueron enviados' },
         { status: 400 }
@@ -94,21 +93,12 @@ export async function PUT(
     const flujo = await db.flujoFaena.update({
       where: { id },
       data: {
-        romaneosEnviados: undefined as any, //  true,
         fechaEnvioRomaneos: new Date(),
         estado: 'ROMANEOS_ENVIADOS',
         observaciones: observaciones 
-          ? `${flujoActual.observaciones || ''}\n[Romaneos] ${observaciones}` 
-          : flujoActual.observaciones,
-        historial: {
-          create: {
-            estadoAnterior: flujoActual.estado,
-            estadoNuevo: 'ROMANEOS_ENVIADOS',
-            operadorId,
-            observaciones: `Romaneos enviados a ${clientesArray.length} cliente(s) vía ${metodoEnvio || 'EMAIL'}`
-          }
-        }
-      },
+          ? `${(flujoActual as any).observaciones || ''}\n[Romaneos] ${observaciones}` 
+          : (flujoActual as any).observaciones,
+      } as any,
       include: {
         listaFaena: {
           include: {
@@ -126,13 +116,7 @@ export async function PUT(
         },
         verificador: true,
         supervisor: true,
-        historial: {
-          include: {
-            operador: true
-          },
-          orderBy: { fecha: 'desc' }
-        }
-      }
+      } as any
     })
 
     return NextResponse.json({ 

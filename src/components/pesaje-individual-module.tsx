@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
@@ -1783,7 +1782,7 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xs">{textos.labelListaAnimales}</CardTitle>
                   <div className="text-[10px] text-stone-500">
-                    {animalesPesados.length}✓ {animalesPendientes.length}⏳
+                    {animalesPesados}✓ {animalesPendientes.length}⏳
                   </div>
                 </div>
               </CardHeader>

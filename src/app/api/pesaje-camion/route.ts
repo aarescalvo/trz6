@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Especie, TipoAnimal, EstadoPesaje, TipoPesajeCamion } from '@prisma/client'
@@ -359,7 +358,7 @@ export async function POST(request: NextRequest) {
       
       let animalNumero = 1
       for (const tipoInfo of tiposDistribucion) {
-        const cantidadTipo = parseInt(tipoInfo.cantidad) || 0
+        const cantidadTipo = parseInt(String(tipoInfo.cantidad)) || 0
         for (let i = 0; i < cantidadTipo; i++) {
           animalesData.push({
             tropaId: '', // Se asigna dentro de la tx
@@ -392,7 +391,7 @@ export async function POST(request: NextRequest) {
         ? tiposAnimales.filter((t: TipoAnimalItem) => t.tipoAnimal && t.cantidad > 0)
             .map((t: TipoAnimalItem) => ({
               tipoAnimal: t.tipoAnimal as TipoAnimal,
-              cantidad: parseInt(t.cantidad)
+              cantidad: parseInt(String(t.cantidad)) || 0
             }))
         : []
       

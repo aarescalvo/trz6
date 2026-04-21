@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -46,7 +45,7 @@ export async function GET(
           raza: a.raza,
           pesoVivo: a.pesoVivo,
           estado: a.estado,
-          corral: a.corral,
+          corral: (a as any).corral,
           fechaBaja: a.fechaBaja,
           motivoBaja: a.motivoBaja
         }))

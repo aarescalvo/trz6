@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import jsPDF from 'jspdf'
@@ -48,9 +47,9 @@ export async function GET(request: NextRequest) {
     // Obtener romaneos de la tropa
     const romaneos = await db.romaneo.findMany({
       where: { 
-        tropaId: tropaId,
+        tropaCodigo: tropa.codigo,
         estado: 'CONFIRMADO'
-      },
+      } as any,
       include: {
         tipificador: true,
         mediasRes: true
@@ -185,7 +184,7 @@ export async function GET(request: NextRequest) {
 
     // Preparar datos de la tabla
     const tableData = romaneos.map((romaneo) => {
-      const tipoDent = formatTipoDenticion(romaneo.denticion, romaneo.categoria)
+      const tipoDent = formatTipoDenticion((romaneo.denticion as any), (romaneo as any).categoria)
       const pesoEntrada = romaneo.pesoVivo || 0
       const kgMediaA = romaneo.pesoMediaIzq || 0
       const kgMediaB = romaneo.pesoMediaDer || 0
@@ -197,7 +196,7 @@ export async function GET(request: NextRequest) {
         (romaneo.numeroAnimal || 0).toString(),
         formatRaza(romaneo.raza),
         tipoDent,
-        romaneo.caravana || '',
+        (romaneo as any).caravana || '',
         pesoEntrada.toFixed(0),
         kgMediaA.toFixed(0),
         kgMediaB.toFixed(0),
@@ -269,7 +268,7 @@ export async function GET(request: NextRequest) {
     // Contar por categoría
     const categorias: Record<string, { count: number; pesoTotal: number; pesoVivo: number }> = {}
     romaneos.forEach(r => {
-      const cat = r.categoria || 'NT'
+      const cat = (r as any).categoria || 'NT'
       if (!categorias[cat]) {
         categorias[cat] = { count: 0, pesoTotal: 0, pesoVivo: 0 }
       }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -336,7 +335,7 @@ export function ConfigImpresorasModule({ operador }: Props) {
                       <p className="text-xs text-stone-500 mb-1">Variables disponibles:</p>
                       <div className="flex flex-wrap gap-1">
                         {plantilla.variables.map(v => (
-                          <Badge key={v} variant="secondary" className="text-xs">{{v}}</Badge>
+                          <Badge key={v} variant="secondary" className="text-xs">{String(v)}</Badge>
                         ))}
                       </div>
                     </div>

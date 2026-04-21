@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import * as fs from 'fs'
 import { checkPermission } from '@/lib/auth-helpers'
 
@@ -23,71 +23,62 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Read the Excel file
-    const workbook = XLSX.readFile(excelPath)
+    // Read the Excel file with ExcelJS
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.readFile(excelPath)
     
     // Look for the specific sheet name
     const sheetName = 'tabla composicion codigo'
-    const sheet = workbook.Sheets[sheetName]
+    const ws = workbook.getWorksheet(sheetName)
     
-    if (!sheet) {
+    if (!ws) {
       return NextResponse.json(
         { success: false, error: `Hoja "${sheetName}" no encontrada` },
         { status: 400 }
       )
     }
     
-    // Convert to JSON
-    const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { header: 1 })
-    
-    // Process rows - format is ".001 lomo" (code + name together)
-    let importados = 0
-    let actualizados = 0
-    let errores = 0
-    
-    for (let i = 0; i < (data as any[]).length; i++) {
-      const row = (data as any[])[i] as unknown[]
-      if (!row || row.length === 0) continue
+    // Collect parsed rows from worksheet (sync in exceljs)
+    const parsedRows: { rowIndex: number; codigo: string; nombre: string }[] = []
+    ws.eachRow((row, rowNumber) => {
+      if (!row || row.cellCount === 0) return
       
-      // Get first column value
-      const primeraColumna = String(row[0] || '').trim()
+      const primeraColumna = String(row.getCell(1).value || '').trim()
       
       // Skip empty rows or headers
       if (!primeraColumna || 
           primeraColumna.toLowerCase().includes('tabla') || 
           primeraColumna.toLowerCase().includes('articulo')) {
-        continue
+        return
       }
       
       // Parse "ARTICULO" column which has format: ".001 lomo"
-      // Extract code (first 4 chars: .XXX) and name (rest)
       const match = primeraColumna.match(/^(\.\d{3})\s+(.+)$/)
-      
-      if (!match) {
-        continue
-      }
+      if (!match) return
       
       const codigo = match[1]  // .001
       const nombre = match[2].trim()  // lomo
       
       // Skip "total" row
-      if (codigo === '.000' || nombre.toLowerCase().includes('total')) {
-        continue
-      }
+      if (codigo === '.000' || nombre.toLowerCase().includes('total')) return
       
-      if (!nombre) {
-        errores++
-        continue
-      }
+      if (!nombre) return
       
+      parsedRows.push({ rowIndex: rowNumber, codigo, nombre })
+    })
+
+    // Process rows with DB operations (async)
+    let importados = 0
+    let actualizados = 0
+    let errores = 0
+    
+    for (const { rowIndex, codigo, nombre } of parsedRows) {
       try {
-        // Check if articulo exists
         const existente = await db.articulo.findUnique({
           where: { codigo }
         })
         
         if (existente) {
-          // Update if name is different
           if (existente.nombre !== nombre) {
             await db.articulo.update({
               where: { codigo },
@@ -96,7 +87,6 @@ export async function POST(request: NextRequest) {
             actualizados++
           }
         } else {
-          // Create new
           await db.articulo.create({
             data: {
               codigo,
@@ -107,7 +97,7 @@ export async function POST(request: NextRequest) {
           importados++
         }
       } catch (error) {
-        console.error(`Error processing row ${i}:`, error)
+        console.error(`Error processing row ${rowIndex}:`, error)
         errores++
       }
     }

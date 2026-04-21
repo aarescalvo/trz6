@@ -1,4 +1,3 @@
-// @ts-nocheck
 import PDFDocument from 'pdfkit'
 import { PassThrough } from 'stream'
 
@@ -91,10 +90,10 @@ export async function generarPlanilla01PDF(datos: DatosPlanilla01): Promise<Buff
           right: 30
         },
         info: {
-          title: `Planilla 01 - ${datos.tropaCodigo}`,
-          author: datos.configuracion?.nombre || 'Solemar Alimentaria S.A.',
-          subject: 'Registro Ingreso de Hacienda'
-        }
+          Title: `Planilla 01 - ${datos.tropaCodigo}`,
+          Author: datos.configuracion?.nombre || 'Solemar Alimentaria S.A.',
+          Subject: 'Registro Ingreso de Hacienda'
+        } as any
       })
       
       const chunks: Buffer[] = []

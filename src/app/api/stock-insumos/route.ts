@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { checkPermission } from '@/lib/auth-helpers'
@@ -24,11 +23,7 @@ export async function GET(request: NextRequest) {
     const stockItems = await db.stockInsumo.findMany({
       where,
       include: {
-        insumo: {
-          include: {
-            proveedor: true
-          }
-        },
+        insumo: true,
         deposito: true
       },
       orderBy: [

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -154,7 +153,7 @@ export async function POST(request: NextRequest) {
       const pesoVivo = animal.pesoVivo || animal.pesajeIndividual?.peso || 0
       const nuevoRinde = pesoVivo > 0 ? ((romaneo.pesoTotal || 0) / pesoVivo) * 100 : 0
       if (nuevoRinde > 70) {
-        alertaRinde = `Rinde ${nuevoRinde.toFixed(1)}% supera el 70%`
+        alertaRinde = `Rinde ${nuevoRinde.toFixed(1)}% supera el 70%` as any
       }
     }
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { tarifasRepository } from '../repositories/tarifas.repository'
 import { eventBus } from '@/core/events/event-bus'
 import { ESPECIE_TARIFA_MAP } from '../constants'
@@ -63,21 +62,21 @@ export class TarifasService {
     // Cerrar tarifa anterior y crear la nueva EN TRANSACCIÓN
     const nueva = await db.$transaction(async (tx) => {
       // 1. Cerrar la tarifa anterior
-      await tx.tarifa.updateMany({
+      await tx.historicoTarifa.updateMany({
         where: {
           tipoTarifaCodigo: data.tipoTarifaCodigo,
           clienteId: data.clienteId || null,
           especie: data.especie || null,
           categoria: data.categoria || null,
           vigenciaHasta: null
-        },
+        } as any,
         data: {
           vigenciaHasta: new Date(data.vigenciaDesde.getTime() - 86400000)
         }
       })
       
       // 2. Crear la nueva
-      const tarifa = await tx.tarifa.create({
+      const tarifa = await tx.historicoTarifa.create({
         data: {
           tipoTarifaCodigo: data.tipoTarifaCodigo,
           valor: data.valor,
@@ -87,7 +86,7 @@ export class TarifasService {
           categoria: data.categoria || null,
           motivo: data.motivo,
           operadorId: data.operadorId
-        }
+        } as any
       })
       
       return tarifa

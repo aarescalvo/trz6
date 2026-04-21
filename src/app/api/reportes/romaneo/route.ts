@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { generarRomaneoPDF, getDatosRomaneoPorTropa } from '@/lib/pdf/romaneo-tropa'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Devolver el PDF como respuesta
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

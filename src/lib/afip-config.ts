@@ -1,4 +1,3 @@
-// @ts-nocheck
 // AFIP Configuration - Constantes y URLs para Facturación Electrónica
 // Referencia: https://www.afip.gob.ar/ws/WSAA/WSAA.HTM
 
@@ -308,7 +307,7 @@ export function requiereCUITReceptor(tipoComprobante: number): boolean {
     TIPOS_COMPROBANTE.NOTA_DEBITO_M,
     TIPOS_COMPROBANTE.NOTA_CREDITO_M,
   ]
-  return tiposQueRequierenCUIT.includes(tipoComprobante)
+  return tiposQueRequierenCUIT.includes(tipoComprobante as typeof tiposQueRequierenCUIT[number])
 }
 
 /**
@@ -324,7 +323,7 @@ export function discriminaIVA(tipoComprobante: number): boolean {
     TIPOS_COMPROBANTE.NOTA_DEBITO_M,
     TIPOS_COMPROBANTE.NOTA_CREDITO_M,
   ]
-  return tiposQueDiscriminan.includes(tipoComprobante)
+  return tiposQueDiscriminan.includes(tipoComprobante as typeof tiposQueDiscriminan[number])
 }
 
 /**

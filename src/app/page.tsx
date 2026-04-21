@@ -959,7 +959,7 @@ export default function FrigorificoApp() {
       case 'menudencias':
         return wrapModule('menudencias', <MenudenciasModule operador={operador as any} />)
       case 'stockUnificada':
-        return wrapModule('stockUnificada', <StockUnificada operador={operador} />)
+        return wrapModule('stockUnificada', <StockUnificada operador={operador as any} />)
       case 'stocksCorrales':
         return wrapModule('stocksCorrales', <StocksCorralesModule operador={operador} />)
       case 'reportes':

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -223,10 +222,10 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
             <Clientes operador={operador} />
           </TabsContent>
           <TabsContent value="tiposServicio">
-            <TiposServicioConfig operador={operador} />
+            <TiposServicioConfig operador={{ ...operador, rol: (operador as any).rol || 'ADMINISTRADOR' } } />
           </TabsContent>
           <TabsContent value="preciosServicio">
-            <PreciosServicioConfig operador={operador} />
+            <PreciosServicioConfig operador={{ ...operador, rol: (operador as any).rol || 'ADMINISTRADOR' } } />
           </TabsContent>
           <TabsContent value="transportistas">
             <Transportistas operador={operador} />

@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 // Helper para descargar blobs sin file-saver
 function saveAs(blob: Blob, filename: string) {
@@ -131,44 +131,54 @@ function formatCurrency(value: number): string {
 }
 
 /**
- * Aplica estilos a una hoja de Excel
+ * Aplica estilos a una hoja de Excel (auto-width de columnas)
  */
-function applySheetStyles(ws: XLSX.WorkSheet, headerRow: number = 1) {
-  // Establecer ancho de columnas automáticamente
-  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+function applySheetStyles(ws: ExcelJS.Worksheet) {
+  // Calcular ancho máximo por columna usando rowCount y columnCount
+  const totalRows = ws.rowCount;
+  const totalCols = ws.columnCount;
 
-  // Calcular ancho máximo por columna
-  const colWidths: number[] = [];
-  for (let C = range.s.c; C <= range.e.c; ++C) {
+  if (totalRows === 0 || totalCols === 0) return;
+
+  for (let colNum = 1; colNum <= totalCols; colNum++) {
     let maxW = 10;
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      const cell = ws[cellAddress];
-      if (cell && cell.v) {
-        const cellValue = String(cell.v);
+    for (let rowNum = 1; rowNum <= totalRows; rowNum++) {
+      const cell = ws.getCell(rowNum, colNum);
+      if (cell.value) {
+        const cellValue = String(cell.value);
         maxW = Math.max(maxW, cellValue.length + 2);
       }
     }
-    colWidths.push(Math.min(maxW, 50)); // Máximo 50 caracteres
+    ws.getColumn(colNum).width = Math.min(maxW, 50); // Máximo 50 caracteres
   }
-  ws['!cols'] = colWidths.map(w => ({ wch: w }));
 }
 
 /**
- * Crea una hoja de Excel con datos y estilos
+ * Crea una hoja de Excel con datos y estilos dentro de un workbook
  */
 function createSheetWithData(
+  wb: ExcelJS.Workbook,
+  sheetName: string,
   headers: string[],
   data: any[][],
   title?: string
-): XLSX.WorkSheet {
-  // Agregar título si existe
-  const sheetData: any[][] = title ? [[title], []] : [];
-  sheetData.push(headers);
-  sheetData.push(...data);
+): ExcelJS.Worksheet {
+  const ws = wb.addWorksheet(sheetName.substring(0, 31)); // Excel limita a 31 caracteres
 
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
-  applySheetStyles(ws, title ? 3 : 1);
+  // Agregar título si existe
+  if (title) {
+    ws.addRow([title]);
+    ws.addRow([]); // blank row
+  }
+
+  // Agregar encabezado
+  ws.addRow(headers);
+
+  // Agregar datos
+  data.forEach(row => ws.addRow(row));
+
+  // Aplicar auto-width
+  applySheetStyles(ws);
 
   return ws;
 }
@@ -184,20 +194,21 @@ export class ExcelExporter {
     sheets: SheetData[];
     title?: string;
   }): void {
-    const { filename, sheets, title } = options;
-    const wb = XLSX.utils.book_new();
+    (async () => {
+      const { filename, sheets, title } = options;
+      const wb = new ExcelJS.Workbook();
 
-    sheets.forEach((sheet) => {
-      const ws = createSheetWithData(sheet.headers, sheet.data, title);
-      XLSX.utils.book_append_sheet(wb, ws, sheet.name.substring(0, 31)); // Excel limita a 31 caracteres
-    });
+      sheets.forEach((sheet) => {
+        createSheetWithData(wb, sheet.name, sheet.headers, sheet.data, title);
+      });
 
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
 
-    saveAs(blob, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
+      saveAs(blob, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
+    })();
   }
 
   /**

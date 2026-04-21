@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { validarPermiso } from '@/lib/auth-helpers'
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       porCliente[cid].push(tropa)
     }
 
-    const facturasCreadas = []
+    const facturasCreadas: any[] = []
 
     for (const [clienteId, tropasCliente] of Object.entries(porCliente)) {
       const cliente = tropasCliente[0].usuarioFaena
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
 
       // Calcular totales
       let subtotal = 0
-      const detalles = []
+      const detalles: any[] = []
 
       for (const tropa of tropasCliente) {
         const kgGancho = tropa.kgGancho || 0

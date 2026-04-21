@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -381,7 +380,7 @@ export function PreciosServicioConfig({ operador }: Props) {
                 disabled={!!selectedPrecio}
               >
                 <option value="">Seleccionar servicio...</option>
-                {tiposServicio.filter(t => t.activo && t.seFactura).map(t => (
+                {tiposServicio.filter((t: any) => t.activo && t.seFactura).map((t: any) => (
                   <option key={t.id} value={t.id}>
                     {t.nombre} ({t.unidad})
                   </option>

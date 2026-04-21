@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import jsPDF from 'jspdf'
@@ -48,9 +47,9 @@ export async function GET(request: NextRequest) {
     // Obtener romaneos de la tropa
     const romaneos = await db.romaneo.findMany({
       where: { 
-        tropaId: tropaId,
+        tropaCodigo: tropa.codigo,
         estado: 'CONFIRMADO'
-      },
+      } as any,
       include: {
         tipificador: true,
         mediasRes: true
@@ -204,8 +203,8 @@ export async function GET(request: NextRequest) {
         romaneo.garron.toString(),
         (romaneo.numeroAnimal || 0).toString(),
         formatRaza(romaneo.raza),
-        formatTipoDenticion(romaneo.denticion, romaneo.categoria),
-        romaneo.caravana || '',
+        formatTipoDenticion(romaneo.denticion as any, (romaneo as any).categoria),
+        (romaneo as any).caravana || '',
         pesoEntrada.toFixed(0),
         kgMediaA.toFixed(0),
         kgMediaB.toFixed(0),

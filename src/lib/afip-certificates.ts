@@ -1,4 +1,3 @@
-// @ts-nocheck
 // AFIP Certificate Management
 // Handles certificate validation, storage, and verification
 
@@ -173,25 +172,23 @@ export async function storeCertificate(
       await db.aFIPConfig.update({
         where: { id: existing.id },
         data: {
-          certificado: certificate,
-          clavePrivada: privateKey,
+          certificadoPath: certificate,
+          clavePrivadaPath: privateKey,
           puntoVenta,
-          ambiente,
-          certificadoValido: true,
+          entorno: ambiente,
           fechaVencimiento: validation.info?.notAfter
-        }
+        } as any
       })
     } else {
       // Create new
       await db.aFIPConfig.create({
         data: {
-          certificado: certificate,
-          clavePrivada: privateKey,
+          certificadoPath: certificate,
+          clavePrivadaPath: privateKey,
           puntoVenta,
-          ambiente,
-          certificadoValido: true,
+          entorno: ambiente,
           fechaVencimiento: validation.info?.notAfter
-        }
+        } as any
       })
     }
     
@@ -217,18 +214,18 @@ export async function getCertificateConfig(): Promise<{
   expirationDate: Date | null
 } | null> {
   try {
-    const config = await db.aFIPConfig.findFirst()
+    const config = await db.aFIPConfig.findFirst() as any
     
     if (!config) {
       return null
     }
     
     return {
-      certificate: config.certificado,
-      privateKey: config.clavePrivada,
+      certificate: config.certificadoPath,
+      privateKey: config.clavePrivadaPath,
       puntoVenta: config.puntoVenta,
-      ambiente: config.ambiente as 'testing' | 'production',
-      isValid: config.certificadoValido,
+      ambiente: (config.entorno || 'testing') as 'testing' | 'production',
+      isValid: !!config.fechaVencimiento,
       expirationDate: config.fechaVencimiento
     }
   } catch (error) {
@@ -298,11 +295,10 @@ export async function deleteCertificates(): Promise<boolean> {
       await db.aFIPConfig.update({
         where: { id: existing.id },
         data: {
-          certificado: null,
-          clavePrivada: null,
-          certificadoValido: false,
+          certificadoPath: null,
+          clavePrivadaPath: null,
           fechaVencimiento: null
-        }
+        } as any
       })
     }
     

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, TipoRotulo } from '@prisma/client'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -140,7 +139,7 @@ export async function POST(request: NextRequest) {
     ]
 
     for (const rotulo of rotulosDefault) {
-      await prisma.rotulo.create({ data: rotulo })
+      await (prisma as any).rotulo.create({ data: rotulo })
     }
 
     return NextResponse.json({ 

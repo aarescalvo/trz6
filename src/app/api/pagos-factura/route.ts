@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -148,8 +147,7 @@ export async function POST(request: NextRequest) {
         where: { id: facturaId },
         data: {
           saldo: Math.max(0, nuevoSaldo),
-          estado: nuevoEstado,
-          fechaPago: undefined as any, //  nuevoSaldo <= 0 ? new Date() : factura(. as any).fechaPago
+          estado: nuevoEstado as any,
         }
       })
 
@@ -204,8 +202,7 @@ export async function DELETE(request: NextRequest) {
         where: { id: factura.id },
         data: {
           saldo: nuevoSaldo,
-          estado: 'EMITIDA',
-          fechaPago: undefined as any, //  null
+          estado: 'EMITIDA' as any,
         }
       })
 

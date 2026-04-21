@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -40,44 +39,27 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        asignaciones: {
-          include: {
-            romaneoRef: {
-              include: {
-                mediasRes: {
-                  include: {
-                    despachoItems: {
-                      include: {
-                        despacho: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
+      } as any,
       orderBy: { fecha: 'desc' }
     })
 
     // If tropaCodigo filter is specified, filter the results
     const filteredListas = tropaCodigo
-      ? listasFaena.map(lf => ({
+      ? listasFaena.map((lf: any) => ({
           ...lf,
-          tropas: lf.tropas.filter(t => t.tropa.codigo.toLowerCase().includes(tropaCodigo.toLowerCase()))
-        })).filter(lf => lf.tropas.length > 0)
+          tropas: (lf.tropas || []).filter((t: any) => (t.tropa?.codigo || '').toLowerCase().includes(tropaCodigo.toLowerCase()))
+        })).filter((lf: any) => (lf.tropas || []).length > 0)
       : listasFaena
 
     // Build the result array - one row per tropa
     const result: any[] = []
 
     for (const lista of filteredListas) {
-      for (const listaTropa of lista.tropas) {
-        const tropa = listaTropa.tropa
+      for (const listaTropa of (lista as any).tropas || []) {
+        const tropa = (listaTropa as any).tropa
 
         // Get romaneos for this tropa via asignaciones
-        const romaneosDeTropa = lista.asignaciones
+        const romaneosDeTropa = ((lista as any).asignaciones || [])
           .filter(a => a.tropaCodigo === tropa.codigo)
           .map(a => a.romaneoRef)
           .filter(Boolean)

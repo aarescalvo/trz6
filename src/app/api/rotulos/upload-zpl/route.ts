@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, TipoRotulo } from '@prisma/client'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -50,13 +49,12 @@ export async function POST(request: NextRequest) {
         nombre,
         codigo,
         tipo,
-        tipoPlantilla: 'ZPL',
         ancho,
         alto,
-        contenidoZPL,
-        camposZPL: JSON.stringify(variablesDetectadas),
-        nombreArchivoZPL: file.name,
-        elementos: '[]', // Vacío para plantillas ZPL
+        contenido: contenidoZPL,
+        variables: JSON.stringify(variablesDetectadas),
+        nombreArchivo: file.name,
+        elementos: '[]' as any, // Vacío para plantillas ZPL
         diasConsumo,
         activo: true,
         esDefault: false

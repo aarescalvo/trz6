@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
       { codigo: 'FAENA_INCLUIDO', nombre: 'Faena con Subproductos Incluidos', unidad: 'KG', seFactura: false, incluidoEn: 'FAENA', porcentajeIva: 10.5, orden: 0, descripcion: 'Precio incluye subproductos' },
     ]
 
-    const creados = []
+    const creados: any[] = []
 
     for (const tipo of tiposDefault) {
       const existente = await db.tipoServicio.findUnique({

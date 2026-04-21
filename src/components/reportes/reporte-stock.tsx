@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -83,9 +82,9 @@ export function ReporteStock() {
     try {
       const archivo = await exportReport({
         tipo: 'stock',
-        datos,
+        datos: datos as any,
         resumen,
-        camaras
+        camaras: camaras as any,
       })
 
       window.open(archivo, '_blank')

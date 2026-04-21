@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
     const fechaStr = fecha.toISOString().split('T')[0].replace(/-/g, '').slice(2) // DDMMYY
 
     // Generar código de barras: tropaCodigo-garron-lado-fechaFaena
-    const tropaCodigo = asignacion.animal.tropa?.codigo || 'S/T'
+    const tropaCodigo = asignacion.animal?.tropa?.codigo || 'S/T'
     const codigo = `${tropaCodigo}-${garron}-${lado}-${fechaStr}`
 
     const pesoNum = peso ? parseFloat(peso) : 0
@@ -93,10 +92,10 @@ export async function POST(request: NextRequest) {
           garron,
           listaFaenaId,
           tropaCodigo,
-          numeroAnimal: asignacion.numeroAnimal,
-          tipoAnimal: asignacion.animal.tipoAnimal,
-          raza: asignacion.animal.raza,
-          pesoVivo: asignacion.animal.pesoVivo,
+          numeroAnimal: (asignacion as any).numeroAnimal,
+          tipoAnimal: asignacion.animal?.tipoAnimal,
+          raza: asignacion.animal?.raza,
+          pesoVivo: asignacion.animal?.pesoVivo,
           denticion: denticion || '2',
           tipificadorId,
           operadorId,
@@ -148,13 +147,13 @@ export async function POST(request: NextRequest) {
 
     // Actualizar stock de cámara si corresponde
     if (camaraId && !esDecomisoBool) {
-      const especie = asignacion.animal.tropa?.especie || 'BOVINO'
+      const especie = asignacion.animal?.tropa?.especie || 'BOVINO'
       
       const stockExistente = await db.stockMediaRes.findUnique({
         where: {
           camaraId_tropaCodigo_especie: {
             camaraId,
-            tropaCodigo: tropaCodigo || null,
+            tropaCodigo: tropaCodigo || null as any,
             especie: especie as 'BOVINO' | 'EQUINO'
           }
         }

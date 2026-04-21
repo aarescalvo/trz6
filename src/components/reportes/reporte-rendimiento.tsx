@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -86,7 +85,7 @@ export function ReporteRendimiento() {
     try {
       const archivo = await exportReport({
         tipo: 'rendimiento',
-        datos,
+        datos: datos as any,
         resumen,
         fechaDesde,
         fechaHasta

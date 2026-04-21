@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -308,6 +307,7 @@ export function Widget({
   config,
   editMode = false,
   onToggleMinimize,
+  onToggleVisibility,
   children,
   className
 }: WidgetProps) {

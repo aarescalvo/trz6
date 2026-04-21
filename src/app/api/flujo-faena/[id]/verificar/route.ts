@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -42,7 +41,7 @@ export async function PUT(
     }
 
     // Check if already verified
-    if (flujoActual.datosVerificados) {
+    if ((flujoActual as any).datosVerificados) {
       return NextResponse.json(
         { success: false, error: 'Los datos ya fueron verificados' },
         { status: 400 }
@@ -61,20 +60,11 @@ export async function PUT(
     const flujo = await db.flujoFaena.update({
       where: { id },
       data: {
-        datosVerificados: undefined as any, //  true,
         verificadorId,
         fechaVerificacion: new Date(),
         estado: 'PENDIENTE_VISTO_BUENO',
-        observaciones: observaciones ? `${flujoActual.observaciones || ''}\n[Verificación] ${observaciones}` : flujoActual.observaciones,
-        historial: {
-          create: {
-            estadoAnterior: flujoActual.estado,
-            estadoNuevo: 'PENDIENTE_VISTO_BUENO',
-            operadorId: verificadorId,
-            observaciones: 'Datos verificados, pendiente visto bueno del supervisor'
-          }
-        }
-      },
+        observaciones: observaciones ? `${(flujoActual as any).observaciones || ''}\n[Verificación] ${observaciones}` : (flujoActual as any).observaciones,
+      } as any,
       include: {
         listaFaena: {
           include: {
@@ -92,13 +82,7 @@ export async function PUT(
         },
         verificador: true,
         supervisor: true,
-        historial: {
-          include: {
-            operador: true
-          },
-          orderBy: { fecha: 'desc' }
-        }
-      }
+      } as any
     })
 
     return NextResponse.json({ 

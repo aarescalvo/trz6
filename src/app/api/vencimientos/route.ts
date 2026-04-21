@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -49,13 +48,13 @@ export async function GET(request: NextRequest) {
         usuarioFaena: true
       },
       orderBy: {
-        fechaVencimiento: 'asc'
-      }
+        fechaIngreso: 'asc'
+      } as any
     })
 
     // Calcular días restantes para cada media res
     const mediasConDias = mediasRes.map(mr => {
-      const fechaVenc = mr.fechaVencimiento ? new Date(mr.fechaVencimiento) : null
+      const fechaVenc = (mr as any).fechaVencimiento ? new Date((mr as any).fechaVencimiento) : null
       const diasRestantes = fechaVenc 
         ? Math.ceil((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
         : null
@@ -112,9 +111,8 @@ export async function POST(request: NextRequest) {
     const mediaRes = await db.mediaRes.update({
       where: { id: mediaResId },
       data: {
-        diasVencimiento,
         fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null
-      }
+      } as any
     })
 
     return NextResponse.json({

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -351,7 +350,7 @@ export function ComprobantesTable({ operador }: Props) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {viewFactura.pagos.map((p: any, i: number) => (
+                        {(viewFactura.pagos || []).map((p: any, i: number) => (
                           <TableRow key={p.id || i} className="text-xs">
                             <TableCell>{formatDate(p.fecha)}</TableCell>
                             <TableCell>{METODOS_PAGO[p.metodoPago] || p.metodoPago}</TableCell>

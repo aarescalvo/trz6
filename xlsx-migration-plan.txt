@@ -1,0 +1,478 @@
+================================================================================
+XLSX → EXCELJS MIGRATION PLAN
+================================================================================
+Project: frigorifico-sistema (produccion4z)
+Date: Analysis generated automatically
+Status: exceljs ^4.4.0 is ALREADY INSTALLED in package.json
+================================================================================
+
+1. SCOPE OF MIGRATION
+================================================================================
+
+Direct xlsx imports found in 5 files:
+
+  1. src/lib/export-excel.ts          (STATIC import)
+  2. src/app/api/articulos/importar/route.ts  (STATIC import)
+  3. src/app/api/planilla01/route.ts          (STATIC import)
+  4. src/app/api/reportes/faena/excel/route.ts (DYNAMIC import)
+  5. src/app/api/migrar-usuarios/route.ts      (DYNAMIC import)
+
+Indirect dependents (import ExcelExporter from @/lib/export-excel — NO changes
+needed in these files, they use the abstraction layer):
+
+  - src/components/reportes/ReporteLiquidacionProductor.tsx
+  - src/components/reportes/ReporteResumenClienteFaena.tsx
+  - src/components/reportes/ReporteBalanceFaena.tsx
+  - src/components/reportes/ReporteFaenaPendienteFacturar.tsx
+  - src/components/reportes/ReporteStockProductos.tsx
+  - src/components/reportes/reporte-planilla01-bovino.tsx
+  - src/components/reportes/ReporteConciliacionFaenaFactura.tsx
+  - src/components/reportes/reportes-documentos.tsx
+  - src/components/reportes/ReporteRindeTropa.tsx
+  - src/components/reportes/index.tsx
+  - src/components/reportes-avanzados.tsx
+  - src/components/c2-expedicion/index.tsx
+  - src/components/c2-degradacion/index.tsx
+  - src/components/c2-rendimiento/index.tsx
+  - src/components/c2-reportes/index.tsx
+  - src/components/c2-stock/index.tsx
+  - src/app/api/reportes/faena/excel/route.ts
+
+================================================================================
+
+2. XLSX API USAGE INVENTORY
+================================================================================
+
+--- XLSX Methods Used Across All Files ---
+
+  CREATE WORKBOOK:
+    XLSX.utils.book_new()                   → 4 files (1,3,4 via direct; 1 via export-excel)
+
+  DATA → SHEET:
+    XLSX.utils.aoa_to_sheet(aoaData)        → 3 files (1,3,4)
+    [Not used: XLSX.utils.json_to_sheet()]
+
+  SHEET → DATA (reading):
+    XLSX.utils.sheet_to_json(sheet, { header: 1 })    → File 2 (raw array mode)
+    XLSX.utils.sheet_to_json<T>(sheet)                 → File 5 (typed JSON mode)
+
+  READ FILE:
+    XLSX.readFile(filePath)                  → File 2 (from disk path)
+    XLSX.read(buffer, { type: 'buffer' })    → File 5 (from Buffer)
+
+  WRITE WORKBOOK:
+    XLSX.write(wb, { bookType:'xlsx', type:'array' })  → File 1 (client blob)
+    XLSX.write(wb, { bookType:'xlsx', type:'buffer' }) → File 3 (server response)
+    XLSX.write(wb, { bookType:'xlsx', type:'array' })  → File 4 (server response)
+
+  SHEET MANAGEMENT:
+    XLSX.utils.book_append_sheet(wb, ws, name)  → 4 files (1,3,4 via direct; 1 via export-excel)
+    workbook.Sheets[sheetName]                  → Files 2, 5 (reading)
+
+  COLUMN WIDTHS:
+    ws['!cols'] = [{ wch: N }, ...]            → Files 1,3,4
+
+  RANGE UTILITIES:
+    XLSX.utils.decode_range(ws['!ref'])        → File 1
+    XLSX.utils.encode_cell({ r, c })           → File 1
+    ws['!ref']                                 → File 1
+
+================================================================================
+
+3. DETAILED FILE ANALYSIS
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 1: src/lib/export-excel.ts
+────────────────────────────────────────────────────────────────────────────────
+
+  PURPOSE: Client-side Excel export library. Core abstraction used by 16+
+           React components. Generates .xlsx files as blobs for browser download.
+  LINES:   694 lines total (significant utility class)
+  IMPORT:  `import * as XLSX from 'xlsx'` (static, top-level)
+
+  XLSX METHODS USED:
+    • XLSX.utils.book_new()
+    • XLSX.utils.aoa_to_sheet(sheetData)
+    • XLSX.utils.book_append_sheet(wb, ws, name)
+    • XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    • XLSX.utils.decode_range(ws['!ref'])
+    • XLSX.utils.encode_cell({ r, c })
+    • ws['!cols'] = [{ wch: N }]
+    • ws['!ref'] (read)
+
+  KEY CLASS: ExcelExporter (static methods)
+    - exportToExcel()           — generic multi-sheet export
+    - exportFaenaReport()       — faena report with totals
+    - exportRendimientoReport() — rendimiento with statistics
+    - exportStockReport()       — stock with summary
+    - exportCuentaCorriente()   — cuenta corriente with aging
+    - exportMovimientosCaja()   — caja movements with totals
+    - exportFacturas()          — invoice listing
+    - exportOrdenesCompra()     — purchase orders
+    - exportToCSV()             — CSV export (NO xlsx used here)
+    - exportMultipleSheets()    — multi-sheet from Record
+    - exportFromObjects()       — generic from object array
+    - exportAuditoria()         — audit log
+    - exportProduccion()        — production report
+
+  COMPLEXITY: ★★★ COMPLEX
+    - Largest file (694 lines)
+    - Central dependency for 16+ components
+    - Uses advanced xlsx features (range manipulation for auto-width)
+    - Client-side blob download pattern (saveAs helper)
+    - Must preserve public API — all static method signatures
+
+  EXCELJS EQUIVALENTS:
+    XLSX.utils.book_new()
+      → new ExcelJS.Workbook()
+
+    XLSX.utils.aoa_to_sheet(aoaData)
+      → const ws = wb.addWorksheet('name');
+        ws.addRows(aoaData);  // first row = header, rest = data rows
+        // OR for raw AOA including title/blank rows:
+        aoaData.forEach(row => ws.addRow(row));
+
+    XLSX.utils.book_append_sheet(wb, ws, name)
+      → wb.addWorksheet(name)  // create directly; no separate append needed
+
+    XLSX.write(wb, { bookType:'xlsx', type:'array' })
+      → const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats...' });
+
+    XLSX.utils.decode_range(ws['!ref'])
+      → ws.rowCount, ws.columnCount  (exceljs has rowCount/columnCount directly)
+
+    XLSX.utils.encode_cell({ r, c })
+      → ws.getCell(row + 1, col + 1)  (exceljs is 1-indexed)
+
+    ws['!cols'] = [{ wch: N }, ...]
+      → ws.columns.forEach((col, i) => { col.width = widths[i]; });
+        // OR: ws.getColumn(n).width = 25;
+
+  MIGRATION NOTES:
+    - The applySheetStyles() auto-width logic needs rewriting.
+      ExcelJS doesn't have ws['!ref'] — use ws.rowCount + iterate.
+      Cell value access: cell.value instead of cell.v.
+    - All addRow/addRows calls are async in exceljs? No — worksheet
+      manipulation is sync, only writeBuffer() is async.
+    - Title rows + blank rows: use ws.addRow() for each row of the AOA.
+    - The public API of ExcelExporter can remain identical — change only
+      internals.
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 2: src/app/api/articulos/importar/route.ts
+────────────────────────────────────────────────────────────────────────────────
+
+  PURPOSE: API route to import artículos (products) from an Excel file on disk.
+           Reads a specific sheet, parses product codes, upserts into DB.
+  LINES:   134 lines
+  IMPORT:  `import * as XLSX from 'xlsx'` (static)
+
+  XLSX METHODS USED:
+    • XLSX.readFile(excelPath)           — read file from filesystem
+    • workbook.Sheets['tabla composicion codigo'] — get sheet by name
+    • XLSX.utils.sheet_to_json(sheet, { header: 1 }) — raw array mode (no headers)
+
+  COMPLEXITY: ★★ MEDIUM
+    - Straightforward file read + sheet_to_json
+    - Uses { header: 1 } for raw array output (not header-based JSON)
+    - Custom parsing logic for ".001 lomo" format
+
+  EXCELJS EQUIVALENTS:
+    XLSX.readFile(excelPath)
+      → const wb = new ExcelJS.Workbook();
+        await wb.xlsx.readFile(excelPath);
+
+    workbook.Sheets[name]
+      → const ws = wb.getWorksheet('tabla composicion codigo');
+
+    XLSX.utils.sheet_to_json(sheet, { header: 1 })
+      → // No direct equivalent for header:1 mode.
+        // Must iterate rows and extract values:
+        const data: any[][] = [];
+        ws.eachRow((row, rowNumber) => {
+          const values: any[] = [];
+          row.eachCell({ includeEmpty: true }, (cell) => {
+            values[cell.col - 1] = cell.value;  // but gaps in sparse rows
+          });
+          data.push(values);
+        });
+        // OR for exact array-per-row including empties:
+        const data = ws.getSheetValues();
+        // Note: getSheetValues() returns values starting from row 1, col 1
+        // and may include null/undefined for empty cells.
+
+  MIGRATION NOTES:
+    - readFile becomes async → wrap in await
+    - The sheet_to_json with { header: 1 } is the trickiest part.
+      ws.getSheetValues() is closest but check for off-by-one and null handling.
+    - The parsing loop logic (row[0] matching, skipping headers) stays the same.
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 3: src/app/api/planilla01/route.ts
+────────────────────────────────────────────────────────────────────────────────
+
+  PURPOSE: API route to generate a "Planilla 01" (official Argentine livestock
+           intake form) as an Excel file. Complex layout with headers, sections,
+           animal detail table, totals, and signature lines.
+  LINES:   139 lines
+  IMPORT:  `import * as XLSX from 'xlsx'` (static)
+
+  XLSX METHODS USED:
+    • XLSX.utils.book_new()
+    • XLSX.utils.aoa_to_sheet(allData)        — complex multi-section AOA
+    • XLSX.utils.book_append_sheet(wb, ws, 'Planilla 01')
+    • XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+    • ws['!cols'] = [{ wch: N }, ...]         — 12 columns configured
+
+  COMPLEXITY: ★★ MEDIUM
+    - Server-side Excel generation returning buffer as HTTP response
+    - Complex layout with many sections but uses only basic aoa_to_sheet
+    - No cell styling (fonts, borders, merges) — could be enhanced later
+
+  EXCELJS EQUIVALENTS:
+    XLSX.utils.book_new()
+      → new ExcelJS.Workbook()
+
+    XLSX.utils.aoa_to_sheet(allData)
+      → const ws = wb.addWorksheet('Planilla 01');
+        allData.forEach(row => ws.addRow(row));
+
+    XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      → const buffer = await wb.xlsx.writeBuffer();
+        // buffer is ArrayBuffer, may need Buffer.from(buffer)
+
+    ws['!cols'] = [{ wch: N }, ...]
+      → for (let i = 1; i <= 12; i++) ws.getColumn(i).width = widths[i-1];
+
+  MIGRATION NOTES:
+    - Straightforward. AOA data is simple row arrays.
+    - writeBuffer() is async → make POST handler async (it already is).
+    - Could add cell merges, fonts, borders later with exceljs (enhancement).
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 4: src/app/api/reportes/faena/excel/route.ts
+────────────────────────────────────────────────────────────────────────────────
+
+  PURPOSE: API route to generate a faena (slaughter) report as Excel.
+           Queries balances, adds totals, returns xlsx buffer.
+  LINES:   123 lines
+  IMPORT:  `const XLSX = await import('xlsx')` (dynamic)
+
+  NOTE: This file ALSO imports ExcelExporter but does NOT use it!
+        It has its own inline xlsx generation. Should be refactored to use
+        ExcelExporter, or migrated independently.
+
+  XLSX METHODS USED:
+    • XLSX.utils.book_new()
+    • XLSX.utils.aoa_to_sheet([headers, ...rows])
+    • XLSX.utils.book_append_sheet(wb, ws, 'Faena')
+    • XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+    • ws['!cols'] = [{ wch: N }, ...]
+
+  COMPLEXITY: ★ SIMPLE
+    - Nearly identical pattern to File 3
+    - Could potentially be replaced by ExcelExporter.exportFaenaReport()
+      (which already exists in export-excel.ts!)
+    - Duplicates functionality already in the ExcelExporter class
+
+  EXCELJS EQUIVALENTS:
+    Same as File 3. See above.
+
+  MIGRATION NOTES:
+    - LOWEST priority. Consider REMOVING direct xlsx usage entirely:
+      ExcelExporter.exportFaenaReport() already handles this exact case.
+    - Or migrate to exceljs inline, same pattern as File 3.
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 5: src/app/api/migrar-usuarios/route.ts
+────────────────────────────────────────────────────────────────────────────────
+
+  PURPOSE: Admin-only API route to bulk-migrate users from an Excel file.
+           Reads from disk, parses typed columns, creates DB records.
+  LINES:   208 lines
+  IMPORT:  `const XLSX = await import('xlsx').then(m => m.default || m)` (dynamic)
+
+  XLSX METHODS USED:
+    • XLSX.read(fileBuffer, { type: 'buffer' })    — read from Buffer
+    • workbook.Sheets['Hoja1']                       — get sheet by name
+    • XLSX.utils.sheet_to_json<UsuarioExcel>(sheet)   — typed JSON with headers
+
+  COMPLEXITY: ★★ MEDIUM
+    - Uses sheet_to_json with header mapping (typed interface)
+    - Column names have trailing spaces (e.g. 'TITULAR ') which xlsx handles
+    - Dynamic import with .default fallback
+
+  EXCELJS EQUIVALENTS:
+    XLSX.read(buffer, { type: 'buffer' })
+      → const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(buffer);
+
+    workbook.Sheets['Hoja1']
+      → const ws = wb.getWorksheet('Hoja1');
+
+    XLSX.utils.sheet_to_json<UsuarioExcel>(sheet)
+      → // exceljs doesn't have auto header-to-object mapping.
+        // Must manually map:
+        const data: UsuarioExcel[] = [];
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // skip header
+          data.push({
+            'TITULAR ': row.getCell(1).value?.toString() || '',
+            'CUIT': Number(row.getCell(2).value) || 0,
+            'MAIL': row.getCell(3).value?.toString() || '',
+            'NOMBRE Y APELLIGO': row.getCell(4).value?.toString() || '',
+            'CELULAR': row.getCell(5).value?.toString() || '',
+          });
+        });
+        // OR use ws.getHeaderRow() + ws.eachRow with named access:
+        const headerRow = ws.getRow(1).values as string[];
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return;
+          // build object from header mapping
+        });
+
+  MIGRATION NOTES:
+    - Column names with trailing spaces ('TITULAR ') need careful handling.
+    - exceljs may normalize whitespace differently — test thoroughly.
+    - Replace dynamic import pattern with simple static import or top-level await.
+    - The .then(m => m.default || m) fallback won't be needed with exceljs.
+
+================================================================================
+
+4. RECOMMENDED MIGRATION ORDER
+================================================================================
+
+  PHASE 1 — Simple files (warm-up, low risk)
+  ──────────────────────────────────────────
+  Step 1: File 4 (src/app/api/reportes/faena/excel/route.ts) ★ SIMPLE
+          - Tiny file, could also just refactor to use ExcelExporter
+          - Good to test the basic exceljs writeBuffer pattern for server responses
+
+  Step 2: File 3 (src/app/api/planilla01/route.ts) ★★ MEDIUM
+          - Similar pattern to File 4 but larger
+          - Tests addRow + column width setting
+
+  PHASE 2 — Read-heavy files (different API surface)
+  ────────────────────────────────────────────────
+  Step 3: File 5 (src/app/api/migrar-usuarios/route.ts) ★★ MEDIUM
+          - Tests exceljs read from Buffer + typed JSON extraction
+          - sheet_to_json equivalent needs custom mapping logic
+
+  Step 4: File 2 (src/app/api/articulos/importar/route.ts) ★★ MEDIUM
+          - Tests exceljs readFile from disk + raw array extraction
+          - sheet_to_json with { header: 1 } is the hardest conversion
+
+  PHASE 3 — Core library (highest impact, do last)
+  ──────────────────────────────────────────────
+  Step 5: File 1 (src/lib/export-excel.ts) ★★★ COMPLEX
+          - Central dependency for 16+ components
+          - Migrate AFTER all patterns are proven in Steps 1-4
+          - The auto-width logic (decode_range / encode_cell) needs rewriting
+          - All public methods must produce identical output
+
+================================================================================
+
+5. POST-MIGRATION CLEANUP
+================================================================================
+
+  After all 5 files are migrated:
+
+  1. Remove "xlsx" from package.json dependencies
+  2. Run: bun remove xlsx
+  3. Search for any remaining xlsx references:
+     rg "xlsx" src/ --type ts
+     rg "xlsx" src/ --type tsx
+  4. Run full test suite
+  5. Verify all 16+ component exports still work correctly
+  6. Test file upload (articulos import) and user migration endpoints
+  7. Verify server-side Excel downloads (planilla01, faena report)
+
+================================================================================
+
+6. COMPLETE API MAPPING REFERENCE
+================================================================================
+
+  XLSX                                EXCELJS
+  ────────────────────────────────────────────────────────────────────────────────
+  import * as XLSX from 'xlsx'       import ExcelJS from 'exceljs'
+
+  NEW WORKBOOK:
+    XLSX.utils.book_new()              const wb = new ExcelJS.Workbook()
+
+  ADD WORKSHEET:
+    XLSX.utils.book_append_sheet(      const ws = wb.addWorksheet('name')
+      wb, ws, 'name')
+
+  CREATE SHEET FROM AOA:
+    XLSX.utils.aoa_to_sheet(data)      const ws = wb.addWorksheet('name');
+                                        data.forEach(row => ws.addRow(row));
+
+  READ FILE (path):
+    XLSX.readFile(path)                await wb.xlsx.readFile(path)
+
+  READ FILE (buffer):
+    XLSX.read(buf, {type:'buffer'})    await wb.xlsx.load(buf)
+
+  GET SHEET BY NAME:
+    wb.Sheets['name']                  wb.getWorksheet('name')
+
+  SHEET TO JSON (header mode):
+    XLSX.utils.sheet_to_json(ws)       // Manual: iterate rows with getCell()
+                                        // or use ws.eachRow() + header mapping
+
+  SHEET TO JSON (raw array, header:1):
+    XLSX.utils.sheet_to_json(          // Manual: iterate rows, extract values
+      ws, {header:1})                  // ws.getSheetValues() or ws.eachRow()
+
+  WRITE TO ARRAY/BUFFER:
+    XLSX.write(wb, {type:'array'})     const buf = await wb.xlsx.writeBuffer()
+
+  WRITE TO BUFFER:
+    XLSX.write(wb, {type:'buffer'})    const buf = await wb.xlsx.writeBuffer()
+                                        // buf is ArrayBuffer; use Buffer.from(buf)
+
+  COLUMN WIDTHS:
+    ws['!cols'] = [{wch:20},...]       ws.getColumn(1).width = 20
+                                        // or ws.columns.forEach(...)
+
+  CELL ACCESS:
+    ws['A1'] or ws[XLSX.utils          ws.getCell('A1').value
+      .encode_cell({r:0,c:0})]
+
+  ROW COUNT:
+    XLSX.utils.decode_range(           ws.rowCount
+      ws['!ref']).e.r + 1
+
+  NOTE: exceljs worksheet methods (addRow, getCell, getColumn) are SYNCHRONOUS.
+        Only readFile, load, and writeBuffer are ASYNC (return Promises).
+
+================================================================================
+
+7. RISK ASSESSMENT
+================================================================================
+
+  LOW RISK:
+    - Files 3 & 4: Simple server-side xlsx generation, straightforward patterns
+
+  MEDIUM RISK:
+    - Files 2 & 5: Reading xlsx files — sheet_to_json replacement needs testing
+      with real Excel files to ensure column mapping is preserved
+    - File 2: { header: 1 } raw array mode has no direct exceljs equivalent
+
+  HIGH RISK:
+    - File 1: Core library used by 16+ components
+    - Auto-width calculation logic needs complete rewrite
+    - Client-side blob download must work identically
+    - MUST test all ExcelExporter methods after migration
+
+  MITIGATION:
+    - Migrate in phases (as ordered above)
+    - Test each file independently before proceeding
+    - Keep xlsx installed until ALL files are migrated and tested
+    - Consider adding unit tests for ExcelExporter methods
+
+================================================================================
+END OF MIGRATION PLAN
+================================================================================

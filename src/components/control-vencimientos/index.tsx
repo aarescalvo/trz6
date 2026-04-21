@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -297,13 +296,13 @@ export function ControlVencimientosModule() {
                         <td className="p-3 text-sm">{formatDate(item.fechaVencimiento)}</td>
                         <td className="p-3">
                           <span className={`font-bold ${
-                            item.diasParaVencer !== null && item.diasParaVencer < 0 
+                            item.diasParaVencer != null && item.diasParaVencer < 0 
                               ? 'text-red-600' 
-                              : item.diasParaVencer !== null && item.diasParaVencer <= 2 
+                              : item.diasParaVencer != null && item.diasParaVencer <= 2 
                                 ? 'text-orange-600' 
                                 : 'text-yellow-600'
                           }`}>
-                            {item.diasParaVencer !== null 
+                            {item.diasParaVencer != null 
                               ? (item.diasParaVencer < 0 
                                   ? `${Math.abs(item.diasParaVencer)} días`
                                   : `${item.diasParaVencer} días`)

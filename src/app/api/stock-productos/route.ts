@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -79,7 +78,6 @@ export async function POST(request: NextRequest) {
         where: { id: existente.id },
         data: {
           cantidad: { increment: parseInt(data.cantidad) || 0 },
-          pesoKg: undefined as any, //  { increment: parseFloat(data(. as any).pesoKg) || 0 }
         }
       })
       return NextResponse.json({ success: true, data: actualizado })
@@ -92,11 +90,9 @@ export async function POST(request: NextRequest) {
         productoNombre: data.productoNombre,
         tipo: data.tipo || 'OTRO',
         cantidad: parseInt(data.cantidad) || 0,
-        pesoKg: undefined as any, //  parseFloat(data(. as any).pesoKg) || 0,
         camaraId: data.camaraId || null,
         tropaCodigo: data.tropaCodigo || null,
         lote: data.lote || null,
-        fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null,
         estado: data.estado || 'DISPONIBLE'
       }
     })

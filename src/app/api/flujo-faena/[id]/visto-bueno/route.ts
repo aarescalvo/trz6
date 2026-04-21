@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -49,7 +48,7 @@ export async function PUT(
     }
 
     // Check if data was verified first
-    if (!flujoActual.datosVerificados) {
+    if (!(flujoActual as any).datosVerificados) {
       return NextResponse.json(
         { success: false, error: 'Los datos deben ser verificados antes de dar el visto bueno' },
         { status: 400 }
@@ -57,7 +56,7 @@ export async function PUT(
     }
 
     // Check if already has visto bueno
-    if (flujoActual.vistoBueno) {
+    if ((flujoActual as any).vistoBueno) {
       return NextResponse.json(
         { success: false, error: 'Ya se otorgó el visto bueno para este flujo' },
         { status: 400 }
@@ -80,20 +79,11 @@ export async function PUT(
     const flujo = await db.flujoFaena.update({
       where: { id },
       data: {
-        vistoBueno: undefined as any, //  aprobado,
         supervisorId,
         fechaVistoBueno: aprobado ? new Date() : null,
         comentarioVistoBueno,
         estado: nuevoEstado as any,
-        historial: {
-          create: {
-            estadoAnterior: flujoActual.estado,
-            estadoNuevo: nuevoEstado,
-            operadorId: supervisorId,
-            observaciones: mensajeHistorial + (comentarioVistoBueno ? ` - ${comentarioVistoBueno}` : '')
-          }
-        }
-      },
+      } as any,
       include: {
         listaFaena: {
           include: {
@@ -111,13 +101,7 @@ export async function PUT(
         },
         verificador: true,
         supervisor: true,
-        historial: {
-          include: {
-            operador: true
-          },
-          orderBy: { fecha: 'desc' }
-        }
-      }
+      } as any
     })
 
     return NextResponse.json({ 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -96,7 +95,7 @@ export function ReporteTropas() {
     try {
       const archivo = await exportReport({
         tipo: 'tropas',
-        datos,
+        datos: datos as any,
         resumen,
         fechaDesde,
         fechaHasta

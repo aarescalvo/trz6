@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Puente Web - Módulo de integración AFIP y SIGICA
  * 
@@ -41,8 +40,8 @@ export class PuenteWebService {
     if (this.config) return this.config;
 
     // Load from database
-    const configAFIP = await db.configuracionAFIP?.findFirst();
-    const configSIGICA = await db.configuracionSIGICA?.findFirst();
+    const configAFIP = await db.configuracionAFIP?.findFirst() as any;
+    const configSIGICA = await db.configuracionSIGICA?.findFirst() as any;
 
     this.config = {
       afip: {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySessionToken } from '@/lib/jwt'
+import { checkRateLimit, generateRateLimitKey, RATE_LIMIT_CONFIGS, type RateLimitType } from '@/lib/rate-limit'
 
 // Rutas públicas que no requieren autenticación
 const PUBLIC_ROUTES = [
@@ -219,6 +220,27 @@ function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some(route => pathname.startsWith(route))
 }
 
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
+
+function getRateLimitType(pathname: string, method: string): RateLimitType {
+  // Auth routes get stricter limits to prevent brute force
+  if (pathname.startsWith('/api/auth')) {
+    return 'AUTH_LOGIN'
+  }
+  // Write operations get lower limits
+  if (method !== 'GET') {
+    return 'API_WRITE'
+  }
+  // Default: general API limit
+  return 'API_GENERAL'
+}
+
 function getRequiredPermission(pathname: string): string | null {
   // Find the longest matching route prefix
   let bestMatch: string | null = null
@@ -245,14 +267,52 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // ========================================
+  // RATE LIMITING
+  // ========================================
+  const clientIp = getClientIp(request)
+  const rateLimitType = getRateLimitType(pathname, method)
+  const rateLimitKey = generateRateLimitKey(clientIp, pathname)
+  const rateLimitResult = checkRateLimit(rateLimitKey, rateLimitType)
+  const rateLimitConfig = RATE_LIMIT_CONFIGS[rateLimitType]
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: rateLimitResult.blocked
+          ? 'Demasiados intentos. Intente más tarde.'
+          : 'Rate limit excedido',
+        retryAfter: rateLimitResult.retryAfter
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(rateLimitResult.retryAfter || 60),
+          'X-RateLimit-Limit': String(rateLimitConfig.maxRequests),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(Math.ceil(rateLimitResult.resetAt / 1000)),
+        },
+      }
+    )
+  }
+
   // Allow public routes
   if (isPublicRoute(pathname)) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set('X-RateLimit-Limit', String(rateLimitConfig.maxRequests))
+    response.headers.set('X-RateLimit-Remaining', String(rateLimitResult.remaining))
+    response.headers.set('X-RateLimit-Reset', String(Math.ceil(rateLimitResult.resetAt / 1000)))
+    return response
   }
 
   // Allow GET requests on read-only-no-perm routes
   if (method === 'GET' && READ_ONLY_NO_PERM.some(route => pathname.startsWith(route))) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set('X-RateLimit-Limit', String(rateLimitConfig.maxRequests))
+    response.headers.set('X-RateLimit-Remaining', String(rateLimitResult.remaining))
+    response.headers.set('X-RateLimit-Reset', String(Math.ceil(rateLimitResult.resetAt / 1000)))
+    return response
   }
 
   // ========================================
@@ -304,6 +364,10 @@ export async function middleware(request: NextRequest) {
   if (operadorRol) {
     response.headers.set('x-operador-rol', operadorRol)
   }
+  // Add rate limit headers
+  response.headers.set('X-RateLimit-Limit', String(rateLimitConfig.maxRequests))
+  response.headers.set('X-RateLimit-Remaining', String(rateLimitResult.remaining))
+  response.headers.set('X-RateLimit-Reset', String(Math.ceil(rateLimitResult.resetAt / 1000)))
 
   return response
 }

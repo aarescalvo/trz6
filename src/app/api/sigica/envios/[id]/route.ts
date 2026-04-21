@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -29,7 +28,7 @@ export async function GET(
 
     if (!envio) {
       return NextResponse.json(
-        { success: false, error: 'Envío no encontrado' },
+        { success: false, error: 'Envío no encontrado' } as any,
         { status: 404 }
       )
     }
@@ -40,7 +39,7 @@ export async function GET(
       try {
         datosEnviados = JSON.parse(envio.datosEnviados)
       } catch {
-        datosEnviados = envio.datosEnviados
+        datosEnviados = envio.datosEnviados as any
       }
     }
 
@@ -129,7 +128,7 @@ export async function DELETE(
 
     if (!envio) {
       return NextResponse.json(
-        { success: false, error: 'Envío no encontrado' },
+        { success: false, error: 'Envío no encontrado' } as any,
         { status: 404 }
       )
     }

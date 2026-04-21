@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { EstadoMediaRes } from '@prisma/client'
@@ -230,28 +229,8 @@ export async function GET(request: NextRequest) {
         include: {
           romaneo: {
             include: {
-              listaFaena: {
-                include: {
-                  tropas: {
-                    include: {
-                      tropa: {
-                        include: {
-                          productor: true,
-                          usuarioFaena: true,
-                          corral: true,
-                          pesajeCamion: {
-                            include: {
-                              transportista: true
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+            } as any,
+          },
         }
       })
       
@@ -458,7 +437,7 @@ async function construirTrazabilidad(tropa: Record<string, unknown>): Promise<Tr
   })
   
   if (listaFaenaTropas.length > 0) {
-    const lf = listaFaenaTropas[0].listaFaena
+    const lf = (listaFaenaTropas[0] as any).listaFaena
     listaFaena = {
       numero: lf.numero,
       fecha: lf.fecha,

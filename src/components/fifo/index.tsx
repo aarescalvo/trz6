@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -360,14 +359,14 @@ export function FIFOModule() {
                         </td>
                         <td className="p-2 text-center">
                           <span className={`font-medium ${
-                            item.diasParaVencer !== null && item.diasParaVencer < 0 
-                              ? 'text-red-600' 
-                              : item.diasParaVencer !== null && item.diasParaVencer <= 3 
-                                ? 'text-orange-600' 
+                            item.diasParaVencer != null && item.diasParaVencer < 0
+                              ? 'text-red-600'
+                              : item.diasParaVencer != null && item.diasParaVencer <= 3
+                                ? 'text-orange-600'
                                 : 'text-green-600'
                           }`}>
-                            {item.diasParaVencer !== null 
-                              ? (item.diasParaVencer < 0 
+                            {item.diasParaVencer != null
+                              ? (item.diasParaVencer < 0
                                   ? `${Math.abs(item.diasParaVencer)} días`
                                   : `${item.diasParaVencer} días`)
                               : '-'

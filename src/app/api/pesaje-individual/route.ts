@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
     const fechaHasta = searchParams.get('fechaHasta')
     const limit = parseInt(searchParams.get('limit') || '100')
 
-    const where: Record<string, unknown> = {}
+    const where: any = {}
 
     if (animalId) where.animalId = animalId
     if (fechaDesde || fechaHasta) {

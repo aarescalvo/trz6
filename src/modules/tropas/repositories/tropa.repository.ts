@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { BaseRepository } from '@/core/repository/base.repository'
 import { db } from '@/lib/db'
 import {
@@ -15,7 +14,7 @@ import {
 } from '../types'
 
 export class TropaRepository extends BaseRepository<Tropa> {
-  protected model = db.tropa
+  protected model: any = db.tropa
 
   /**
    * Busca una tropa por su código único
@@ -47,7 +46,7 @@ export class TropaRepository extends BaseRepository<Tropa> {
         tiposAnimales: true,
       },
       orderBy: { fechaRecepcion: 'desc' }
-    }) as Promise<TropaWithDetails[]>
+    }) as unknown as Promise<TropaWithDetails[]>
   }
 
   /**
@@ -146,7 +145,7 @@ export class TropaRepository extends BaseRepository<Tropa> {
       this.model.count({ where }),
     ])
 
-    return { data: data as TropaWithDetails[], total }
+    return { data: data as unknown as TropaWithDetails[], total }
   }
 
   /**
@@ -275,7 +274,7 @@ export class TropaRepository extends BaseRepository<Tropa> {
         tiposAnimales: true,
       },
       orderBy: { fechaRecepcion: 'desc' }
-    }) as Promise<Tropa[]>
+    }) as unknown as Promise<Tropa[]>
   }
 
   /**
@@ -306,7 +305,7 @@ export class TropaRepository extends BaseRepository<Tropa> {
         tiposAnimales: true,
       },
       orderBy: { fechaRecepcion: 'desc' }
-    }) as Promise<Tropa[]>
+    }) as unknown as Promise<Tropa[]>
   }
 
   /**

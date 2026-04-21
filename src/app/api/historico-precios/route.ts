@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -12,16 +11,13 @@ export async function GET(request: NextRequest) {
     const clienteId = searchParams.get('clienteId')
     const tipoProducto = searchParams.get('tipoProducto')
 
-    const where: {
-      clienteId?: string | null
-      tipoProducto?: string
-    } = {}
+    const where: Record<string, unknown> = {}
 
     if (clienteId) where.clienteId = clienteId
     if (tipoProducto) where.tipoProducto = tipoProducto as 'MEDIA_RES' | 'CUARTO_DELANTERO' | 'CUARTO_TRASERO' | 'MENUDENCIA' | 'OTRO'
 
     const historico = await db.historicoPrecio.findMany({
-      where,
+      where: where as any,
       orderBy: { fechaVigencia: 'desc' },
       take: 50
     })
@@ -61,7 +57,7 @@ export async function POST(request: NextRequest) {
         precio,
         observaciones,
         registradoPor
-      }
+      } as any
     })
 
     return NextResponse.json({

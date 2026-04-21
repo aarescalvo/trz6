@@ -1,0 +1,178 @@
+========================================================================
+  CODEBASE TODO/FIXME/HACK/XXX ANALYSIS REPORT
+  Project: produccion4z
+  Path scanned: src/
+  Generated: 2025-07-11
+========================================================================
+
+SUMMARY
+-------
+  TODO  : 19 items (items to implement)
+  FIXME : 0 items  (no bugs to fix found)
+  HACK  : 0 items  (no workarounds found)
+  XXX   : 0 items  (no dangerous/critical items found)
+
+  NOTE: 154 matches of "TODOS" were excluded - these are Spanish-language
+        filter values meaning "All" (e.g., estado !== 'TODOS'), not developer
+        annotations. Only true developer TODO/FIXME/HACK/XXX comments are
+        listed below.
+
+========================================================================
+  TODO - ITEMS TO IMPLEMENT (19)
+========================================================================
+
+--- DATABASE SCHEMA & MODELS (5) ---
+
+  [1] src/app/api/contabilidad/asientos/route.ts:24
+      // TODO: model AsientoContable no existe en schema - crear el modelo cuando se implemente contabilidad
+      Category: Database Schema / Contabilidad (Accounting)
+
+  [2] src/app/api/contabilidad/asientos/route.ts:65
+      // TODO: model AsientoContable no existe en schema - crear el modelo cuando se implemente contabilidad
+      Category: Database Schema / Contabilidad (Accounting)
+
+  [3] src/app/api/contabilidad/plan-cuentas/route.ts:19
+      // TODO: model PlanCuenta no existe en schema - crear el modelo cuando se implemente contabilidad
+      Category: Database Schema / Contabilidad (Accounting)
+
+  [4] src/app/api/contabilidad/plan-cuentas/route.ts:61
+      // TODO: model PlanCuenta no existe en schema - crear el modelo cuando se implemente contabilidad
+      Category: Database Schema / Contabilidad (Accounting)
+
+  [5] src/app/api/proveedores/route.ts:22
+      // TODO: Crear modelo Proveedor si se necesita funcionalidad específica
+      Category: Database Schema / Proveedores (Suppliers)
+
+--- INTEGRATION & HARDWARE (4) ---
+
+  [6] src/app/api/balanza/lectura/route.ts:50
+      // TODO: Implementar con serialport cuando se use en producción real
+      Category: Hardware Integration / Balanza (Scale)
+
+  [7] src/components/configuracion/balanzas.tsx:191
+      // TODO: Implementar test de conexión real
+      Category: Hardware Integration / Balanzas (Scales)
+
+  [8] src/components/configuracion/impresoras.tsx:195
+      // TODO: Implementar test de impresión real
+      Category: Hardware Integration / Impresoras (Printers)
+
+  [9] src/app/api/rotulos/imprimir-media-res/route.ts:147
+      // TODO: Convertir PNG a GRF usando una librería
+      Category: Hardware Integration / Rótulos (Labels)
+
+--- EMAIL & NOTIFICATIONS (2) ---
+
+  [10] src/app/api/reportes/romaneo-pdf/enviar/route.ts:119
+       // TODO: Implementar envío real con nodemailer cuando esté configurado
+       Category: Email / Report Sending
+
+  [11] src/components/trazabilidad-module.tsx:204
+       // TODO: Implement email sending
+       Category: Email / Traceability
+
+--- FILE UPLOAD & AFIP (2) ---
+
+  [12] src/components/configuracion/afip-config.tsx:113
+       // TODO: Implementar upload de certificado
+       Category: AFIP Integration / Certificate Upload
+
+  [13] src/components/configuracion/afip-config.tsx:119
+       // TODO: Implementar upload de clave privada
+       Category: AFIP Integration / Private Key Upload
+
+--- AFIP CONFIGURATION (2) ---
+
+  [14] src/lib/afip.ts:101
+       domicilio: '', // TODO: agregar a configuración
+       Category: AFIP Configuration / Business Data
+
+  [15] src/lib/afip.ts:103
+       inicioActividades: '', // TODO: agregar a configuración
+       Category: AFIP Configuration / Business Data
+
+--- EXPORTS & REPORTS (1) ---
+
+  [16] src/components/trazabilidad-module.tsx:198
+       // TODO: Implement PDF export
+       Category: Reports / Traceability PDF Export
+
+--- INVENTORY & MOVEMENTS (1) ---
+
+  [17] src/components/config-insumos/index.tsx:321
+       // Movimientos simulados (TODO: implementar modelo MovimientoInsumo)
+       Category: Inventory / Supply Movements (currently using simulated data)
+
+--- DATA MODEL INTEGRITY (1) ---
+
+  [18] src/app/api/conciliacion/diferencias/route.ts:138
+       // TODO: model Caja no tiene campo cuentaBancariaId en el schema - revisar la relación con cuentas bancarias
+       Category: Data Model / Reconciliation
+
+--- SECURITY (1) ---
+
+  [19] src/lib/security-notifications.ts:40
+       // TODO: En el futuro, aquí se podría:
+       Category: Security / Future Enhancements
+
+========================================================================
+  FIXME - BUGS TO FIX (0)
+========================================================================
+  No FIXME comments found in the codebase.
+
+========================================================================
+  HACK - WORKAROUNDS TO CLEAN UP (0)
+========================================================================
+  No HACK comments found in the codebase.
+
+========================================================================
+  XXX - DANGEROUS / CRITICAL ITEMS (0)
+========================================================================
+  No XXX developer annotation comments found.
+  Note: "XXX" appears in code as a pattern (.XXX) in importar/route.ts
+  but is a code extraction description, not a developer annotation.
+
+========================================================================
+  PRIORITY RECOMMENDATIONS
+========================================================================
+
+  HIGH PRIORITY (blocks features):
+  - [1-4] Contabilidad models (AsientoContable, PlanCuenta) - 4 TODOs in 2 files
+          These block the entire accounting module.
+  - [17] MovimientoInsumo model - simulated data currently in use
+  - [18] Caja model missing cuentaBancariaId - affects reconciliation
+
+  MEDIUM PRIORITY (integration gaps):
+  - [6,7] Scale (balanza) serial port integration - production readiness
+  - [8] Printer test implementation
+  - [10,11] Email sending (nodemailer) - report delivery
+  - [12,13] AFIP certificate/key upload - fiscal compliance
+
+  LOW PRIORITY (enhancements):
+  - [5] Proveedor model creation
+  - [9] PNG to GRF conversion for labels
+  - [14,15] AFIP config: domicilio and inicioActividades
+  - [16] Traceability PDF export
+  - [19] Security notifications future enhancements
+
+========================================================================
+  FILES AFFECTED (13 unique files)
+========================================================================
+  src/app/api/balanza/lectura/route.ts
+  src/app/api/conciliacion/diferencias/route.ts
+  src/app/api/contabilidad/asientos/route.ts
+  src/app/api/contabilidad/plan-cuentas/route.ts
+  src/app/api/proveedores/route.ts
+  src/app/api/reportes/romaneo-pdf/enviar/route.ts
+  src/app/api/rotulos/imprimir-media-res/route.ts
+  src/components/config-insumos/index.tsx
+  src/components/configuracion/afip-config.tsx
+  src/components/configuracion/balanzas.tsx
+  src/components/configuracion/impresoras.tsx
+  src/components/trazabilidad-module.tsx
+  src/lib/afip.ts
+  src/lib/security-notifications.ts
+
+========================================================================
+  END OF REPORT
+========================================================================

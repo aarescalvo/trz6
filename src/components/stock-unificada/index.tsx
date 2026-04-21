@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -11,6 +10,7 @@ interface Operador {
   id: string
   nombre: string
   rol: string
+  nivel?: number
   permisos?: Record<string, boolean>
 }
 
@@ -38,10 +38,10 @@ export default function StockUnificada({ operador }: StockUnificadaProps) {
 
   // Si solo tiene un permiso, mostrar directamente ese módulo sin tabs
   if (puedeStock && !puedeReportes) {
-    return <StockCamarasModule operador={operador} />
+    return <StockCamarasModule operador={operador as any} />
   }
   if (!puedeStock && puedeReportes) {
-    return <C2StockModule operador={operador} />
+    return <C2StockModule operador={operador as any} />
   }
 
   // Tiene ambos permisos, mostrar tabs
@@ -59,10 +59,10 @@ export default function StockUnificada({ operador }: StockUnificadaProps) {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="medias">
-          <StockCamarasModule operador={operador} />
+          <StockCamarasModule operador={operador as any} />
         </TabsContent>
         <TabsContent value="cajas">
-          <C2StockModule operador={operador} />
+          <C2StockModule operador={operador as any} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -170,7 +169,7 @@ export function ReportePlanilla01Bovino() {
         ['', ''],
         ['Nombre Productor', tropa.productor?.nombre || tropa.usuarioFaena?.nombre || '-'],
         ['CUIT', tropa.productor?.cuit || tropa.usuarioFaena?.cuit || '-'],
-        ['Origen', tropa.productor?.domicitorio || '-'],
+        ['Origen', tropa.productor?.domicilio || '-'],
         ['Localidad', tropa.productor?.localidad || '-'],
         ['Provincia', tropa.productor?.provincia || '-'],
         ['N RENSPA', tropa.productor?.renspsa || '-'],
@@ -303,7 +302,7 @@ export function ReportePlanilla01Bovino() {
       doc.setFont('helvetica', 'bold')
       doc.text('Origen:', rightCol, y)
       doc.setFont('helvetica', 'normal')
-      doc.text(tropa.productor?.domicitorio || '-', rightCol + 35, y)
+      doc.text(tropa.productor?.domicilio || '-', rightCol + 35, y)
       y += rowH
 
       // Fila 4
@@ -738,7 +737,7 @@ export function ReportePlanilla01Bovino() {
                     </div>
                     <div>
                       <span className="text-stone-500">Origen:</span>
-                      <span className="ml-2 font-medium">{tropa.productor?.domicitorio || '-'}</span>
+                      <span className="ml-2 font-medium">{tropa.productor?.domicilio || '-'}</span>
                     </div>
                     <div>
                       <span className="text-stone-500">Localidad:</span>

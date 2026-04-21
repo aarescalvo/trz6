@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { 
@@ -152,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Solicitar CAE a AFIP
-    const resultado = await FECAESolicitar(feRequest, config)
+    const resultado = await FECAESolicitar(feRequest as any, config)
 
     if (!resultado.success) {
       return NextResponse.json({

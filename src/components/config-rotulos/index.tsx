@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -75,6 +74,7 @@ interface Rotulo {
   tipo: TipoRotulo
   categoria?: string | null
   tipoImpresora: string
+  modeloImpresora?: string | null
   ancho: number
   alto: number
   dpi: number
@@ -86,6 +86,7 @@ interface Rotulo {
   activo: boolean
   esDefault: boolean
   esBinario?: boolean  // Para archivos .lbl/.nlbl
+  elementos?: any[]
 }
 
 export function ConfigRotulosModule({ operador, modoEditor: modoEditorProp, onVolverDeEditor }: Props) {

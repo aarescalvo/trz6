@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { checkPermission } from '@/lib/auth-helpers'
 
 // Mapeo de tipos de animal
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
     const fechaStr = new Date(tropa.fechaRecepcion).toLocaleDateString('es-AR')
     const codigoTropa = tropa.codigo?.replace(/\s/g, '_') || tropaId
 
-    // Crear workbook
-    const wb = XLSX.utils.book_new()
+    // Crear workbook con ExcelJS
+    const wb = new ExcelJS.Workbook()
     
     // Datos del encabezado
     const headerData = [
@@ -104,21 +104,18 @@ export async function POST(request: NextRequest) {
     // Combinar todos los datos
     const allData = [...headerData, ...animalesData, ...footerData]
     
-    // Crear hoja
-    const ws = XLSX.utils.aoa_to_sheet(allData)
+    // Crear hoja y agregar filas
+    const ws = wb.addWorksheet('Planilla 01')
+    allData.forEach(row => ws.addRow(row))
 
     // Configurar anchos de columna
-    ws['!cols'] = [
-      { wch: 18 }, { wch: 25 }, { wch: 12 }, { wch: 18 }, 
-      { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
-      { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }
-    ]
-
-    // Agregar hoja al libro
-    XLSX.utils.book_append_sheet(wb, ws, 'Planilla 01')
+    const colWidths = [18, 25, 12, 18, 12, 15, 12, 15, 12, 15, 12, 15]
+    colWidths.forEach((w, i) => {
+      ws.getColumn(i + 1).width = w
+    })
 
     // Generar buffer
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+    const buffer = await wb.xlsx.writeBuffer()
 
     return new NextResponse(buffer, {
       status: 200,

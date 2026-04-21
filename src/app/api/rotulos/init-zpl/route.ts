@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, TipoRotulo } from '@prisma/client'
 import { checkPermission } from '@/lib/auth-helpers'
 
@@ -284,7 +283,7 @@ export async function POST(request: NextRequest) {
         })
 
         if (existente) {
-          await prisma.rotulo.update({
+          await (prisma as any).rotulo.update({
             where: { codigo: rotulo.codigo },
             data: {
               contenido: rotulo.contenido,
@@ -293,7 +292,7 @@ export async function POST(request: NextRequest) {
           })
           actualizados++
         } else {
-          await prisma.rotulo.create({ data: rotulo })
+          await (prisma as any).rotulo.create({ data: rotulo })
           creados++
         }
       } catch (e) {

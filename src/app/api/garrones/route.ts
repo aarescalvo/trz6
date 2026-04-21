@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -151,7 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que sean de la misma tropa
-    if (asig1.animal.tropaId !== asig2.animal.tropaId) {
+    if (asig1.animal?.tropaId !== asig2.animal?.tropaId) {
       return NextResponse.json(
         { success: false, error: 'Solo se pueden intercambiar garrones de la misma tropa' },
         { status: 400 }

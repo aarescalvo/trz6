@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { validarPermiso } from '@/lib/auth-helpers'
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
     const config = await db.configuracionFrigorifico.findFirst()
 
     // Importar pdfmake dinámicamente
-    const PdfPrinter = (await import('pdfmake')).default || (await import('pdfmake'))
+    const PdfPrinter = ((await import('pdfmake')).default || (await import('pdfmake'))) as any
     const printer = new PdfPrinter(fonts)
 
     const docDefinition = generarFacturaPDF(factura, config)
@@ -156,7 +155,7 @@ function generarFacturaPDF(factura: any, config: any) {
   if (empresaDireccion) {
     headerEmpresa.push({ text: empresaDireccion, fontSize: 9, color: COLOR_MUTED, margin: [0, 2, 0, 0] })
   }
-  const datosFiscales = []
+  const datosFiscales: string[] = []
   if (empresaCuit) datosFiscales.push(`CUIT: ${empresaCuit}`)
   if (empresaEstab) datosFiscales.push(`Est. N° ${empresaEstab}`)
   if (empresaMatricula) datosFiscales.push(`Mat. ${empresaMatricula}`)

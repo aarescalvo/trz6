@@ -1,4 +1,3 @@
-// @ts-nocheck
 // SIGICA - Sistema de Gestión de la Industria Cárnica Argentina
 // Integración con el sistema oficial del SENASA para plantas faenadoras
 // Referencia: https://www.argentina.gob.ar/senasa
@@ -340,7 +339,6 @@ export class SIGICAService {
         },
         include: {
           tipificador: true,
-          tropa: { select: { especie: true } }
         }
       })
 
@@ -348,18 +346,28 @@ export class SIGICAService {
         return { exito: false, mensajeError: 'No se encontraron romaneos para enviar' }
       }
 
+      // Obtener especie de las tropas
+      const tropaCodigos = [...new Set(romaneos.map(r => r.tropaCodigo).filter((c): c is string => Boolean(c)))]
+      const tropas = tropaCodigos.length > 0
+        ? await db.tropa.findMany({
+            where: { codigo: { in: tropaCodigos } },
+            select: { codigo: true, especie: true }
+          })
+        : []
+      const tropaMap = new Map(tropas.map(t => [t.codigo, t.especie]))
+
       // Preparar datos para SIGICA
       const romaneosSIGICA: RomaneoSIGICA[] = romaneos.map(r => ({
         garron: r.garron,
         tropaCodigo: r.tropaCodigo || '',
         fecha: r.fecha,
-        especie: (r.tropa?.especie as 'BOVINO' | 'EQUINO') || 'BOVINO',
+        especie: (tropaMap.get(r.tropaCodigo || '') as 'BOVINO' | 'EQUINO') || 'BOVINO',
         pesoVivo: r.pesoVivo,
         pesoTotal: r.pesoTotal,
         pesoMediaIzq: r.pesoMediaIzq,
         pesoMediaDer: r.pesoMediaDer,
         denticion: r.denticion,
-        tipoAnimal: r.tipoAnimal,
+        tipoAnimal: r.tipoAnimal as string | null,
         raza: r.raza,
         tipificadorMatricula: r.tipificador?.matricula || null
       }))
@@ -449,7 +457,7 @@ export class SIGICAService {
         where: params.camaraIds ? { id: { in: params.camaraIds } } : { activo: true },
         include: {
           stockMedias: true,
-          stockSIGICA: true
+          stockCamaraSIGICA: true
         }
       })
 
@@ -484,7 +492,7 @@ export class SIGICAService {
           bovinosKg,
           equinosMedias,
           equinosKg,
-          remanenteKg: camara.stockSIGICA?.remanenteKg || 0
+          remanenteKg: camara.stockCamaraSIGICA?.remanenteKg || 0
         }
       })
 

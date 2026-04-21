@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createLogger } from '@/lib/logger'
 const log = createLogger('lib.chart-to-image')
 import { type RefObject } from 'react'
@@ -76,7 +75,7 @@ export async function captureChartFromRef(
       }
 
       // Inline any computed styles needed for the SVG to render correctly
-      inlineStyles(svgElement, clonedSvg)
+      inlineStyles(svgElement as SVGSVGElement, clonedSvg)
 
       // Serialize the SVG to a string
       const svgData = new XMLSerializer().serializeToString(clonedSvg)
@@ -184,7 +183,7 @@ export async function captureMultipleCharts(
         }
       }
 
-      inlineStyles(svgElement, clonedSvg)
+      inlineStyles(svgElement as SVGSVGElement, clonedSvg)
 
       const svgData = new XMLSerializer().serializeToString(clonedSvg)
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })

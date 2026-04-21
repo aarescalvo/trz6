@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -138,7 +137,7 @@ export async function GET(request: NextRequest) {
         tipoAnimal: r.tipoAnimal,
         pesoVivo: r.pesoVivo,
         pesoCanal: r.pesoTotal,
-        rinde: r.rinde || (r.pesoVivo > 0 ? (r.pesoTotal! / r.pesoVivo!) * 100 : 0),
+        rinde: r.rinde || (r.pesoVivo && r.pesoVivo > 0 ? (r.pesoTotal! / r.pesoVivo) * 100 : 0),
         fecha: r.fecha.toISOString()
       }))
       .sort((a, b) => b.rinde - a.rinde)

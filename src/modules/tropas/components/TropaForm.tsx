@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
@@ -348,7 +347,7 @@ export function TropaForm({
               {/* Agregar tipo */}
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
-                  <Select value={nuevoTipo} onValueChange={setNuevoTipo}>
+                  <Select value={nuevoTipo} onValueChange={(v) => setNuevoTipo(v as TipoAnimal | '')}>
                     <SelectTrigger>
                       <SelectValue placeholder="Tipo de animal" />
                     </SelectTrigger>

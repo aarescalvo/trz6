@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState } from 'react'
@@ -97,7 +96,7 @@ function ConfirmarTiposDialogContent({ tropa, onConfirm, loading, onClose }: {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-stone-500">DTE:</span>
-            <span className="font-mono">{tropa?.dte || '-'}</span>
+            <span className="font-mono">{(tropa as any)?.dte || '-'}</span>
           </div>
         </div>
 

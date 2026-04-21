@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -67,7 +66,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Build tropas detail
-    const tropasDetail = []
+    const tropasDetail: any[] = []
 
     for (const tropa of tropas) {
       // Get romaneos for this tropa

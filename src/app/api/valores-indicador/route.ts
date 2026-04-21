@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -113,7 +112,7 @@ export async function POST(request: NextRequest) {
           indicadorId,
           fecha: new Date(fecha)
         }
-      }
+      } as any
     })
 
     if (existente) {
@@ -232,7 +231,7 @@ export async function PUT(request: NextRequest) {
               indicadorId: nuevoIndicadorId,
               fecha: nuevaFecha
             }
-          }
+          } as any
         })
 
         if (existente && existente.id !== id) {

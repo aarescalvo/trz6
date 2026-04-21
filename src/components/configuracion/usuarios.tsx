@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -147,7 +146,7 @@ export function Usuarios({ operador }: Props) {
   }
 
   const getTipos = (u: Usuario) => {
-    const tipos = []
+    const tipos: string[] = []
     if (u.esUsuarioFaena) tipos.push('Faena')
     if (u.esProductor) tipos.push('Productor')
     if (u.esConsignatario) tipos.push('Consignat.')

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { BaseService } from '@/core/service/base.service'
 import { TropaRepository } from '../repositories/tropa.repository'
 import { eventBus, EventTypes } from '@/core/events/event-bus'
@@ -18,7 +17,7 @@ import {
 } from '../types'
 
 export class TropaService extends BaseService<Tropa> {
-  protected repository: TropaRepository
+  protected repository: any
 
   constructor() {
     super()

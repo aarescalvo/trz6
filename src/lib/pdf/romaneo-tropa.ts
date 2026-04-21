@@ -1,4 +1,3 @@
-// @ts-nocheck
 import PDFDocument from 'pdfkit'
 import { PassThrough } from 'stream'
 import { db } from '@/lib/db'
@@ -107,10 +106,10 @@ export async function getDatosRomaneoPorTropa(tropaCodigo: string): Promise<Dato
       garron: r.garron,
       numeroAnimal: r.numeroAnimal,
       tipoAnimal: r.tipoAnimal,
-      raza: r.raza || animal?.raza,
+      raza: r.raza || animal?.raza || null,
       caravana: animal?.caravana || null,
       denticion: r.denticion,
-      pesoVivo: r.pesoVivo || animal?.pesoVivo,
+      pesoVivo: r.pesoVivo || animal?.pesoVivo || null,
       pesoMediaIzq: r.pesoMediaIzq,
       pesoMediaDer: r.pesoMediaDer,
       pesoTotal: r.pesoTotal,

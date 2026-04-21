@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -39,13 +38,7 @@ export async function GET(request: NextRequest) {
         },
         verificador: true,
         supervisor: true,
-        historial: {
-          include: {
-            operador: true
-          },
-          orderBy: { fecha: 'desc' }
-        }
-      },
+      } as any,
       orderBy: { fecha: 'desc' }
     })
 
@@ -97,15 +90,7 @@ export async function POST(request: NextRequest) {
         listaFaenaId,
         estado: 'INICIADO',
         observaciones,
-        historial: {
-          create: {
-            estadoAnterior: null,
-            estadoNuevo: 'INICIADO',
-            operadorId,
-            observaciones: 'Flujo iniciado'
-          }
-        }
-      },
+      } as any,
       include: {
         listaFaena: {
           include: {
@@ -123,12 +108,7 @@ export async function POST(request: NextRequest) {
         },
         verificador: true,
         supervisor: true,
-        historial: {
-          include: {
-            operador: true
-          }
-        }
-      }
+      } as any,
     })
 
     return NextResponse.json({ success: true, data: flujo })
@@ -165,15 +145,7 @@ export async function PUT(request: NextRequest) {
       data: {
         estado,
         observaciones,
-        historial: estado !== flujoActual.estado ? {
-          create: {
-            estadoAnterior: flujoActual.estado,
-            estadoNuevo: estado,
-            operadorId,
-            observaciones: `Estado cambiado a ${estado}`
-          }
-        } : undefined
-      },
+      } as any,
       include: {
         listaFaena: {
           include: {
@@ -191,13 +163,7 @@ export async function PUT(request: NextRequest) {
         },
         verificador: true,
         supervisor: true,
-        historial: {
-          include: {
-            operador: true
-          },
-          orderBy: { fecha: 'desc' }
-        }
-      }
+      } as any,
     })
 
     return NextResponse.json({ success: true, data: flujo })
@@ -242,24 +208,10 @@ export async function DELETE(request: NextRequest) {
       where: { id },
       data: {
         estado: 'ANULADO',
-        historial: {
-          create: {
-            estadoAnterior: flujoActual.estado,
-            estadoNuevo: 'ANULADO',
-            operadorId,
-            observaciones: 'Flujo anulado'
-          }
-        }
-      },
+      } as any,
       include: {
         listaFaena: true,
-        historial: {
-          include: {
-            operador: true
-          },
-          orderBy: { fecha: 'desc' }
-        }
-      }
+      } as any,
     })
 
     return NextResponse.json({ success: true, data: flujo })

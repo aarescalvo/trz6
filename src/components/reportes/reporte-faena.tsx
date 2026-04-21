@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -135,7 +134,7 @@ export function ReporteFaena() {
     try {
       const archivo = await exportReport({
         tipo: 'faena',
-        datos,
+        datos: datos as any,
         resumen,
         fechaDesde,
         fechaHasta

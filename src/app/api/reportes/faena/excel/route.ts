@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ExcelExporter } from '@/lib/export-excel';
+import ExcelJS from 'exceljs';
 import { db } from '@/lib/db';
 import { checkPermission } from '@/lib/auth-helpers'
 
@@ -49,9 +49,8 @@ export async function POST(request: NextRequest) {
       observaciones: b.observaciones || '',
     }));
 
-    // Crear workbook
-    const XLSX = await import('xlsx');
-    const wb = XLSX.utils.book_new();
+    // Crear workbook con ExcelJS
+    const wb = new ExcelJS.Workbook();
 
     // Preparar datos
     const headers = [
@@ -86,24 +85,18 @@ export async function POST(request: NextRequest) {
     rows.push(['', '', 'TOTALES', totalAnimales, totalPesoVivo, totalPesoFrio, rindePromedio.toFixed(2), '']);
 
     // Crear hoja
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const ws = wb.addWorksheet('Faena');
+    ws.addRow(headers);
+    rows.forEach(row => ws.addRow(row));
 
     // Ajustar anchos de columna
-    ws['!cols'] = [
-      { wch: 12 }, // Fecha
-      { wch: 10 }, // Tropa
-      { wch: 25 }, // Productor
-      { wch: 10 }, // Animales
-      { wch: 15 }, // Peso Vivo
-      { wch: 15 }, // Peso Frío
-      { wch: 10 }, // Rinde
-      { wch: 30 }, // Observaciones
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Faena');
+    const colWidths = [12, 10, 25, 10, 15, 15, 10, 30];
+    colWidths.forEach((w, i) => {
+      ws.getColumn(i + 1).width = w;
+    });
 
     // Generar buffer
-    const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+    const buffer = await wb.xlsx.writeBuffer();
 
     return new NextResponse(buffer, {
       status: 200,

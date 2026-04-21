@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear una factura por cada usuario
-    const facturasCreadas = []
+    const facturasCreadas: any[] = []
 
     for (const [usuarioId, items] of Object.entries(itemsPorUsuario)) {
       // Obtener datos del cliente
@@ -128,7 +127,7 @@ export async function POST(request: NextRequest) {
       const numero = String(numerador.ultimoNumero).padStart(8, '0')
 
       // Crear detalles de factura
-      const detalles = []
+      const detalles: any[] = []
       let subtotal = 0
 
       // Detalle de faena por kg
@@ -180,7 +179,7 @@ export async function POST(request: NextRequest) {
           despachoId,
           operadorId,
           detalles: {
-            create: detalles
+            create: detalles as any
           }
         },
         include: {
@@ -189,7 +188,7 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      facturasCreadas.push(factura)
+      facturasCreadas.push(factura as any)
     }
 
     return NextResponse.json({

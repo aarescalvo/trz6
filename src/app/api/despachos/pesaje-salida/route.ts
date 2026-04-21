@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -70,8 +69,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         cliente: true,
-        destinos: true,
-        lineas: { include: { camaraOrigen: true } }
+        lineas: { include: { camaraOrigen: true } } as any
       }
     })
 

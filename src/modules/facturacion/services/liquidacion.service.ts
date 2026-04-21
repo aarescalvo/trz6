@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { liquidacionRepository } from '../repositories/liquidacion.repository'
 import { tarifasService } from './tarifas.service'
 import { eventBus } from '@/core/events/event-bus'
@@ -17,7 +16,6 @@ export class LiquidacionService {
       where: { id: tropaId },
       include: {
         usuarioFaena: true,
-        romaneos: { where: { estado: 'CONFIRMADO' } }
       }
     })
     
@@ -154,7 +152,6 @@ export class LiquidacionService {
         data: {
           estado: 'EMITIDA',
           facturaId: fac.id,
-          fechaEmision: new Date()
         }
       })
       

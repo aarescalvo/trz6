@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -178,8 +177,8 @@ export function PersonalizacionUI({
         toast.success('Preferencias guardadas')
 
         // Apply preferences to DOM immediately after saving
-        applyPreferencesToDOM({ tema, tamanoFuente, densidad })
-        cachePreferences({ tema, tamanoFuente, densidad })
+        applyPreferencesToDOM({ tema, tamanoFuente, densidad } as any)
+        cachePreferences({ tema, tamanoFuente, densidad } as any)
 
         onPreferenciasChange?.({
           moduloOrden,

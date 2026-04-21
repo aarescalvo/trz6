@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -67,7 +66,7 @@ export function CierreFaenaModule({ operador }: { operador: Operador }) {
         // Filtrar pendientes (garrones sin animal asignado)
         if (abierta?.asignaciones) {
           const pend = abierta.asignaciones.filter(
-            (a: AsignacionPendiente) => !a.animalId && !a.animal
+            (a: any) => !a.animalId && !a.animal
           )
           setPendientes(pend)
         } else {

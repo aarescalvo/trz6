@@ -1,7 +1,7 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkAdminRole } from '@/lib/auth-helpers'
+import ExcelJS from 'exceljs'
 
 interface UsuarioExcel {
   'TITULAR ': string
@@ -43,11 +43,10 @@ export async function GET(request: NextRequest) {
         id: true,
         nombre: true,
         cuit: true,
-        contactoNombre: true,
         celular: true,
         emails: true,
         createdAt: true
-      }
+      } as any
     })
 
     return NextResponse.json({
@@ -74,8 +73,6 @@ export async function POST(request: NextRequest) {
   if (adminError) return adminError
 
   try {
-    // Importar xlsx dinámicamente
-    const XLSX = await import('xlsx').then(m => m.default || m)
     const path = await import('path')
     const fs = await import('fs')
     
@@ -122,8 +119,9 @@ export async function POST(request: NextRequest) {
     
     let workbook
     try {
-      // Leer desde buffer en lugar de archivo directamente
-      workbook = XLSX.read(fileBuffer, { type: 'buffer' })
+      // Leer desde buffer con ExcelJS
+      workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(fileBuffer)
     } catch (readError) {
       return NextResponse.json(
         { 
@@ -134,8 +132,60 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const sheet = workbook.Sheets['Hoja1']
-    const data = XLSX.utils.sheet_to_json<UsuarioExcel>(sheet)
+    const ws = workbook.getWorksheet('Hoja1')
+    
+    if (!ws) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Hoja "Hoja1" no encontrada en el archivo Excel'
+        },
+        { status: 500 }
+      )
+    }
+
+    // Leer encabezado para mapear columnas
+    const headerRow = ws.getRow(1)
+    const headerValues: string[] = []
+    headerRow.eachCell((cell, colNumber) => {
+      headerValues[colNumber] = String(cell.value || '').trim()
+    })
+
+    // Mapeo de nombres de columna a posición (exceljs es 1-indexed)
+    const colMap: Record<string, number> = {}
+    for (let i = 1; i < headerValues.length; i++) {
+      if (headerValues[i]) {
+        colMap[headerValues[i]] = i
+      }
+    }
+
+    // También intentar mapear con el espacio final que usa la interfaz original
+    // 'TITULAR ' tiene un espacio al final en la interfaz
+    for (const key of Object.keys(colMap)) {
+      if (!colMap[key + ' ']) {
+        colMap[key + ' '] = colMap[key]
+      }
+    }
+
+    const data: UsuarioExcel[] = []
+    ws.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return // skip header
+
+      const getCellValue = (colKey: string) => {
+        const colNum = colMap[colKey]
+        if (!colNum) return undefined
+        const cell = row.getCell(colNum)
+        return cell.value
+      }
+
+      data.push({
+        'TITULAR ': String(getCellValue('TITULAR') || '').trim(),
+        'CUIT': Number(getCellValue('CUIT')) || 0,
+        'MAIL': String(getCellValue('MAIL') || '').trim(),
+        'NOMBRE Y APELLIGO': String(getCellValue('NOMBRE Y APELLIGO') || '').trim(),
+        'CELULAR': String(getCellValue('CELULAR') || '').trim(),
+      })
+    })
     
     resultado.total = data.length
 
@@ -169,12 +219,11 @@ export async function POST(request: NextRequest) {
             nombre,
             cuit,
             email: mail || null,  // Campo email (singular) con múltiples emails separados por ;
-            contactoNombre: contactoNombre || null,
             celular: celular || null,
             esUsuarioFaena: true,
             esProductor: false,
             modalidadRetiro: true,
-          }
+          } as any
         })
 
         resultado.creados++

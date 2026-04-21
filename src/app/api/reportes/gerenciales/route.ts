@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -53,8 +52,8 @@ export async function GET(request: NextRequest) {
 
     // Stock
     const stockMedias = await db.mediaRes.count({ where: { estado: 'EN_CAMARA' } })
-    const stockCuartos = await db.cuarto.count({ where: { estado: 'DISPONIBLE' } })
-    const stockProductos = await db.cajaEmpaque.count({ where: { estado: 'DISPONIBLE' } })
+    const stockCuartos = await db.cuarto.count({ where: { estado: 'EN_CAMARA' } })
+    const stockProductos = await db.cajaEmpaque.count({ where: { estado: 'EN_CAMARA' } })
 
     // Ingresos
     const facturas = await db.factura.findMany({

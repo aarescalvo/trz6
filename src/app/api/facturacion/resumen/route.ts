@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkPermission } from '@/lib/auth-helpers'
@@ -35,17 +34,10 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             nombre: true,
-            tipoFacturacion: true,
           }
         },
         detalles: {
           include: {
-            tropa: {
-              select: {
-                codigo: true,
-                cantidadCabezas: true,
-              }
-            }
           }
         }
       }
@@ -68,7 +60,7 @@ export async function GET(request: NextRequest) {
     let totalKgGancho = 0
 
     for (const factura of facturas) {
-      for (const detalle of (factura.detalles || [])) {
+      for (const detalle of ((factura as any).detalles || [])) {
         totalServicioFaena += (detalle as any).servicioFaena || 0
         totalServicioDespostada += (detalle as any).servicioDespostada || 0
         totalVentasExtras += ((detalle as any).ventaMenudencia || 0) + ((detalle as any).ventaHueso || 0) + ((detalle as any).ventaGrasa || 0) + ((detalle as any).ventaCuero || 0)
@@ -110,14 +102,14 @@ export async function GET(request: NextRequest) {
       } else if (factura.estado === 'PENDIENTE') {
         porCliente[clienteId].pendiente += factura.total
       }
-      for (const detalle of (factura.detalles || [])) {
+      for (const detalle of ((factura as any).detalles || [])) {
         porCliente[clienteId].cabezas += (detalle as any).cantidadAnimales || 0
         porCliente[clienteId].kgGancho += (detalle as any).kgGancho || 0
       }
     }
 
     // Obtener resumen de los últimos 12 meses
-    const resumenAnual = []
+    const resumenAnual: any[] = []
     for (let m = 0; m < 12; m++) {
       const fechaInicioMes = new Date(anioActual, mesActual - 1 - m, 1)
       const fechaFinMes = new Date(anioActual, mesActual - m, 0, 23, 59, 59)

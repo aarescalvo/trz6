@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { Especie, TipoAnimal } from '@prisma/client'
@@ -100,13 +99,13 @@ export async function POST(request: NextRequest) {
     // Verificar si ya existe un registro con la misma combinación única
     const existente = await db.rendimientoHistorico.findUnique({
       where: {
-        [anio_mes_especie_tipoAnimal as any]: {
+        anio_mes_especie_tipo: {
           anio: parseInt(anio),
           mes: parseInt(mes),
           especie: especie as Especie,
           tipoAnimal: tipoAnimal as TipoAnimal
         }
-      }
+      } as any
     })
 
     if (existente) {
@@ -213,13 +212,13 @@ export async function PUT(request: NextRequest) {
 
         const existente = await db.rendimientoHistorico.findUnique({
           where: {
-            [anio_mes_especie_tipoAnimal as any]: {
+            anio_mes_especie_tipo: {
               anio: nuevoAnio,
               mes: nuevoMes,
               especie: nuevaEspecie,
               tipoAnimal: nuevoTipoAnimal
             }
-          }
+          } as any
         })
 
         if (existente && existente.id !== id) {

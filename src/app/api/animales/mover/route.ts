@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -113,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     // Ejecutar todo en transacción
     const movimientosCreados = await db.$transaction(async (tx) => {
-      const movimientos = []
+      const movimientos: any[] = []
       
       for (const [corralOrigenId, animalesGrupo] of Object.entries(porCorralOrigen)) {
         // Actualizar corral de cada animal
@@ -169,7 +168,7 @@ export async function POST(request: NextRequest) {
             operadorId: operadorId || null
           }
         })
-        movimientos.push(movimiento)
+        movimientos.push(movimiento as any)
 
         // Registrar auditoría
         for (const animal of animalesGrupo) {
