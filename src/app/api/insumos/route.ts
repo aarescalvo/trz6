@@ -103,6 +103,26 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Si cambia el precio, registrar en historial
+    if (data.precioUnitario !== undefined) {
+      const insumoActual = await db.insumo.findUnique({ where: { id } });
+      const precioNuevo = data.precioUnitario ?? null;
+      const precioAnterior = insumoActual?.precioUnitario ?? null;
+
+      if (precioNuevo !== precioAnterior) {
+        await db.historialPrecioInsumo.create({
+          data: {
+            insumoId: id,
+            precioAnterior,
+            precioNuevo,
+            moneda: data.moneda || insumoActual?.moneda || 'ARS',
+            motivo: data.motivoPrecio || 'Actualización manual',
+            operadorId: data.operadorId || null,
+          }
+        });
+      }
+    }
+
     const insumo = await db.insumo.update({
       where: { id },
       data: {

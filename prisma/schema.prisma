@@ -266,6 +266,7 @@ model Operador {
   notaCreditoCliente               NotaCredito[]
   notaDebitoCliente                NotaDebito[]
   movimientosInsumo                MovimientoInsumo[]
+  historialPreciosInsumo           HistorialPrecioInsumo[]
   historicoPrecioProductoHistorico HistoricoPrecioProducto[]
   historicoPrecio                  HistoricoPrecio[]
   ordenCompra                      OrdenCompra[]
@@ -1470,8 +1471,28 @@ model Insumo {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  historialPrecios HistorialPrecioInsumo[]
+
   @@index([categoria])
   @@index([activo])
+}
+
+// ==================== HISTORIAL DE PRECIOS INSUMOS ====================
+
+model HistorialPrecioInsumo {
+  id             String  @id @default(cuid())
+  insumoId       String
+  insumo         Insumo  @relation(fields: [insumoId], references: [id])
+  precioAnterior Float?
+  precioNuevo    Float?
+  moneda         String  @default("ARS")
+  motivo         String? // "Actualización manual", "Ingreso compra", "Ajuste"
+  operadorId     String?
+  operador       Operador? @relation(fields: [operadorId], references: [id])
+  fecha          DateTime @default(now())
+
+  @@index([insumoId])
+  @@index([fecha])
 }
 
 enum CategoriaInsumoTipo {
