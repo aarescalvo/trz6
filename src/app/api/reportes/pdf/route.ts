@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { tipo, filtros = {} } = body
 
-    // Importar pdfmake dinámicamente para evitar problemas ESM/CJS en build
-    // @ts-expect-error - pdfmake dynamic import\n    const PdfPrinter = (await import('pdfmake/src/printer')).default
+    // @ts-ignore - pdfmake dynamic import types may vary by platform
+    const PdfPrinter = (await import('pdfmake/src/printer')).default
     const printer = new PdfPrinter(fonts)
 
     const docDefinition = await generarDefinicionPDF(tipo, filtros)

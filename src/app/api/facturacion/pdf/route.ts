@@ -76,8 +76,7 @@ export async function POST(request: NextRequest) {
     // Obtener configuración del frigorífico
     const config = await db.configuracionFrigorifico.findFirst()
 
-    // Importar pdfmake dinámicamente
-    // @ts-expect-error pdfmake/src/printer types not available
+    // @ts-ignore - pdfmake/src/printer types may not be available on all platforms
     const PdfPrinter = ((await import('pdfmake')).default || (await import('pdfmake'))) as unknown as typeof import('pdfmake/src/printer')
     const printer = new PdfPrinter(fonts)
 

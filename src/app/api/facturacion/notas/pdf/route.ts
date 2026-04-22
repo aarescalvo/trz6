@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
 
     const config = await db.configuracionFrigorifico.findFirst()
 
+    // @ts-ignore - pdfmake/src/printer types may not be available on all platforms
     const PdfPrinter = ((await import('pdfmake')).default || (await import('pdfmake'))) as unknown as typeof import('pdfmake/src/printer')
     const printer = new PdfPrinter(fonts)
 
