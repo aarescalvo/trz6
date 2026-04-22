@@ -48,22 +48,22 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: 10,
     blockDurationMs: 5 * 60 * 1000  // 5 minutos
   },
-  // API general: 100 requests por minuto
+  // API general: 200 requests por minuto
   API_GENERAL: {
     windowMs: 60 * 1000,
-    maxRequests: 100,
+    maxRequests: 200,
     blockDurationMs: 60 * 1000
   },
-  // Escritura API: 30 requests por minuto
+  // Escritura API: 100 requests por minuto
   API_WRITE: {
     windowMs: 60 * 1000,
-    maxRequests: 30,
+    maxRequests: 100,
     blockDurationMs: 2 * 60 * 1000
   },
-  // Creación de registros: 30 por minuto
+  // Creación de registros: 60 por minuto
   CREATE_RECORD: {
     windowMs: 60 * 1000,
-    maxRequests: 30,
+    maxRequests: 60,
     blockDurationMs: 60 * 1000
   }
 } as const
