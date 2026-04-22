@@ -4,6 +4,8 @@ import { checkPermission } from '@/lib/auth-helpers'
 
 // GET - Fetch all indicadores with most recent values
 export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeReportes')
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')

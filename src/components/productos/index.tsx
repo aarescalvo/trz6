@@ -138,9 +138,13 @@ export default function ProductosModule() {
       const params = new URLSearchParams();
       if (busqueda) params.append('buscar', busqueda);
       
-      const response = await fetch(`/api/productos?${params}`);
+      const response = await fetch(`/api/productos-vendibles?${params}`);
       const data = await response.json();
-      setProductos(data);
+      if (data.success) {
+        setProductos(data.data);
+      } else {
+        toast({ title: 'Error', description: data.error || 'Error al cargar productos', variant: 'destructive' });
+      }
     } catch (error) {
       console.error('Error al cargar productos:', error);
       toast({
@@ -158,9 +162,13 @@ export default function ProductosModule() {
   // Obtener próximo código libre
   const obtenerProximoCodigo = async () => {
     try {
-      const response = await fetch('/api/productos/proximo-codigo');
+      const response = await fetch('/api/productos-vendibles?limit=1&offset=0');
       const data = await response.json();
-      setFormulario(prev => ({ ...prev, codigo: data.codigo }));
+      if (data.success && data.data && data.data.length > 0) {
+        const maxCode = Math.max(...data.data.map((p: any) => parseInt(p.codigo) || 0));
+        const nextCode = String(maxCode + 1).padStart(3, '0');
+        setFormulario(prev => ({ ...prev, codigo: nextCode }));
+      }
     } catch (error) {
       console.error('Error al obtener próximo código:', error);
     }
@@ -227,11 +235,11 @@ export default function ProductosModule() {
 
     setCargando(true);
     try {
-      const url = '/api/productos';
+      const url = '/api/productos-vendibles';
       const method = productoEditando ? 'PUT' : 'POST';
       const body = productoEditando 
-        ? { ...formulario, id: productoEditando.id }
-        : formulario;
+        ? { ...formulario, id: productoEditando.id, vencimientoDias: formulario.vencimiento ? parseInt(formulario.vencimiento) : 0, numeroRegistroSenasa: formulario.nroSenasa, unidadMedida: formulario.unidad || 'KG' }
+        : { ...formulario, vencimientoDias: formulario.vencimiento ? parseInt(formulario.vencimiento) : 0, numeroRegistroSenasa: formulario.nroSenasa, unidadMedida: formulario.unidad || 'KG' };
 
       const response = await fetch(url, {
         method,
@@ -265,7 +273,7 @@ export default function ProductosModule() {
   // Eliminar producto
   const eliminar = async (id: string) => {
     try {
-      const response = await fetch(`/api/productos?id=${id}`, {
+      const response = await fetch(`/api/productos-vendibles?id=${id}`, {
         method: 'DELETE',
       });
 

@@ -4,7 +4,9 @@ import { seedMonedasDefault } from '@/lib/moneda'
 
 // GET - Obtener todas las monedas
 import { checkPermission } from '@/lib/auth-helpers'
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeFacturacion')
+  if (authError) return authError
   try {
     // Asegurar que existan las monedas por defecto
     await seedMonedasDefault()

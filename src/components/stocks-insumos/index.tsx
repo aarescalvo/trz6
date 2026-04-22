@@ -32,7 +32,9 @@ interface Insumo {
   stockMaximo: number | null
   puntoReposicion: number | null
   proveedorNombre: string | null
+  codigoProveedor: string | null
   precioUnitario: number | null
+  moneda: string
   ubicacion: string | null
   activo: boolean
   observaciones: string | null
@@ -79,7 +81,9 @@ export function StocksInsumosModule({ operador }: Props) {
     stockMaximo: '',
     puntoReposicion: '',
     proveedorNombre: '',
+    codigoProveedor: '',
     precioUnitario: '',
+    moneda: 'ARS',
     ubicacion: '',
     activo: true,
     observaciones: ''
@@ -118,7 +122,9 @@ export function StocksInsumosModule({ operador }: Props) {
       stockMaximo: '',
       puntoReposicion: '',
       proveedorNombre: '',
+      codigoProveedor: '',
       precioUnitario: '',
+      moneda: 'ARS',
       ubicacion: '',
       activo: true,
       observaciones: ''
@@ -144,8 +150,10 @@ export function StocksInsumosModule({ operador }: Props) {
       stockMaximo: insumo.stockMaximo?.toString() || '',
       puntoReposicion: insumo.puntoReposicion?.toString() || '',
       proveedorNombre: insumo.proveedorNombre || '',
+      codigoProveedor: insumo.codigoProveedor || '',
       precioUnitario: insumo.precioUnitario?.toString() || '',
-      ubicacion: insumo.ubicacion || '',
+      moneda: insumo.moneda || 'ARS',
+      ubicacion: insumo.ubicacion || ',
       activo: insumo.activo,
       observaciones: insumo.observaciones || ''
     })
@@ -529,11 +537,32 @@ export function StocksInsumosModule({ operador }: Props) {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label><TextoEditable id="label-moneda-form" original="Moneda" tag="span" /></Label>
+                  <Select value={formData.moneda} onValueChange={(v) => setFormData({...formData, moneda: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ARS">ARS</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label><TextoEditable id="label-proveedor-form" original="Proveedor" tag="span" /></Label>
                   <Input
                     value={formData.proveedorNombre}
                     onChange={(e) => setFormData({...formData, proveedorNombre: e.target.value})}
                     placeholder="Nombre del proveedor"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label><TextoEditable id="label-cod-proveedor-form" original="Codigo Proveedor" tag="span" /></Label>
+                  <Input
+                    value={formData.codigoProveedor}
+                    onChange={(e) => setFormData({...formData, codigoProveedor: e.target.value})}
+                    placeholder="Codigo del proveedor"
                   />
                 </div>
               </div>

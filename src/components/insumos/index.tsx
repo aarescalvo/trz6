@@ -98,10 +98,11 @@ interface Props {
 const CATEGORIAS = [
   { value: 'EMBALAJE', label: 'Embalaje' },
   { value: 'ETIQUETAS', label: 'Etiquetas' },
-  { value: 'LIMPIEZA', label: 'Limpieza' },
-  { value: 'EPP', label: 'EPP' },
-  { value: 'REPUESTOS', label: 'Repuestos' },
-  { value: 'OTRO', label: 'Otro' }
+  { value: 'HIGIENE', label: 'Higiene y Limpieza' },
+  { value: 'PROTECCION', label: 'Proteccion (EPP)' },
+  { value: 'HERRAMIENTAS', label: 'Herramientas' },
+  { value: 'OFICINA', label: 'Oficina' },
+  { value: 'OTROS', label: 'Otros' }
 ]
 
 const UNIDADES = [
@@ -579,7 +580,7 @@ export function InsumosModule({ operador }: Props) {
     const activos = insumos.filter(i => i.activo)
     const grouped: Record<string, Insumo[]> = {}
     activos.forEach(i => {
-      const cat = i.categoria || 'OTRO'
+      const cat = i.categoria || 'OTROS'
       if (!grouped[cat]) grouped[cat] = []
       grouped[cat].push(i)
     })

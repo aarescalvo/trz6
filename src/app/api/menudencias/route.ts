@@ -3,7 +3,9 @@ import { db } from '@/lib/db'
 
 // GET - Listar menudencias
 import { checkPermission } from '@/lib/auth-helpers'
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await checkPermission(request, 'puedeMenudencias')
+  if (authError) return authError
   try {
     const menudencias = await db.menudencia.findMany({
       include: {

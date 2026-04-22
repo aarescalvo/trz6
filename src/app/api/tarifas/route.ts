@@ -8,6 +8,11 @@ function getOperadorId(request: NextRequest): string | null {
 }
 
 export async function GET(request: NextRequest) {
+  const operadorId = getOperadorId(request)
+  const puedeVer = await validarPermiso(operadorId, 'puedeFacturacion')
+  if (!puedeVer) {
+    return NextResponse.json({ success: false, error: 'Sin permisos de facturacion' }, { status: 403 })
+  }
   try {
     const { searchParams } = new URL(request.url)
     const modo = searchParams.get('modo') || 'vigentes'
@@ -44,9 +49,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data })
     }
     
+    // Modo seed eliminado por seguridad - usar endpoint dedicado con auth
     if (modo === 'seed') {
-      const created = await tarifasService.seedTiposDefault()
-      return NextResponse.json({ success: true, message: `${created} tipos de tarifa creados` })
+      return NextResponse.json({ success: false, error: 'Modo no disponible. Use el endpoint POST /api/tarifas/seed' }, { status: 403 })
     }
     
     return NextResponse.json({ success: false, error: 'Modo no válido' }, { status: 400 })
