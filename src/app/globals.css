@@ -122,14 +122,19 @@
 }
 
 /* Fix: evitar overlay gris de Radix Dialog cuando está cerrado (SSR hydration) */
-[data-radix-dialog-overlay][data-state="closed"] {
-  display: none !important;
+[data-radix-dialog-overlay],
+[data-radix-alert-dialog-overlay],
+[data-vaul-overlay] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+[data-radix-dialog-overlay][data-state="open"],
+[data-radix-alert-dialog-overlay][data-state="open"],
+[data-vaul-overlay][data-state="open"] {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 [data-radix-dialog-content][data-state="closed"] {
-  display: none !important;
-}
-/* Fix: AlertDialog overlay */
-[data-radix-alert-dialog-overlay][data-state="closed"] {
   display: none !important;
 }
 [data-radix-alert-dialog-content][data-state="closed"] {
