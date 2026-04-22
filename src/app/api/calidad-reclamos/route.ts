@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       where.estado = { in: ['PENDIENTE', 'EN_REVISION'] }
     }
     if (historial === 'true') {
-      where.estado = { in: ['CERRADO', 'RESUELTO', 'ANULADO'] }
+      where.estado = { in: ['CERRADO', 'RESUELTO', 'ANULADO', 'RESPONDIDO'] }
     }
     if (busqueda) {
       where.OR = [

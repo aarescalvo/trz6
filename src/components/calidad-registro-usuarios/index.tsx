@@ -127,6 +127,7 @@ export function CalidadRegistroUsuariosModule({ operador }: Props) {
   })
   
   const [selectedReclamo, setSelectedReclamo] = useState<Reclamo | null>(null)
+  const [expandedHistorialId, setExpandedHistorialId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchClientes()
@@ -299,6 +300,7 @@ export function CalidadRegistroUsuariosModule({ operador }: Props) {
           fetchReclamosCliente(selectedCliente.id)
         }
         fetchReclamosPendientes()
+        fetchReclamosHistorial()
       } else {
         toast.error(data.error || 'Error al guardar')
       }
@@ -327,6 +329,7 @@ export function CalidadRegistroUsuariosModule({ operador }: Props) {
           fetchReclamosCliente(selectedCliente.id)
         }
         fetchReclamosPendientes()
+        fetchReclamosHistorial()
       }
     } catch (error) {
       toast.error('Error al actualizar')
@@ -680,7 +683,7 @@ export function CalidadRegistroUsuariosModule({ operador }: Props) {
                     <TextoEditable id="calidad-historial-title" original="Historial de Reclamos" tag="span" />
                   </CardTitle>
                   <CardDescription>
-                    <TextoEditable id="calidad-historial-desc" original="Reclamos cerrados, resueltos y anulados" tag="span" />
+                    <TextoEditable id="calidad-historial-desc" original="Reclamos respondidos, cerrados, resueltos y anulados" tag="span" />
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -692,55 +695,54 @@ export function CalidadRegistroUsuariosModule({ operador }: Props) {
                       </p>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-stone-50/50">
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-fecha" original="Fecha" tag="span" />
-                          </TableHead>
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-cliente" original="Cliente" tag="span" />
-                          </TableHead>
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-tipo" original="Tipo" tag="span" />
-                          </TableHead>
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-titulo" original="Título" tag="span" />
-                          </TableHead>
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-prioridad" original="Prioridad" tag="span" />
-                          </TableHead>
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-estado" original="Estado" tag="span" />
-                          </TableHead>
-                          <TableHead>
-                            <TextoEditable id="calidad-hist-th-resolucion" original="Resolución" tag="span" />
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {reclamosHistorial.map((reclamo) => (
-                          <TableRow key={reclamo.id}>
-                            <TableCell className="text-sm">{new Date(reclamo.fecha).toLocaleDateString('es-AR')}</TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{reclamo.cliente?.nombre || '-'}</p>
+                    <div className="divide-y">
+                      {reclamosHistorial.map((reclamo) => (
+                        <div key={reclamo.id}>
+                          <div 
+                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-stone-50 transition-colors"
+                            onClick={() => setExpandedHistorialId(expandedHistorialId === reclamo.id ? null : reclamo.id)}
+                          >
+                            <ChevronRight className={`w-4 h-4 text-stone-400 transition-transform ${expandedHistorialId === reclamo.id ? 'rotate-90' : ''}`} />
+                            <span className="text-sm text-stone-500 whitespace-nowrap">{new Date(reclamo.fecha).toLocaleDateString('es-AR')}</span>
+                            <span className="font-medium text-sm truncate max-w-[200px]">{reclamo.cliente?.nombre || '-'}</span>
+                            {getTipoBadge(reclamo.tipo)}
+                            <span className="text-sm truncate flex-1">{reclamo.titulo}</span>
+                            {getEstadoBadge(reclamo.estado)}
+                            {getPrioridadBadge(reclamo.prioridad)}
+                          </div>
+                          {expandedHistorialId === reclamo.id && (
+                            <div className="px-4 pb-4 pt-1 bg-stone-50/50 border-t border-stone-100">
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="font-medium text-stone-700 mb-1">Descripción:</p>
+                                  <p className="text-stone-600">{reclamo.descripcion || 'Sin descripción'}</p>
+                                </div>
+                                {reclamo.respuesta && (
+                                  <div>
+                                    <p className="font-medium text-stone-700 mb-1">Respuesta:</p>
+                                    <div className="p-2 bg-green-50 rounded text-green-700">
+                                      {reclamo.respuesta}
+                                    </div>
+                                    {reclamo.respondidoPor && (
+                                      <p className="text-xs text-stone-400 mt-1">Respondido por: {reclamo.respondidoPor}</p>
+                                    )}
+                                    {reclamo.fechaRespuesta && (
+                                      <p className="text-xs text-stone-400">Fecha: {new Date(reclamo.fechaRespuesta).toLocaleDateString('es-AR')}</p>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            </TableCell>
-                            <TableCell>{getTipoBadge(reclamo.tipo)}</TableCell>
-                            <TableCell className="font-medium max-w-xs truncate">{reclamo.titulo}</TableCell>
-                            <TableCell>{getPrioridadBadge(reclamo.prioridad)}</TableCell>
-                            <TableCell>{getEstadoBadge(reclamo.estado)}</TableCell>
-                            <TableCell className="text-sm text-stone-500">
-                              {reclamo.fechaResolucion 
-                                ? new Date(reclamo.fechaResolucion).toLocaleDateString('es-AR')
-                                : '-'
-                              }
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                              <div className="flex gap-4 mt-3 text-xs text-stone-500">
+                                {reclamo.resultado && <span>Resultado: <strong>{reclamo.resultado}</strong></span>}
+                                {reclamo.fechaResolucion && <span>Resuelto: {new Date(reclamo.fechaResolucion).toLocaleDateString('es-AR')}</span>}
+                                {reclamo.resueltoPor && <span>Por: {reclamo.resueltoPor}</span>}
+                                {reclamo.tropaCodigo && <span>Tropa: {reclamo.tropaCodigo}</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </CardContent>
               </Card>
