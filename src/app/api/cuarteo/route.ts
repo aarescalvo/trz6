@@ -42,17 +42,24 @@ export async function GET(request: NextRequest) {
       db.registroCuarteo.count({ where })
     ])
 
-    // If includeCuartos, fetch related Cuarto records for each registro
+    // If includeCuartos, fetch related Cuarto records + pH measurements for each registro
     let enrichedRegistros = registros
     if (includeCuartos) {
-      const mediaResIds = registros.map(r => r.mediaResId).filter(Boolean) as string[]
-      const cuartos = mediaResIds.length > 0 ? await db.cuarto.findMany({
-        where: { mediaResId: { in: mediaResIds } },
-        include: {
-          tipoCuarto: { select: { id: true, nombre: true, codigo: true } },
-          camara: { select: { id: true, nombre: true } }
-        }
-      }) : []
+      const mediaResIds = [...new Set(registros.map(r => r.mediaResId).filter(Boolean))] as string[]
+
+      const [cuartos, medicionesPH] = mediaResIds.length > 0 ? await Promise.all([
+        db.cuarto.findMany({
+          where: { mediaResId: { in: mediaResIds } },
+          include: {
+            tipoCuarto: { select: { id: true, nombre: true, codigo: true } },
+            camara: { select: { id: true, nombre: true } }
+          }
+        }),
+        db.medicionPH.findMany({
+          where: { mediaResId: { in: mediaResIds } },
+          orderBy: { numeroMedicion: 'asc' }
+        })
+      ]) : [[], []]
 
       const cuartosByMediaRes = cuartos.reduce((acc: any, c: any) => {
         if (!acc[c.mediaResId]) acc[c.mediaResId] = []
@@ -60,9 +67,24 @@ export async function GET(request: NextRequest) {
         return acc
       }, {})
 
+      // Group pH measurements by mediaResId and extract classification
+      const phByMediaRes: Record<string, { mediciones: any[]; clasificacion: string | null; valorPH: number | null }> = {}
+      for (const ph of medicionesPH) {
+        if (!phByMediaRes[ph.mediaResId]) {
+          phByMediaRes[ph.mediaResId] = { mediciones: [], clasificacion: null, valorPH: null }
+        }
+        phByMediaRes[ph.mediaResId].mediciones.push(ph)
+        // Use the first measurement as primary classification
+        if (ph.numeroMedicion === 1 && ph.clasificacion) {
+          phByMediaRes[ph.mediaResId].clasificacion = ph.clasificacion
+          phByMediaRes[ph.mediaResId].valorPH = ph.valorPH
+        }
+      }
+
       enrichedRegistros = registros.map(r => ({
         ...r,
-        cuartos: r.mediaResId ? (cuartosByMediaRes[r.mediaResId] || []) : []
+        cuartos: r.mediaResId ? (cuartosByMediaRes[r.mediaResId] || []) : [],
+        datosPH: r.mediaResId ? (phByMediaRes[r.mediaResId] || null) : null
       }))
     }
 

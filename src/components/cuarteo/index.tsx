@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from 'sonner'
 import { useBalanza } from '@/hooks/useBalanza'
 import { useImpresora } from '@/hooks/useImpresora'
-import { Scissors, Loader2, RefreshCw, Search, Package, AlertTriangle, CheckCircle2, BarChart3, Scale, Printer } from 'lucide-react'
+import { Scissors, Loader2, RefreshCw, Search, Package, AlertTriangle, CheckCircle2, BarChart3, Scale, Printer, TestTubes } from 'lucide-react'
 
 interface Operador { id: string; nombre: string; rol: string }
 
@@ -58,6 +58,7 @@ interface RegistroCuarteo {
   operador: { id: string; nombre: string } | null
   observaciones: string | null
   cuartos?: CuartoItem[]
+  datosPH?: DatosPH | null
 }
 
 interface Camara {
@@ -65,6 +66,22 @@ interface Camara {
   nombre: string
   tipo: string
   activo?: boolean
+}
+
+interface MedicionPHData {
+  id: string
+  valorPH: number
+  clasificacion: string
+  temperatura?: number | null
+  numeroMedicion: number
+  horaMedicion: string
+  medidoPor?: string | null
+}
+
+interface DatosPH {
+  mediciones: MedicionPHData[]
+  clasificacion: string | null
+  valorPH: number | null
 }
 
 export function CuarteoModule({ operador }: { operador: Operador }) {
@@ -83,6 +100,9 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
   const [pesosCuartos, setPesosCuartos] = useState<Record<string, string>>({})
   const [camaraDestino, setCamaraDestino] = useState('')
   const [observaciones, setObservaciones] = useState('')
+
+  // pH data for selected MediaRes
+  const [medicionesPHActuales, setMedicionesPHActuales] = useState<DatosPH | null>(null)
 
   // Detalle dialog
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -137,7 +157,10 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
         }
         setMediaResEncontrada(mr)
         setPesosCuartos({})
+        setMedicionesPHActuales(null)
         toast.success(`Media Res encontrada: ${mr.peso} kg`)
+        // Fetch pH measurements for this MediaRes
+        fetchPHByMediaRes(mr.id)
       } else {
         // Fallback: buscar directamente por ID
         try {
@@ -147,14 +170,18 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
             const mr = data2.data[0]
             setMediaResEncontrada(mr)
             setPesosCuartos({})
+            setMedicionesPHActuales(null)
             toast.success(`Media Res encontrada: ${mr.peso} kg`)
+            fetchPHByMediaRes(mr.id)
           } else {
             toast.error('Media Res no encontrada')
             setMediaResEncontrada(null)
+            setMedicionesPHActuales(null)
           }
         } catch {
           toast.error('Media Res no encontrada')
           setMediaResEncontrada(null)
+          setMedicionesPHActuales(null)
         }
       }
     } catch (error) {
@@ -163,6 +190,39 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
       setMediaResEncontrada(null)
     } finally {
       setBuscandoMR(false)
+    }
+  }
+
+  // Fetch pH measurements for a MediaRes
+  const fetchPHByMediaRes = async (mediaResId: string) => {
+    try {
+      const res = await fetch(`/api/calidad-ph?mediaResId=${mediaResId}`)
+      const data = await res.json()
+      if (data.success && data.data && data.data.length > 0) {
+        const meds = data.data as MedicionPHData[]
+        const primera = meds.find(m => m.numeroMedicion === 1)
+        setMedicionesPHActuales({
+          mediciones: meds.sort((a, b) => a.numeroMedicion - b.numeroMedicion),
+          clasificacion: primera?.clasificacion || meds[0]?.clasificacion || null,
+          valorPH: primera?.valorPH || meds[0]?.valorPH || null
+        })
+      } else {
+        setMedicionesPHActuales(null)
+      }
+    } catch {
+      setMedicionesPHActuales(null)
+    }
+  }
+
+  // Color badge for pH classification
+  const colorClasificacionPH = (clasif: string | null | undefined) => {
+    if (!clasif) return 'bg-stone-100 text-stone-500 border-stone-300'
+    switch (clasif) {
+      case 'NORMAL': return 'bg-green-100 text-green-700 border-green-300'
+      case 'INTERMEDIO': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+      case 'DFD': return 'bg-red-100 text-red-700 border-red-300'
+      case 'ALTO': return 'bg-orange-100 text-orange-700 border-orange-300'
+      default: return 'bg-stone-100 text-stone-500 border-stone-300'
     }
   }
 
@@ -233,6 +293,7 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
         setCodigoBusqueda('')
         setMediaResEncontrada(null)
         setPesosCuartos({})
+        setMedicionesPHActuales(null)
         setCamaraDestino('')
         setObservaciones('')
         fetchDatos()
@@ -397,10 +458,40 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
                         </p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => { setMediaResEncontrada(null); setCodigoBusqueda(''); setPesosCuartos({}) }}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {medicionesPHActuales?.clasificacion && (
+                        <Badge variant="outline" className={`${colorClasificacionPH(medicionesPHActuales.clasificacion)} flex items-center gap-1`}>
+                          <TestTubes className="w-3 h-3" />
+                          pH {medicionesPHActuales.valorPH?.toFixed(1) || '-'} ({medicionesPHActuales.clasificacion})
+                        </Badge>
+                      )}
+                      {medicionesPHActuales && medicionesPHActuales.mediciones.length > 1 && (
+                        <span className="text-xs text-stone-400">
+                          {medicionesPHActuales.mediciones.length} mediciones
+                        </span>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => { setMediaResEncontrada(null); setCodigoBusqueda(''); setPesosCuartos({}); setMedicionesPHActuales(null) }}>
                       Limpiar
                     </Button>
                   </div>
+                  {/* Detalle de mediciones de pH */}
+                  {medicionesPHActuales && medicionesPHActuales.mediciones.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-amber-200/50">
+                      <div className="flex flex-wrap gap-2">
+                        {medicionesPHActuales.mediciones.map((m) => (
+                          <div key={m.id} className="flex items-center gap-1.5 text-xs bg-white/70 rounded-md px-2 py-1 border border-amber-100">
+                            <span className="font-medium text-stone-500">#{m.numeroMedicion}</span>
+                            <span className="font-semibold text-stone-800">{m.valorPH.toFixed(1)}</span>
+                            <Badge variant="outline" className={`${colorClasificacionPH(m.clasificacion)} text-[10px] px-1 py-0`}>{m.clasificacion}</Badge>
+                            {m.temperatura && <span className="text-stone-400">{m.temperatura}°C</span>}
+                            <span className="text-stone-400">{m.horaMedicion}</span>
+                            {m.medidoPor && <span className="text-stone-400">({m.medidoPor})</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -606,6 +697,7 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
                       <TableHead>Tipo Corte</TableHead>
                       <TableHead>Peso Total</TableHead>
                       <TableHead>Cuartos</TableHead>
+                      <TableHead>pH</TableHead>
                       <TableHead>Cámara</TableHead>
                       <TableHead>Operador</TableHead>
                       <TableHead className="text-center">Detalle</TableHead>
@@ -630,6 +722,16 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
                                 </Badge>
                               ))}
                             </div>
+                          ) : (
+                            <span className="text-stone-300 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {r.datosPH?.clasificacion ? (
+                            <Badge variant="outline" className={`${colorClasificacionPH(r.datosPH.clasificacion)} flex items-center gap-1 w-fit`}>
+                              <TestTubes className="w-3 h-3" />
+                              {r.datosPH.valorPH?.toFixed(1)}
+                            </Badge>
                           ) : (
                             <span className="text-stone-300 text-sm">-</span>
                           )}
@@ -707,6 +809,32 @@ export function CuarteoModule({ operador }: { operador: Operador }) {
                             <Badge variant="outline" className="bg-teal-50 text-teal-700">
                               {c.peso} kg
                             </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {registroDetalle.datosPH && registroDetalle.datosPH.mediciones.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                      <TestTubes className="w-4 h-4 text-stone-500" />
+                      Mediciones de pH
+                    </p>
+                    <div className="space-y-1">
+                      {registroDetalle.datosPH.mediciones.map((m, i) => (
+                        <div key={i} className="flex items-center justify-between bg-stone-50 rounded-md px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-stone-500">#{m.numeroMedicion}</span>
+                            <span className="font-semibold">{m.valorPH.toFixed(1)}</span>
+                            <Badge variant="outline" className={`${colorClasificacionPH(m.clasificacion)} text-xs`}>
+                              {m.clasificacion}
+                            </Badge>
+                            {m.temperatura && <span className="text-xs text-stone-400">{m.temperatura}°C</span>}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-stone-400">
+                            <span>{m.horaMedicion}</span>
+                            {m.medidoPor && <span>({m.medidoPor})</span>}
                           </div>
                         </div>
                       ))}
