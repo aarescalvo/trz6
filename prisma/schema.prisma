@@ -272,6 +272,7 @@ model Operador {
   actividades                      ActividadOperador[]
   asientosContables                AsientoContable[]
   alertasResueltas                 AlertaStock[]             @relation("AlertasResueltas")
+  medicionesPH                     MedicionPH[]
 
   @@index([usuario])
 }
@@ -924,6 +925,7 @@ model MediaRes {
   facturaId String? // ID de la factura donde se facturó
   cuartos   Cuarto[]
   decomisos Decomiso[] @relation("DecomisoMediaRes")
+  medicionesPH MedicionPH[]
 
   @@unique([romaneoId, lado, sigla])
   @@index([estado])
@@ -945,6 +947,61 @@ enum EstadoMediaRes {
   EN_CAMARA
   EN_CUARTEO
   DESPACHADO
+}
+
+// ==================== pH - MEDICIONES DE CALIDAD ====================
+
+enum ClasificacionPH {
+  NORMAL      // pH 5.4 - 5.7
+  INTERMEDIO  // pH 5.8 - 5.9
+  DFD         // pH >= 6.0 (Dark, Firm, Dry)
+  ALTO        // pH < 5.4 (PSE - Pale, Soft, Exudative)
+  SIN_CLASIFICAR
+}
+
+model MedicionPH {
+  id String @id @default(cuid())
+
+  // Media res medida
+  mediaResId String
+  mediaRes   MediaRes @relation(fields: [mediaResId], references: [id], onDelete: Cascade)
+
+  // Datos de la medición
+  valorPH        Float               // Valor numérico del pH
+  clasificacion  ClasificacionPH      @default(SIN_CLASIFICAR)
+  temperatura    Float?               // Temperatura de la carne (°C) - opcional
+  horaMedicion   DateTime             // Fecha y hora de la medición (ingresada manualmente)
+  numeroMedicion Int                  @default(1) // 1 = primera, 2 = segunda (opcional), 3 = tercera (opcional)
+
+  // Operador que tomó la medición
+  operadorId String?
+  operador   Operador? @relation(fields: [operadorId], references: [id])
+  medidoPor  String? // Nombre del operador (denormalizado para reportes rápidos)
+
+  // Datos denormalizados para reportes (snapshot al momento de medir)
+  tropaCodigo   String? // Código de tropa
+  garron       Int?    // Número de garrón
+  tipoAnimal   String? // Tipo de animal (VA, NO, etc.)
+  raza         String? // Raza del animal
+  ladoMedia    String? // IZQUIERDA o DERECHA
+  productorNombre String? // Nombre del productor
+  productorId  String? // ID del productor
+  usuarioFaenaId String? // ID del usuario de faena (matarife)
+  usuarioFaenaNombre String? // Nombre del usuario de faena
+
+  // Observaciones
+  observaciones String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mediaResId])
+  @@index([tropaCodigo])
+  @@index([clasificacion])
+  @@index([horaMedicion])
+  @@index([productorId])
+  @@index([operadorId])
+  @@unique([mediaResId, numeroMedicion]) // Solo una medición N por media res
 }
 
 // ==================== STOCK CÁMARA ====================

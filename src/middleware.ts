@@ -188,6 +188,7 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   '/api/calidad-reclamos': 'puedeReportes',
   '/api/calidad-novedades': 'puedeReportes',
   '/api/calidad-usuarios': 'puedeConfiguracion',
+  '/api/calidad-ph': 'puedeReportes',
   '/api/email': 'puedeConfiguracion',
   // Conciliación
   '/api/conciliacion': 'puedeStock',

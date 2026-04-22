@@ -57,6 +57,7 @@ import C2RendimientoModule from '@/components/c2-rendimiento'
 import C2DegradacionModule from '@/components/c2-degradacion'
 import C2ReportesModule from '@/components/c2-reportes'
 import { CalidadRegistroUsuariosModule } from '@/components/calidad-registro-usuarios'
+import CalidadPHModule from '@/components/calidad-ph'
 import { DespachosModule } from '@/components/despachos'
 import { ConfigOperadoresModule } from '@/components/config-operadores'
 import { MovimientoCamarasModule } from '@/components/movimiento-camaras'
@@ -133,7 +134,7 @@ interface Stats {
   enCamara: number
 }
 
-type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA'
+type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'calidadPh' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA'
 
 // Navigation item
 interface NavItem {
@@ -283,6 +284,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: FileText,
     items: [
       { id: 'calidadRegistroUsuarios', label: 'Registro de Usuarios', icon: Users, permiso: 'puedeConfiguracion' },
+      { id: 'calidadPh', label: 'Control de pH', icon: Activity, permiso: 'puedeReportes' },
       { id: 'auditoriaOperador', label: 'Auditoría Operadores', icon: Users, permiso: 'puedeConfiguracion' },
     ]
   },
@@ -1053,6 +1055,8 @@ export default function FrigorificoApp() {
         return wrapModule('configC2BOM', <C2BOMModule operador={operador} />)
       case 'calidadRegistroUsuarios':
         return wrapModule('calidadRegistroUsuarios', <CalidadRegistroUsuariosModule operador={operador} />)
+      case 'calidadPh':
+        return wrapModule('calidadPh', <CalidadPHModule operador={operador} />)
       // Módulos integrados desde modules-pending
       case 'auditoriaOperador':
         return wrapModule('auditoriaOperador', <AuditoriaOperadorModule operador={operador} />)
