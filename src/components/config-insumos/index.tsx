@@ -46,7 +46,17 @@ interface MovimientoInsumo {
 
 interface Props { operador: Operador }
 
-const CATEGORIAS = ['Envases', 'Etiquetas', 'Insumos Faena', 'Limpieza', 'Otros']
+const CATEGORIAS = [
+  { value: 'EMBALAJE', label: 'Embalaje' },
+  { value: 'ETIQUETAS', label: 'Etiquetas' },
+  { value: 'HIGIENE', label: 'Higiene' },
+  { value: 'PROTECCION', label: 'Protección' },
+  { value: 'HERRAMIENTAS', label: 'Herramientas' },
+  { value: 'OFICINA', label: 'Oficina' },
+  { value: 'OTROS', label: 'Otros' },
+]
+
+const CATEGORIA_LABELS: Record<string, string> = Object.fromEntries(CATEGORIAS.map(c => [c.value, c.label]))
 const UNIDADES = ['UN', 'KG', 'MT', 'LT', 'CJ', 'ROLLO', 'M']
 
 type EstadoInsumo = 'DISPONIBLE' | 'STOCK_BAJO' | 'SIN_STOCK'
@@ -68,7 +78,7 @@ export function ConfigInsumosModule({ operador }: Props) {
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
-    categoria: 'Envases',
+    categoria: 'EMBALAJE',
     subcategoria: '',
     unidadMedida: 'UN',
     stockMinimo: '',
@@ -164,15 +174,17 @@ export function ConfigInsumosModule({ operador }: Props) {
   // Badge de categoría
   const getCategoriaBadge = (categoria: string) => {
     const colores: Record<string, string> = {
-      'Envases': 'bg-blue-100 text-blue-700 border-blue-200',
-      'Etiquetas': 'bg-purple-100 text-purple-700 border-purple-200',
-      'Insumos Faena': 'bg-orange-100 text-orange-700 border-orange-200',
-      'Limpieza': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-      'Otros': 'bg-gray-100 text-gray-700 border-gray-200'
+      'EMBALAJE': 'bg-blue-100 text-blue-700 border-blue-200',
+      'ETIQUETAS': 'bg-purple-100 text-purple-700 border-purple-200',
+      'HIGIENE': 'bg-cyan-100 text-cyan-700 border-cyan-200',
+      'PROTECCION': 'bg-orange-100 text-orange-700 border-orange-200',
+      'HERRAMIENTAS': 'bg-amber-100 text-amber-700 border-amber-200',
+      'OFICINA': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      'OTROS': 'bg-gray-100 text-gray-700 border-gray-200'
     }
     return (
-      <Badge variant="outline" className={colores[categoria] || colores['Otros']}>
-        {categoria}
+      <Badge variant="outline" className={colores[categoria] || colores['OTROS']}>
+        {CATEGORIA_LABELS[categoria] || categoria}
       </Badge>
     )
   }
@@ -196,7 +208,7 @@ export function ConfigInsumosModule({ operador }: Props) {
     setFormData({
       codigo: '',
       nombre: '',
-      categoria: 'Envases',
+      categoria: 'EMBALAJE',
       subcategoria: '',
       unidadMedida: 'UN',
       stockMinimo: '',
@@ -212,7 +224,7 @@ export function ConfigInsumosModule({ operador }: Props) {
     setFormData({
       codigo: insumo.codigo || '',
       nombre: insumo.nombre,
-      categoria: insumo.categoria || 'Otros',
+      categoria: insumo.categoria || 'OTROS',
       subcategoria: insumo.subcategoria || '',
       unidadMedida: insumo.unidadMedida || 'UN',
       stockMinimo: insumo.stockMinimo.toString(),
@@ -476,7 +488,7 @@ export function ConfigInsumosModule({ operador }: Props) {
                 >
                   <option value="TODAS">Todas</option>
                   {CATEGORIAS.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
               </div>
@@ -602,7 +614,7 @@ export function ConfigInsumosModule({ operador }: Props) {
                     value={formData.categoria} 
                     onChange={(e) => setFormData({...formData, categoria: e.target.value})}
                   >
-                    {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                    {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
               </div>
