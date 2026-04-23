@@ -123,6 +123,11 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   const [configImpresoraOpen, setConfigImpresoraOpen] = useState(false)
   const [impresoraIp, setImpresoraIp] = useState('')
   const [usarPredeterminada, setUsarPredeterminada] = useState(false)
+  const [impresoraPuerto, setImpresoraPuerto] = useState(9100)
+  const [impresoraVelocidad, setImpresoraVelocidad] = useState(4)   // 1-12 ips
+  const [impresoraCalor, setImpresoraCalor] = useState(10)         // 0-30
+  const [impresoraAncho, setImpresoraAncho] = useState(100)        // mm
+  const [impresoraAlto, setImpresoraAlto] = useState(50)           // mm
 
   // Toggle production mode with sidebar event
   const toggleModoProduccion = useCallback((active: boolean) => {
@@ -147,8 +152,18 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   useEffect(() => {
     const savedIp = localStorage.getItem('impresoraRomaneoIp') || ''
     const savedPredeterminada = localStorage.getItem('impresoraRomaneoPredeterminada') === 'true'
+    const savedPuerto = parseInt(localStorage.getItem('impresoraRomaneoPuerto') || '9100')
+    const savedVelocidad = parseInt(localStorage.getItem('impresoraRomaneoVelocidad') || '4')
+    const savedCalor = parseInt(localStorage.getItem('impresoraRomaneoCalor') || '10')
+    const savedAncho = parseInt(localStorage.getItem('impresoraRomaneoAncho') || '100')
+    const savedAlto = parseInt(localStorage.getItem('impresoraRomaneoAlto') || '50')
     setImpresoraIp(savedIp)
     setUsarPredeterminada(savedPredeterminada)
+    setImpresoraPuerto(savedPuerto)
+    setImpresoraVelocidad(savedVelocidad)
+    setImpresoraCalor(savedCalor)
+    setImpresoraAncho(savedAncho)
+    setImpresoraAlto(savedAlto)
   }, [])
 
   // Cargar datos iniciales
@@ -351,6 +366,7 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
 
   const handleImprimirRotulos = async (garron: number, lado: 'DERECHA' | 'IZQUIERDA', peso: number, esDecomiso: boolean = false) => {
     try {
+      // Buscar template MEDIA_RES en DB
       const rotulosRes = await fetch('/api/rotulos?tipo=MEDIA_RES&activo=true')
       const rotulosResponse = await rotulosRes.json()
       const rotulosData = rotulosResponse.data || []
@@ -390,62 +406,55 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
         codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}`,
       }
 
-      if (!rotulo) {
-        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
-        return
-      }
-
-      // Verificar si hay configuración de impresora
-      if (!impresoraIp && !usarPredeterminada) {
-        // Si no hay configuración, usar impresora predeterminada automáticamente
-        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
-        return
-      }
-
-      // Si está configurado para usar predeterminada, imprimir HTML
-      if (usarPredeterminada) {
-        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
-        return
-      }
-
-      // Enviar a imprimir por TCP/IP
-      for (const sigla of SIGLAS) {
-        const datosConSigla = {
-          ...datosRotulo,
-          sigla: sigla,
-          sigla_media: sigla,
-          codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
+      // Si hay template y impresora TCP/IP configurada, imprimir directo
+      if (rotulo && !usarPredeterminada && impresoraIp) {
+        let exitos = 0
+        for (const sigla of SIGLAS) {
+          const datosConSigla = {
+            ...datosRotulo,
+            sigla: sigla,
+            sigla_media: sigla,
+            codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
+          }
+          
+          try {
+            const printRes = await fetch('/api/rotulos/imprimir', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rotuloId: rotulo.id,
+                datos: datosConSigla,
+                cantidad: 1,
+                impresoraIp: impresoraIp,
+                impresoraPuerto: impresoraPuerto
+              })
+            })
+            
+            const printData = await printRes.json()
+            if (printData.success) exitos++
+          } catch (printError) {
+            console.error('Error al imprimir por TCP:', printError)
+          }
         }
         
-        try {
-          const printRes = await fetch('/api/rotulos/imprimir', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              rotuloId: rotulo.id,
-              datos: datosConSigla,
-              cantidad: 1,
-              impresoraIp: impresoraIp,
-              impresoraPuerto: 9100
-            })
+        if (exitos === 3) {
+          toast.success(`3 rótulos enviados a ${impresoraIp}`, {
+            description: `Plantilla: ${rotulo.nombre} | ${impresoraVelocidad}ips | Calor ${impresoraCalor}`
           })
-          
-          const printData = await printRes.json()
-          if (!printData.success) {
-            // Fallback a HTML si falla la impresión TCP
-            imprimirRotuloHTML(garron, lado, peso, esDecomiso)
-            return
-          }
-        } catch (printError) {
-          console.error('Error al imprimir por TCP:', printError)
-          imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+          return
+        } else if (exitos > 0) {
+          toast.success(`${exitos}/3 rótulos enviados a impresora`, { description: `Plantilla: ${rotulo.nombre}` })
           return
         }
+        // Si fallaron todas las TCP, caer al HTML
       }
-      
-      toast.success(`3 rótulos enviados a impresora para garrón #${garron}`, {
-        description: `Impresora TCP: ${impresoraIp} - Plantilla: ${rotulo.nombre}`
-      })
+
+      // Si no hay template o impresora TCP, usar HTML (con o sin plantilla)
+      if (!rotulo || usarPredeterminada || !impresoraIp) {
+        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+      } else {
+        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
+      }
       
     } catch (error) {
       console.error('Error al imprimir:', error)
@@ -959,7 +968,7 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
               size="sm" 
               onClick={() => setConfigImpresoraOpen(true)} 
               className={`shadow-sm ${(impresoraIp || usarPredeterminada) ? 'bg-green-50 border-green-300 text-green-600' : 'bg-red-50 border-red-300 text-red-600'}`}
-              title={usarPredeterminada ? 'Impresora predeterminada de Windows' : impresoraIp ? `Impresora TCP: ${impresoraIp}` : 'Configurar impresora'}
+              title={usarPredeterminada ? 'Impresora predeterminada de Windows' : impresoraIp ? `Impresora TCP: ${impresoraIp}:${impresoraPuerto} | ${impresoraVelocidad}ips | Calor ${impresoraCalor}` : 'Configurar impresora'}
             >
               <Printer className="w-4 h-4 mr-1" />
               {(impresoraIp || usarPredeterminada) ? 'Impresora' : 'Sin Impresora'}
@@ -1497,7 +1506,7 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Printer className="w-5 h-5 text-amber-600" />
-              Configurar Impresora de Rótulos
+              Configurar Impresora de Rótulos (Romaneo)
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -1512,12 +1521,12 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
                 </div>
                 <div>
                   <p className="font-medium text-sm">Impresora Predeterminada de Windows</p>
-                  <p className="text-xs text-stone-500">Usa la impresora configurada en el sistema</p>
+                  <p className="text-xs text-stone-500">Usa la impresora configurada en el sistema (muestra diálogo)</p>
                 </div>
               </div>
             </div>
 
-            {/* Opción: Impresora TCP/IP */}
+            {/* Opción: Impresora TCP/IP - Impresión Directa */}
             <div 
               className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${!usarPredeterminada ? 'border-green-500 bg-green-50' : 'border-stone-200 hover:border-stone-300'}`}
               onClick={() => setUsarPredeterminada(false)}
@@ -1527,30 +1536,111 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
                   {!usarPredeterminada && <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5" />}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Impresora TCP/IP (Datamax)</p>
-                  <p className="text-xs text-stone-500">Conexión directa por red - Puerto 9100</p>
+                  <p className="font-medium text-sm">Impresora TCP/IP (Impresión Directa)</p>
+                  <p className="text-xs text-stone-500">Conexión por red - Usa plantilla de Rótulos - Sin diálogo</p>
                 </div>
               </div>
               {!usarPredeterminada && (
-                <div className="ml-7">
-                  <Label className="text-xs">IP de la impresora</Label>
-                  <Input 
-                    value={impresoraIp} 
-                    onChange={(e) => setImpresoraIp(e.target.value)} 
-                    placeholder="192.168.1.100"
-                    className="mt-1"
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                <div className="ml-7 space-y-3">
+                  {/* IP y Puerto */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <Label className="text-xs">IP de la impresora</Label>
+                      <Input 
+                        value={impresoraIp} 
+                        onChange={(e) => setImpresoraIp(e.target.value)} 
+                        placeholder="192.168.1.100"
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Puerto</Label>
+                      <Input 
+                        type="number" 
+                        value={impresoraPuerto} 
+                        onChange={(e) => setImpresoraPuerto(parseInt(e.target.value) || 9100)} 
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tamaño de etiqueta */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Ancho (mm)</Label>
+                      <Input 
+                        type="number" 
+                        value={impresoraAncho} 
+                        onChange={(e) => setImpresoraAncho(parseInt(e.target.value) || 100)} 
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Alto (mm)</Label>
+                      <Input 
+                        type="number" 
+                        value={impresoraAlto} 
+                        onChange={(e) => setImpresoraAlto(parseInt(e.target.value) || 50)} 
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Velocidad y Calor */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Velocidad (ips)</Label>
+                      <Select value={String(impresoraVelocidad)} onValueChange={(v) => setImpresoraVelocidad(parseInt(v))}>
+                        <SelectTrigger className="mt-1" onClick={(e) => e.stopPropagation()}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2 - Muy lenta</SelectItem>
+                          <SelectItem value="3">3 - Lenta</SelectItem>
+                          <SelectItem value="4">4 - Normal</SelectItem>
+                          <SelectItem value="5">5 - Media</SelectItem>
+                          <SelectItem value="6">6 - Media-alta</SelectItem>
+                          <SelectItem value="8">8 - Rápida</SelectItem>
+                          <SelectItem value="10">10 - Muy rápida</SelectItem>
+                          <SelectItem value="12">12 - Máxima</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Calor / Densidad</Label>
+                      <Select value={String(impresoraCalor)} onValueChange={(v) => setImpresoraCalor(parseInt(v))}>
+                        <SelectTrigger className="mt-1" onClick={(e) => e.stopPropagation()}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">0 - Mínimo</SelectItem>
+                          <SelectItem value="5">5 - Bajo</SelectItem>
+                          <SelectItem value="8">8 - Medio-bajo</SelectItem>
+                          <SelectItem value="10">10 - Normal</SelectItem>
+                          <SelectItem value="12">12 - Medio-alto</SelectItem>
+                          <SelectItem value="15">15 - Alto</SelectItem>
+                          <SelectItem value="20">20 - Muy alto</SelectItem>
+                          <SelectItem value="25">25 - Intenso</SelectItem>
+                          <SelectItem value="30">30 - Máximo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="bg-amber-50 p-3 rounded-lg text-xs text-amber-700">
-              <p className="font-medium mb-1">Información del rótulo:</p>
-              <p>• Tamaño etiqueta: 100 x 150 mm</p>
-              <p>• Datos: Tropa, Garrón, Lado, Peso, Sigla</p>
-              <p>• Código de barras incluido</p>
-              <p>• Se imprimen 3 rótulos por media (A, T, D)</p>
+              <p className="font-medium mb-1">Información:</p>
+              <p>• <b>TCP/IP:</b> Usa tu plantilla de Rótulos (MEDIA_RES) y envía directo a impresora</p>
+              <p>• <b>Windows:</b> Muestra diálogo de impresión (no usa plantilla ZPL)</p>
+              <p>• <b>Se imprimen 3 rótulos por media</b> (siglas A, T, D)</p>
+              <p>• <b>Velocidad:</b> Mayor = más rápido pero menos definición</p>
+              <p>• <b>Calor:</b> Mayor = etiqueta más oscura, mejor para código de barras</p>
             </div>
           </div>
           <DialogFooter>
@@ -1559,11 +1649,16 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
               onClick={() => {
                 localStorage.setItem('impresoraRomaneoIp', impresoraIp)
                 localStorage.setItem('impresoraRomaneoPredeterminada', String(usarPredeterminada))
+                localStorage.setItem('impresoraRomaneoPuerto', String(impresoraPuerto))
+                localStorage.setItem('impresoraRomaneoVelocidad', String(impresoraVelocidad))
+                localStorage.setItem('impresoraRomaneoCalor', String(impresoraCalor))
+                localStorage.setItem('impresoraRomaneoAncho', String(impresoraAncho))
+                localStorage.setItem('impresoraRomaneoAlto', String(impresoraAlto))
                 setConfigImpresoraOpen(false)
                 if (usarPredeterminada) {
                   toast.success('Usando impresora predeterminada de Windows')
                 } else {
-                  toast.success('IP de impresora guardada: ' + impresoraIp)
+                  toast.success(`Impresora: ${impresoraIp}:${impresoraPuerto} | ${impresoraVelocidad}ips | Calor ${impresoraCalor}`)
                 }
               }} 
               size="sm"
