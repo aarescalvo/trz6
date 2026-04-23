@@ -4917,3 +4917,42 @@ Stage Summary:
 - **Impresion directa** sin dialogo del navegador cuando TCP/IP esta configurado
 - **Configuracion completa**: IP, puerto, velocidad, calor, tamaño etiqueta
 - **Fallback HTML** mantenido para impresora predeterminada de Windows
+---
+Task ID: ROMANEO-IMPRESION-1
+Agent: main
+Task: Corregir impresion en Romaneo - usar plantilla de DB con TCP/IP directo en vez de HTML hardcodeado
+
+Work Log:
+
+#### 1. Problema detectado
+- El modulo Romaneo siempre mostraba el HTML hardcodeado aunque el usuario tenia plantilla MEDIA_RES cargada
+- Causa: el modulo tiene su propia configuracion de impresora (localStorage impresoraRomaneoIp) independiente de pesaje individual
+- Si la IP no estaba configurada, siempre caia al HTML fallback
+
+#### 2. Solucion aplicada
+- handleImprimirRotulos reescrito: ahora busca template MEDIA_RES en DB y si tiene TCP/IP configurado, envia directo
+- Ya no corta al primer error TCP: cuenta exitos (3 siglas A,T,D) y reporta cuantos se imprimieron
+- Si fallan las 3 TCP, cae al HTML como fallback
+
+#### 3. Configuracion ampliada
+Nuevos campos en la config de impresora del Romaneo:
+- impresoraPuerto (default 9100)
+- impresoraVelocidad (1-12 ips, default 4)
+- impresoraCalor (0-30, default 10)
+- impresoraAncho (mm, default 100)
+- impresoraAlto (mm, default 50)
+- Todos guardados en localStorage con claves impresoraRomaneo*
+
+#### 4. Dialogo actualizado
+- Mismo diseno que pesaje individual con todos los campos
+- Info clarificatoria: TCP/IP usa plantilla de DB, Windows usa HTML
+
+#### 5. Verificacion
+- TypeScript: Sin errores
+- Commit 07b6f77 subido a GitHub
+
+Stage Summary:
+- **Romaneo ahora usa plantilla de DB con TCP/IP directo** ✅
+- **Configuracion completa con velocidad, calor y tamaño** ✅
+- **Fallback HTML robusto** (no corta al primer error) ✅
+- **Push a GitHub completado** ✅
