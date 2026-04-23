@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useMemo } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 import { 
   ClipboardList, Download, Search, Package, DollarSign, 
-  AlertTriangle, TrendingDown, Loader2, FileSpreadsheet
+  AlertTriangle, TrendingDown, Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -29,288 +29,119 @@ interface Insumo {
   codigo: string
   nombre: string
   categoria: string
-  unidad: string
+  subcategoria?: string | null
+  unidadMedida: string
   stockActual: number
   stockMinimo: number
-  precioUnitario: number
-  ubicacion: string
+  stockMaximo?: number | null
+  puntoReposicion?: number | null
+  precioUnitario?: number | null
+  moneda?: string
+  proveedorNombre?: string | null
+  codigoProveedor?: string | null
+  ubicacion?: string | null
+  activo: boolean
 }
 
 const CATEGORIAS = [
-  'Bolsas',
-  'Láminas',
-  'Cajas',
-  'Fajas',
-  'Etiquetas',
-  'Productos de Limpieza',
-  'Herramientas',
-  'Insumos de Oficina'
+  { value: 'EMBALAJE', label: 'Embalaje' },
+  { value: 'ETIQUETAS', label: 'Etiquetas' },
+  { value: 'HIGIENE', label: 'Higiene' },
+  { value: 'PROTECCION', label: 'Proteccion' },
+  { value: 'HERRAMIENTAS', label: 'Herramientas' },
+  { value: 'OFICINA', label: 'Oficina' },
+  { value: 'OTROS', label: 'Otros' },
 ]
 
-// Datos simulados - 18 items
-const INSUMOS_SIMULADOS: Insumo[] = [
-  {
-    id: '1',
-    codigo: 'BOL-001',
-    nombre: 'Bolsa Vacío 5kg',
-    categoria: 'Bolsas',
-    unidad: 'UN',
-    stockActual: 2500,
-    stockMinimo: 500,
-    precioUnitario: 45.50,
-    ubicacion: 'Depósito A - Estante 3'
-  },
-  {
-    id: '2',
-    codigo: 'BOL-002',
-    nombre: 'Bolsa Media Res',
-    categoria: 'Bolsas',
-    unidad: 'UN',
-    stockActual: 150,
-    stockMinimo: 200,
-    precioUnitario: 120.00,
-    ubicacion: 'Depósito A - Estante 3'
-  },
-  {
-    id: '3',
-    codigo: 'BOL-003',
-    nombre: 'Bolsa Cuarto Trasero',
-    categoria: 'Bolsas',
-    unidad: 'UN',
-    stockActual: 890,
-    stockMinimo: 300,
-    precioUnitario: 85.00,
-    ubicacion: 'Depósito A - Estante 4'
-  },
-  {
-    id: '4',
-    codigo: 'LAM-001',
-    nombre: 'Lámina Paletizable',
-    categoria: 'Láminas',
-    unidad: 'MT',
-    stockActual: 450,
-    stockMinimo: 100,
-    precioUnitario: 28.00,
-    ubicacion: 'Depósito A - Estante 1'
-  },
-  {
-    id: '5',
-    codigo: 'LAM-002',
-    nombre: 'Lámina Termoencogible',
-    categoria: 'Láminas',
-    unidad: 'MT',
-    stockActual: 85,
-    stockMinimo: 150,
-    precioUnitario: 35.00,
-    ubicacion: 'Depósito A - Estante 1'
-  },
-  {
-    id: '6',
-    codigo: 'CAJ-001',
-    nombre: 'Caja Exportación',
-    categoria: 'Cajas',
-    unidad: 'UN',
-    stockActual: 800,
-    stockMinimo: 300,
-    precioUnitario: 150.00,
-    ubicacion: 'Depósito B - Sector 1'
-  },
-  {
-    id: '7',
-    codigo: 'CAJ-002',
-    nombre: 'Caja Mercado Interno',
-    categoria: 'Cajas',
-    unidad: 'UN',
-    stockActual: 0,
-    stockMinimo: 400,
-    precioUnitario: 95.00,
-    ubicacion: 'Depósito B - Sector 1'
-  },
-  {
-    id: '8',
-    codigo: 'CAJ-003',
-    nombre: 'Caja Menudencias',
-    categoria: 'Cajas',
-    unidad: 'UN',
-    stockActual: 1200,
-    stockMinimo: 500,
-    precioUnitario: 65.00,
-    ubicacion: 'Depósito B - Sector 2'
-  },
-  {
-    id: '9',
-    codigo: 'FAJ-001',
-    nombre: 'Faja 20cm',
-    categoria: 'Fajas',
-    unidad: 'UN',
-    stockActual: 1200,
-    stockMinimo: 500,
-    precioUnitario: 12.50,
-    ubicacion: 'Depósito A - Estante 2'
-  },
-  {
-    id: '10',
-    codigo: 'FAJ-002',
-    nombre: 'Faja 15cm',
-    categoria: 'Fajas',
-    unidad: 'UN',
-    stockActual: 320,
-    stockMinimo: 400,
-    precioUnitario: 10.00,
-    ubicacion: 'Depósito A - Estante 2'
-  },
-  {
-    id: '11',
-    codigo: 'ETQ-001',
-    nombre: 'Etiqueta Media Res',
-    categoria: 'Etiquetas',
-    unidad: 'UN',
-    stockActual: 5000,
-    stockMinimo: 1000,
-    precioUnitario: 2.50,
-    ubicacion: 'Oficina - Archivador'
-  },
-  {
-    id: '12',
-    codigo: 'ETQ-002',
-    nombre: 'Etiqueta Exportación',
-    categoria: 'Etiquetas',
-    unidad: 'UN',
-    stockActual: 850,
-    stockMinimo: 500,
-    precioUnitario: 4.00,
-    ubicacion: 'Oficina - Archivador'
-  },
-  {
-    id: '13',
-    codigo: 'LIM-001',
-    nombre: 'Desinfectante Industrial',
-    categoria: 'Productos de Limpieza',
-    unidad: 'LT',
-    stockActual: 45,
-    stockMinimo: 50,
-    precioUnitario: 280.00,
-    ubicacion: 'Área Limpieza'
-  },
-  {
-    id: '14',
-    codigo: 'LIM-002',
-    nombre: 'Jabón Antibacterial',
-    categoria: 'Productos de Limpieza',
-    unidad: 'LT',
-    stockActual: 0,
-    stockMinimo: 20,
-    precioUnitario: 150.00,
-    ubicacion: 'Área Limpieza'
-  },
-  {
-    id: '15',
-    codigo: 'HER-001',
-    nombre: 'Cuchillo Desposte',
-    categoria: 'Herramientas',
-    unidad: 'UN',
-    stockActual: 35,
-    stockMinimo: 10,
-    precioUnitario: 850.00,
-    ubicacion: 'Depósito Herramientas'
-  },
-  {
-    id: '16',
-    codigo: 'HER-002',
-    nombre: 'Afilador Cuchillos',
-    categoria: 'Herramientas',
-    unidad: 'UN',
-    stockActual: 8,
-    stockMinimo: 5,
-    precioUnitario: 450.00,
-    ubicacion: 'Depósito Herramientas'
-  },
-  {
-    id: '17',
-    codigo: 'OFI-001',
-    nombre: 'Papel Térmico 80mm',
-    categoria: 'Insumos de Oficina',
-    unidad: 'UN',
-    stockActual: 24,
-    stockMinimo: 10,
-    precioUnitario: 85.00,
-    ubicacion: 'Oficina'
-  },
-  {
-    id: '18',
-    codigo: 'OFI-002',
-    nombre: 'Etiqueta Adhesiva A4',
-    categoria: 'Insumos de Oficina',
-    unidad: 'UN',
-    stockActual: 3,
-    stockMinimo: 10,
-    precioUnitario: 120.00,
-    ubicacion: 'Oficina'
-  }
-]
+const CATEGORIA_LABELS: Record<string, string> = Object.fromEntries(CATEGORIAS.map(c => [c.value, c.label]))
 
 export function ConfigListadoInsumosModule({ operador }: { operador: Operador }) {
-  const [insumos] = useState<Insumo[]>(INSUMOS_SIMULADOS)
+  const [insumos, setInsumos] = useState<Insumo[]>([])
+  const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS')
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS')
   const [exportando, setExportando] = useState(false)
+  const [mostrarInactivos, setMostrarInactivos] = useState(false)
 
-  // Función para determinar estado del stock
+  // Cargar insumos desde la API
+  useEffect(() => {
+    const fetchInsumos = async () => {
+      try {
+        const res = await fetch('/api/insumos')
+        const data = await res.json()
+        if (data.success) {
+          setInsumos(data.data)
+        }
+      } catch (error) {
+        console.error('Error fetching insumos:', error)
+        toast.error('Error al cargar insumos')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchInsumos()
+  }, [])
+
+  // Funcion para determinar estado del stock
   const getStockStatus = (insumo: Insumo): 'ok' | 'bajo' | 'critico' => {
     if (insumo.stockActual === 0) return 'critico'
     if (insumo.stockActual <= insumo.stockMinimo) return 'critico'
-    if (insumo.stockActual <= insumo.stockMinimo * 1.5) return 'bajo'
+    if (insumo.stockMinimo > 0 && insumo.stockActual <= insumo.stockMinimo * 1.5) return 'bajo'
     return 'ok'
   }
 
   // Filtrar insumos
   const insumosFiltrados = useMemo(() => {
     return insumos.filter(insumo => {
-      // Filtro por categoría
+      // Excluir inactivos (opcional)
+      if (!mostrarInactivos && !insumo.activo) return false
+
+      // Filtro por categoria
       if (filtroCategoria !== 'TODOS' && insumo.categoria !== filtroCategoria) return false
-      
+
       // Filtro por estado
-      if (filtroEstado) {
+      if (filtroEstado !== 'TODOS') {
         const status = getStockStatus(insumo)
-        if (filtroEstado === 'ok' && status !== 'ok') return false
-        if (filtroEstado === 'bajo' && status !== 'bajo') return false
-        if (filtroEstado === 'critico' && status !== 'critico') return false
+        if (filtroEstado !== status) return false
       }
-      
-      // Búsqueda
+
+      // Busqueda
       if (busqueda) {
         const termino = busqueda.toLowerCase()
         return (
-          insumo.codigo.toLowerCase().includes(termino) ||
+          (insumo.codigo || '').toLowerCase().includes(termino) ||
           insumo.nombre.toLowerCase().includes(termino) ||
-          insumo.ubicacion.toLowerCase().includes(termino)
+          (insumo.proveedorNombre || '').toLowerCase().includes(termino) ||
+          (insumo.ubicacion || '').toLowerCase().includes(termino)
         )
       }
-      
+
       return true
     })
-  }, [insumos, busqueda, filtroCategoria, filtroEstado])
+  }, [insumos, busqueda, filtroCategoria, filtroEstado, mostrarInactivos])
 
-  // Agrupar por categoría
+  // Agrupar por categoria
   const insumosAgrupados = useMemo(() => {
     const grupos: Record<string, Insumo[]> = {}
     insumosFiltrados.forEach(insumo => {
-      if (!grupos[insumo.categoria]) {
-        grupos[insumo.categoria] = []
+      const catLabel = CATEGORIA_LABELS[insumo.categoria] || insumo.categoria
+      if (!grupos[catLabel]) {
+        grupos[catLabel] = []
       }
-      grupos[insumo.categoria].push(insumo)
+      grupos[catLabel].push(insumo)
     })
     return grupos
   }, [insumosFiltrados])
 
-  // Cálculos de resumen
+  // Calculos de resumen
   const resumen = useMemo(() => {
-    const totalItems = insumos.length
-    const valorTotalStock = insumos.reduce((acc, i) => acc + (i.stockActual * i.precioUnitario), 0)
-    const itemsBajoStock = insumos.filter(i => getStockStatus(i) !== 'ok').length
-    const itemsCriticos = insumos.filter(i => getStockStatus(i) === 'critico').length
-    
+    const activos = insumos.filter(i => i.activo)
+    const totalItems = activos.length
+    const valorTotalStock = activos.reduce((acc, i) => acc + (i.stockActual * (i.precioUnitario || 0)), 0)
+    const itemsBajoStock = activos.filter(i => getStockStatus(i) !== 'ok').length
+    const itemsCriticos = activos.filter(i => getStockStatus(i) === 'critico').length
+
     return { totalItems, valorTotalStock, itemsBajoStock, itemsCriticos }
   }, [insumos])
 
@@ -328,75 +159,118 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
     const status = getStockStatus(insumo)
     switch (status) {
       case 'critico':
-        return (
-          <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100">
-            Sin Stock
-          </Badge>
-        )
+        return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100">Sin Stock</Badge>
       case 'bajo':
-        return (
-          <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">
-            Bajo
-          </Badge>
-        )
+        return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">Bajo</Badge>
       default:
-        return (
-          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
-            OK
-          </Badge>
-        )
+        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">OK</Badge>
     }
   }
 
-  // Exportar a Excel (simulado)
+  // Escapar campo CSV (entre comillas y doblar comillas internas)
+  const csvEscape = (val: string | number | null | undefined): string => {
+    if (val === null || val === undefined) return '""'
+    const s = String(val)
+    return `"${s.replace(/"/g, '""')}"`
+  }
+
+  // Exportar a Excel (CSV con BOM UTF-8 para compatibilidad con Excel)
   const handleExportExcel = async () => {
     setExportando(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Crear CSV simulado
-      const headers = ['Código', 'Nombre', 'Categoría', 'Unidad', 'Stock Actual', 'Stock Mínimo', 'Precio Unit.', 'Valor Total', 'Ubicación', 'Estado']
-      const rows = insumosFiltrados.map(i => [
-        i.codigo,
-        i.nombre,
-        i.categoria,
-        i.unidad,
-        i.stockActual.toString(),
-        i.stockMinimo.toString(),
-        i.precioUnitario.toString(),
-        (i.stockActual * i.precioUnitario).toString(),
-        i.ubicacion,
-        getStockStatus(i).toUpperCase()
+      const headers = [
+        'Codigo',
+        'Nombre',
+        'Categoria',
+        'Subcategoria',
+        'Unidad Medida',
+        'Stock Actual',
+        'Stock Minimo',
+        'Stock Maximo',
+        'Punto Reposicion',
+        'Precio Unitario',
+        'Moneda',
+        'Valor Total',
+        'Proveedor',
+        'Cod. Proveedor',
+        'Ubicacion',
+        'Estado',
+        'Activo',
+      ]
+
+      const rows = insumosFiltrados.map(i => {
+        const status = getStockStatus(i)
+        const estadoLabel = status === 'critico' ? 'CRITICO' : status === 'bajo' ? 'BAJO' : 'OK'
+        return [
+          csvEscape(i.codigo),
+          csvEscape(i.nombre),
+          csvEscape(CATEGORIA_LABELS[i.categoria] || i.categoria),
+          csvEscape(i.subcategoria),
+          csvEscape(i.unidadMedida),
+          i.stockActual,
+          i.stockMinimo,
+          csvEscape(i.stockMaximo),
+          csvEscape(i.puntoReposicion),
+          csvEscape(i.precioUnitario),
+          csvEscape(i.moneda || 'ARS'),
+          i.stockActual * (i.precioUnitario || 0),
+          csvEscape(i.proveedorNombre),
+          csvEscape(i.codigoProveedor),
+          csvEscape(i.ubicacion),
+          estadoLabel,
+          i.activo ? 'Si' : 'No',
+        ]
+      })
+
+      // Agregar fila de totales
+      const totalStock = insumosFiltrados.reduce((a, i) => a + i.stockActual, 0)
+      const totalValor = insumosFiltrados.reduce((a, i) => a + i.stockActual * (i.precioUnitario || 0), 0)
+      rows.push([
+        '', '', '', '', '', totalStock, '', '', '', '', '', totalValor, '', '', '', '', ''
       ])
-      
+
       const csvContent = [
-        headers.join(','),
-        ...rows.map(r => r.join(','))
+        headers.join(';'),
+        ...rows.map(r => r.join(';')),
+        '',
+        `Total items: ${insumosFiltrados.length}`,
+        `Valor total stock: ${formatCurrency(totalValor)}`,
+        `Fecha exportacion: ${new Date().toLocaleString('es-AR')}`,
       ].join('\n')
-      
-      // Simular descarga
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+
+      // BOM UTF-8 para que Excel reconozca caracteres especiales
+      const BOM = '\uFEFF'
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = `listado_insumos_${new Date().toISOString().split('T')[0]}.csv`
       link.click()
       URL.revokeObjectURL(url)
-      
-      toast.success('Listado de insumos exportado correctamente')
+
+      toast.success(`${insumosFiltrados.length} insumos exportados correctamente`)
     } catch (error) {
+      console.error('Error exporting:', error)
       toast.error('Error al exportar el listado')
     } finally {
       setExportando(false)
     }
   }
 
-  // Color de fondo según estado
+  // Color de fondo segun estado
   const getRowClassName = (insumo: Insumo) => {
     const status = getStockStatus(insumo)
     if (status === 'critico') return 'bg-red-50 hover:bg-red-100/50'
     if (status === 'bajo') return 'bg-amber-50 hover:bg-amber-100/50'
     return 'hover:bg-stone-50'
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+      </div>
+    )
   }
 
   return (
@@ -410,7 +284,7 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
               Listado de Insumos
             </h1>
             <p className="text-stone-500 mt-1">
-              Inventario completo de insumos del frigorífico
+              Inventario completo de insumos del frigorifico
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -429,7 +303,7 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
                   <p className="text-xs text-stone-500 mb-1">Total Items</p>
                   <p className="text-3xl font-bold text-stone-800">{resumen.totalItems}</p>
                   <p className="text-xs text-stone-400 mt-1">
-                    {Object.keys(insumosAgrupados).length} categorías
+                    {Object.keys(insumosAgrupados).length} categorias
                   </p>
                 </div>
                 <div className="bg-stone-100 p-3 rounded-lg">
@@ -462,7 +336,7 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
                   <p className="text-xs text-stone-500 mb-1">Items Bajo Stock</p>
                   <p className="text-3xl font-bold text-red-600">{resumen.itemsBajoStock}</p>
                   <p className="text-xs text-red-400 mt-1">
-                    {resumen.itemsCriticos} críticos
+                    {resumen.itemsCriticos} criticos
                   </p>
                 </div>
                 <div className="bg-red-100 p-3 rounded-lg">
@@ -473,27 +347,27 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
           </Card>
         </div>
 
-        {/* Filtros y búsqueda */}
+        {/* Filtros y busqueda */}
         <Card className="border-0 shadow-md">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
-              {/* Búsqueda */}
+              {/* Busqueda */}
               <div className="flex-1">
                 <Label className="text-xs text-stone-500 mb-1 block">Buscar</Label>
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                   <Input
                     className="pl-9"
-                    placeholder="Código, nombre o ubicación..."
+                    placeholder="Codigo, nombre, proveedor o ubicacion..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* Filtro Categoría */}
+              {/* Filtro Categoria */}
               <div className="w-full md:w-48">
-                <Label className="text-xs text-stone-500 mb-1 block">Categoría</Label>
+                <Label className="text-xs text-stone-500 mb-1 block">Categoria</Label>
                 <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas" />
@@ -501,7 +375,7 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
                   <SelectContent>
                     <SelectItem value="TODOS">Todas</SelectItem>
                     {CATEGORIAS.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -531,18 +405,18 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
                     <SelectItem value="critico">
                       <span className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-red-500" />
-                        Crítico
+                        Critico
                       </span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Botón Exportar */}
+              {/* Boton Exportar */}
               <div className="flex items-end">
-                <Button 
+                <Button
                   onClick={handleExportExcel}
-                  disabled={exportando}
+                  disabled={exportando || insumosFiltrados.length === 0}
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
                   {exportando ? (
@@ -554,10 +428,24 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
                 </Button>
               </div>
             </div>
+
+            {/* Toggle inactivos */}
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="mostrar-inactivos"
+                checked={mostrarInactivos}
+                onChange={(e) => setMostrarInactivos(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="mostrar-inactivos" className="text-xs text-stone-500 cursor-pointer">
+                Mostrar inactivos ({insumos.filter(i => !i.activo).length} ocultos)
+              </Label>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Tabla por categorías */}
+        {/* Tabla por categorias */}
         {Object.keys(insumosAgrupados).length === 0 ? (
           <Card className="border-0 shadow-md">
             <CardContent className="p-8 text-center">
@@ -582,64 +470,73 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-stone-50/50">
-                        <TableHead className="w-24 font-semibold">Código</TableHead>
-                        <TableHead className="font-semibold">Nombre</TableHead>
-                        <TableHead className="w-20 text-center font-semibold">Unidad</TableHead>
-                        <TableHead className="text-right font-semibold">Stock Actual</TableHead>
-                        <TableHead className="text-right font-semibold">Stock Mínimo</TableHead>
-                        <TableHead className="text-right font-semibold">Precio Unit.</TableHead>
-                        <TableHead className="text-right font-semibold">Valor Total</TableHead>
-                        <TableHead className="font-semibold">Ubicación</TableHead>
-                        <TableHead className="w-24 text-center font-semibold">Estado</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {itemsCategoria.map((insumo) => (
-                        <TableRow key={insumo.id} className={getRowClassName(insumo)}>
-                          <TableCell className="font-mono text-sm font-medium">
-                            {insumo.codigo}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {insumo.nombre}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline" className="text-xs">
-                              {insumo.unidad}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            <span className={
-                              getStockStatus(insumo) === 'critico' 
-                                ? 'text-red-600' 
-                                : getStockStatus(insumo) === 'bajo' 
-                                  ? 'text-amber-600' 
-                                  : ''
-                            }>
-                              {insumo.stockActual.toLocaleString('es-AR')}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right text-stone-500">
-                            {insumo.stockMinimo.toLocaleString('es-AR')}
-                          </TableCell>
-                          <TableCell className="text-right text-stone-600">
-                            {formatCurrency(insumo.precioUnitario)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(insumo.stockActual * insumo.precioUnitario)}
-                          </TableCell>
-                          <TableCell className="text-sm text-stone-500">
-                            {insumo.ubicacion}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {getStockBadge(insumo)}
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-stone-50/50">
+                          <TableHead className="w-24 font-semibold">Codigo</TableHead>
+                          <TableHead className="font-semibold">Nombre</TableHead>
+                          <TableHead className="w-20 text-center font-semibold">Unidad</TableHead>
+                          <TableHead className="text-right font-semibold">Stock Actual</TableHead>
+                          <TableHead className="text-right font-semibold">Stock Min.</TableHead>
+                          <TableHead className="text-right font-semibold">Precio Unit.</TableHead>
+                          <TableHead className="text-right font-semibold">Valor Total</TableHead>
+                          <TableHead className="font-semibold">Proveedor</TableHead>
+                          <TableHead className="font-semibold">Ubicacion</TableHead>
+                          <TableHead className="w-24 text-center font-semibold">Estado</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {itemsCategoria.map((insumo) => (
+                          <TableRow key={insumo.id} className={`${getRowClassName(insumo)} ${!insumo.activo ? 'opacity-50' : ''}`}>
+                            <TableCell className="font-mono text-sm font-medium">
+                              {insumo.codigo}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {insumo.nombre}
+                              {!insumo.activo && (
+                                <Badge variant="outline" className="ml-2 text-xs bg-stone-200">Inactivo</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="text-xs">
+                                {insumo.unidadMedida}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              <span className={
+                                getStockStatus(insumo) === 'critico'
+                                  ? 'text-red-600'
+                                  : getStockStatus(insumo) === 'bajo'
+                                    ? 'text-amber-600'
+                                    : ''
+                              }>
+                                {insumo.stockActual.toLocaleString('es-AR')}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right text-stone-500">
+                              {insumo.stockMinimo.toLocaleString('es-AR')}
+                            </TableCell>
+                            <TableCell className="text-right text-stone-600">
+                              {insumo.precioUnitario != null ? formatCurrency(insumo.precioUnitario) : '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {insumo.precioUnitario != null ? formatCurrency(insumo.stockActual * insumo.precioUnitario) : '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-stone-500">
+                              {insumo.proveedorNombre || '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-stone-500">
+                              {insumo.ubicacion || '-'}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {getStockBadge(insumo)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -656,11 +553,11 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-amber-500" />
-                <span>Bajo - Stock entre mínimo y 1.5x mínimo</span>
+                <span>Bajo - Stock entre minimo y 1.5x minimo</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-red-500" />
-                <span>Crítico - Sin stock o bajo mínimo</span>
+                <span>Critico - Sin stock o bajo minimo</span>
               </div>
             </div>
           </CardContent>
@@ -669,9 +566,9 @@ export function ConfigListadoInsumosModule({ operador }: { operador: Operador })
         {/* Footer info */}
         <div className="text-center text-xs text-stone-400 pb-4">
           <p>
-            Mostrando {insumosFiltrados.length} de {insumos.length} insumos
-            {filtroCategoria && ` en categoría "${filtroCategoria}"`}
-            {filtroEstado && ` con estado "${filtroEstado}"`}
+            Mostrando {insumosFiltrados.length} de {insumos.filter(i => i.activo).length} insumos activos
+            {filtroCategoria !== 'TODOS' && ` en categoria "${CATEGORIA_LABELS[filtroCategoria] || filtroCategoria}"`}
+            {filtroEstado !== 'TODOS' && ` con estado "${filtroEstado}"`}
           </p>
         </div>
       </div>
