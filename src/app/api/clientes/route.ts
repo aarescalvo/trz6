@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { validarPermiso } from '@/lib/auth-helpers'
+import { validarPermiso, validarPermisoAny } from '@/lib/auth-helpers'
 
 function getOperadorId(request: NextRequest): string | null {
   return request.headers.get('x-operador-id')
@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const operadorId = body.operadorId || getOperadorId(request)
-    const puedeCrear = await validarPermiso(operadorId, 'puedeFacturacion')
+    const puedeCrear = await validarPermisoAny(operadorId, ['puedeFacturacion', 'puedePesajeCamiones'])
     if (!puedeCrear) {
-      return NextResponse.json({ success: false, error: 'Sin permisos de facturación' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Sin permisos suficientes' }, { status: 403 })
     }
     const {
       nombre, tipo, dni, cuit, matricula, direccion, localidad, provincia, 
@@ -118,9 +118,9 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
     const operadorId = body.operadorId || getOperadorId(request)
-    const puedeEditar = await validarPermiso(operadorId, 'puedeFacturacion')
+    const puedeEditar = await validarPermisoAny(operadorId, ['puedeFacturacion', 'puedePesajeCamiones'])
     if (!puedeEditar) {
-      return NextResponse.json({ success: false, error: 'Sin permisos de facturación' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Sin permisos suficientes' }, { status: 403 })
     }
     const {
       id, nombre, tipo, dni, cuit, matricula, direccion, localidad, provincia, 

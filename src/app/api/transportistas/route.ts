@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { checkPermission } from '@/lib/auth-helpers'
+import { checkPermission, checkAnyPermission } from '@/lib/auth-helpers'
+
+// Un operador de pesaje puede consultar y crear transportistas/productores/clientes
+// para dar de alta en el momento, sin necesitar permisos de facturacion o configuracion
+const PESAJE_ALT = ['puedeConfiguracion', 'puedePesajeCamiones']
+const PESAJE_ALT_NO_DELETE = ['puedeConfiguracion', 'puedePesajeCamiones']
+const PESAJE_ALT_READONLY = ['puedeConfiguracion', 'puedePesajeCamiones']
 
 // GET - Fetch transportistas
 export async function GET(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeConfiguracion')
+  const authError = await checkAnyPermission(request, PESAJE_ALT_READONLY)
   if (authError) return authError
   try {
     const transportistas = await db.transportista.findMany({
@@ -26,7 +32,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create transportista
 export async function POST(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeConfiguracion')
+  const authError = await checkAnyPermission(request, PESAJE_ALT)
   if (authError) return authError
   try {
     const body = await request.json()
@@ -77,7 +83,7 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update transportista
 export async function PUT(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeConfiguracion')
+  const authError = await checkAnyPermission(request, PESAJE_ALT)
   if (authError) return authError
   try {
     const body = await request.json()

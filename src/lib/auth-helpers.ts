@@ -46,6 +46,37 @@ export async function validarPermiso(operadorId: string | null | undefined, perm
 }
 
 /**
+ * Valida que un operador tenga al menos uno de los permisos indicados (por ID directo).
+ * ADMINISTRADOR tiene todos los permisos automáticamente.
+ *
+ * @param operadorId - ID del operador
+ * @param permisos - Lista de permisos, se aprueba si tiene alguno
+ * @returns true si tiene al menos uno de los permisos
+ */
+export async function validarPermisoAny(
+  operadorId: string | null | undefined,
+  permisos: string[]
+): Promise<boolean> {
+  if (!operadorId) return false
+
+  // ADMINISTRADOR tiene todos los permisos
+  const operador = await db.operador.findUnique({
+    where: { id: operadorId },
+    select: { rol: true, activo: true }
+  })
+
+  if (!operador || !operador.activo) return false
+  if (operador.rol === 'ADMINISTRADOR') return true
+
+  for (const permiso of permisos) {
+    const has = await validarPermiso(operadorId, permiso)
+    if (has) return true
+  }
+
+  return false
+}
+
+/**
  * Valida que un operador tenga al menos uno de los permisos indicados.
  * ADMINISTRADOR tiene todos los permisos automáticamente.
  * Útil para endpoints compartidos entre múltiples módulos (ej: lectura de balanza).

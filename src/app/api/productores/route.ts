@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 // GET - Listar productores/consignatarios
-import { checkPermission } from '@/lib/auth-helpers'
+import { checkPermission, checkAnyPermission } from '@/lib/auth-helpers'
+
+const PESAJE_ALT = ['puedeFacturacion', 'puedePesajeCamiones']
 export async function GET(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeFacturacion')
+  const authError = await checkAnyPermission(request, PESAJE_ALT)
   if (authError) return authError
 
   try {
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear productor/consignatario
 export async function POST(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeFacturacion')
+  const authError = await checkAnyPermission(request, PESAJE_ALT)
   if (authError) return authError
 
   try {
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar productor/consignatario
 export async function PUT(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeFacturacion')
+  const authError = await checkAnyPermission(request, PESAJE_ALT)
   if (authError) return authError
 
   try {
