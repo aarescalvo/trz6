@@ -839,76 +839,111 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
   // Imprimir rótulo
   const imprimirRotulo = async (animal: Animal) => {
     try {
-      // Si está configurado para usar impresora TCP/IP directa
-      if (!usarPredeterminada && impresoraIp) {
-        const zplContenido = generarZPLPesaje(animal)
-        
-        const printRes = await fetch('/api/impresora/enviar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contenido: zplContenido,
-            impresoraIp: impresoraIp,
-            impresoraPuerto: impresoraPuerto,
-            velocidad: impresoraVelocidad,
-            calor: impresoraCalor,
-            anchoEtiqueta: impresoraAncho,
-            altoEtiqueta: impresoraAlto
-          })
-        })
-
-        const printData = await printRes.json()
-        
-        if (printData.success) {
-          toast.success('Rótulo enviado a impresora', { duration: 1500 })
-          return
-        } else {
-          console.error('Error impresora directa:', printData)
-          toast.error('Error al enviar a impresora, usando vista previa')
-          // Fallback a HTML
-          imprimirRotuloHTML(animal)
-          return
-        }
+      // Preparar datos del rótulo
+      const datosRotulo: Record<string, string> = {
+        codigo_barras: `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`,
+        anio: new Date().getFullYear().toString(),
+        tropa: tropaSeleccionada?.codigo || '',
+        tropa_codigo: tropaSeleccionada?.codigo || '',
+        numero: String(animal.numero).padStart(3, '0'),
+        peso: animal.pesoVivo?.toString() || '0',
+        peso_kg: `${animal.pesoVivo?.toLocaleString('es-AR') || '0'} kg`,
+        tipo: animal.tipoAnimal || '',
+        codigo: animal.codigo,
+        raza: animal.raza || '',
+        caravana: animal.caravana || '',
+        fecha: new Date().toLocaleDateString('es-AR'),
       }
 
-      // Intentar con rótulo de la DB
-      const datosRotulo = {
-        CODIGO_BARRAS: `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`,
-        ANIO: new Date().getFullYear().toString(),
-        TROPA: tropaSeleccionada?.codigo || '',
-        NUMERO: String(animal.numero).padStart(3, '0'),
-        PESO: animal.pesoVivo?.toString() || '0',
-        TIPO: animal.tipoAnimal || '',
-        CODIGO: animal.codigo,
-        RAZA: animal.raza || '',
-        CARAVANA: animal.caravana || ''
-      }
-
+      // Buscar plantilla en DB
       const rotuloRes = await fetch('/api/rotulos?tipo=PESAJE_INDIVIDUAL&esDefault=true')
       const rotuloData = await rotuloRes.json()
-      
-      if (rotuloData.success && rotuloData.data && rotuloData.data.length > 0 && impresoraIp) {
-        const rotulo = rotuloData.data[0]
-        const printRes = await fetch('/api/rotulos/imprimir', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            rotuloId: rotulo.id,
-            datos: datosRotulo,
-            cantidad: 1,
-            impresoraIp: impresoraIp,
-            impresoraPuerto: impresoraPuerto
-          })
-        })
+      const rotulo = rotuloData.success && rotuloData.data && rotuloData.data.length > 0 ? rotuloData.data[0] : null
 
-        const printData = await printRes.json()
-        if (printData.success) {
-          toast.success('Rótulo enviado a impresora', { duration: 1500 })
-          return
+      // Si hay plantilla de DB, usarla (TCP/IP o impresora predeterminada)
+      if (rotulo) {
+        // TCP/IP directo con hardcoded ZPL
+        if (!usarPredeterminada && impresoraIp) {
+          const zplContenido = generarZPLPesaje(animal)
+          
+          try {
+            const printRes = await fetch('/api/impresora/enviar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contenido: zplContenido,
+                impresoraIp: impresoraIp,
+                impresoraPuerto: impresoraPuerto,
+                velocidad: impresoraVelocidad,
+                calor: impresoraCalor,
+                anchoEtiqueta: impresoraAncho,
+                altoEtiqueta: impresoraAlto
+              })
+            })
+
+            const printData = await printRes.json()
+            
+            if (printData.success) {
+              toast.success('Rótulo enviado a impresora', { duration: 1500 })
+              return
+            }
+          } catch (e) {
+            console.error('Error impresora directa:', e)
+          }
+
+          // También intentar con plantilla de DB via TCP
+          try {
+            const printRes = await fetch('/api/rotulos/imprimir', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rotuloId: rotulo.id,
+                datos: datosRotulo,
+                cantidad: 1,
+                impresoraIp: impresoraIp,
+                impresoraPuerto: impresoraPuerto
+              })
+            })
+            const printData = await printRes.json()
+            if (printData.success) {
+              toast.success('Rótulo enviado a impresora', { duration: 1500 })
+              return
+            }
+          } catch (e) {
+            console.error('Error plantilla TCP:', e)
+          }
+        }
+
+        // Impresora predeterminada o TCP falló: renderizar plantilla como HTML
+        try {
+          const { zplToHTML } = await import('@/lib/zpl-to-html')
+          const processRes = await fetch('/api/rotulos/imprimir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rotuloId: rotulo.id, datos: datosRotulo, cantidad: 1 })
+          })
+          const processData = await processRes.json()
+          
+          if (processData.success && processData.contenido && processData.rotulo) {
+            const html = zplToHTML(processData.contenido, datosRotulo, {
+              anchoMm: processData.rotulo.ancho,
+              altoMm: processData.rotulo.alto,
+              dpi: processData.rotulo.dpi
+            })
+            const printWindow = window.open('', '_blank', 'width=500,height=300')
+            if (printWindow) {
+              printWindow.document.write(html)
+              printWindow.document.close()
+            }
+            toast.success('Rótulo generado desde plantilla', { description: `Plantilla: ${rotulo.nombre}` })
+            return
+          }
+        } catch (htmlError) {
+          console.error('Error al renderizar plantilla como HTML:', htmlError)
         }
       }
 
-      // Fallback a HTML (impresora predeterminada de Windows / sin impresora configurada)
+      // Sin plantilla en DB: HTML hardcodeado como último recurso
       imprimirRotuloHTML(animal)
     } catch (error) {
       console.error('Error al imprimir rótulo:', error)

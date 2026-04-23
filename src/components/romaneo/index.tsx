@@ -406,55 +406,98 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
         codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}`,
       }
 
-      // Si hay template y impresora TCP/IP configurada, imprimir directo
-      if (rotulo && !usarPredeterminada && impresoraIp) {
-        let exitos = 0
-        for (const sigla of SIGLAS) {
-          const datosConSigla = {
-            ...datosRotulo,
-            sigla: sigla,
-            sigla_media: sigla,
-            codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
+      // Si hay template de DB, usarlo (TCP/IP o impresora predeterminada)
+      if (rotulo) {
+        // TCP/IP directo
+        if (!usarPredeterminada && impresoraIp) {
+          let exitos = 0
+          for (const sigla of SIGLAS) {
+            const datosConSigla = {
+              ...datosRotulo,
+              sigla: sigla,
+              sigla_media: sigla,
+              codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
+            }
+            
+            try {
+              const printRes = await fetch('/api/rotulos/imprimir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  rotuloId: rotulo.id,
+                  datos: datosConSigla,
+                  cantidad: 1,
+                  impresoraIp: impresoraIp,
+                  impresoraPuerto: impresoraPuerto
+                })
+              })
+              
+              const printData = await printRes.json()
+              if (printData.success) exitos++
+            } catch (printError) {
+              console.error('Error al imprimir por TCP:', printError)
+            }
           }
           
-          try {
-            const printRes = await fetch('/api/rotulos/imprimir', {
+          if (exitos === 3) {
+            toast.success(`3 rótulos enviados a ${impresoraIp}`, {
+              description: `Plantilla: ${rotulo.nombre} | ${impresoraVelocidad}ips | Calor ${impresoraCalor}`
+            })
+            return
+          } else if (exitos > 0) {
+            toast.success(`${exitos}/3 rótulos enviados a impresora`, { description: `Plantilla: ${rotulo.nombre}` })
+            return
+          }
+          // Si fallaron todas las TCP, caer al render HTML de la plantilla
+        }
+
+        // Impresora predeterminada o TCP falló: renderizar plantilla como HTML
+        try {
+          const { zplToHTML } = await import('@/lib/zpl-to-html')
+          // Generar 3 rótulos (A, T, D) como HTML desde la plantilla
+          for (const sigla of SIGLAS) {
+            const datosConSigla = {
+              ...datosRotulo,
+              sigla: sigla,
+              sigla_media: sigla,
+              codigo_barras: `${fecha.getFullYear().toString().slice(-2)}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${fecha.getDate().toString().padStart(2, '0')}-${garron.toString().padStart(4, '0')}-${lado.charAt(0)}-${sigla}`
+            }
+            
+            // Pedir a la API que procese la plantilla con los datos (sin enviar a impresora)
+            const processRes = await fetch('/api/rotulos/imprimir', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 rotuloId: rotulo.id,
                 datos: datosConSigla,
-                cantidad: 1,
-                impresoraIp: impresoraIp,
-                impresoraPuerto: impresoraPuerto
+                cantidad: 1
+                // sin impresoraIp => devuelve contenido procesado
               })
             })
+            const processData = await processRes.json()
             
-            const printData = await printRes.json()
-            if (printData.success) exitos++
-          } catch (printError) {
-            console.error('Error al imprimir por TCP:', printError)
+            if (processData.success && processData.contenido && processData.rotulo) {
+              const html = zplToHTML(processData.contenido, datosConSigla, {
+                anchoMm: processData.rotulo.ancho,
+                altoMm: processData.rotulo.alto,
+                dpi: processData.rotulo.dpi
+              })
+              const printWindow = window.open('', '_blank', 'width=500,height=400')
+              if (printWindow) {
+                printWindow.document.write(html)
+                printWindow.document.close()
+              }
+            }
           }
-        }
-        
-        if (exitos === 3) {
-          toast.success(`3 rótulos enviados a ${impresoraIp}`, {
-            description: `Plantilla: ${rotulo.nombre} | ${impresoraVelocidad}ips | Calor ${impresoraCalor}`
-          })
+          toast.success('Rótulos generados desde plantilla', { description: `Plantilla: ${rotulo.nombre}` })
           return
-        } else if (exitos > 0) {
-          toast.success(`${exitos}/3 rótulos enviados a impresora`, { description: `Plantilla: ${rotulo.nombre}` })
-          return
+        } catch (htmlError) {
+          console.error('Error al renderizar plantilla como HTML:', htmlError)
         }
-        // Si fallaron todas las TCP, caer al HTML
       }
 
-      // Si no hay template o impresora TCP, usar HTML (con o sin plantilla)
-      if (!rotulo || usarPredeterminada || !impresoraIp) {
-        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
-      } else {
-        imprimirRotuloHTML(garron, lado, peso, esDecomiso)
-      }
+      // Si no hay plantilla en DB, usar HTML hardcodeado como último recurso
+      imprimirRotuloHTML(garron, lado, peso, esDecomiso)
       
     } catch (error) {
       console.error('Error al imprimir:', error)
@@ -764,60 +807,87 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
       const rotulo = rotulosData.find((r: any) => r.esDefault) || rotulosData[0]
       
       if (!rotulo) {
-        // Sin rótulo configurado, usar HTML
+        // Sin rótulo configurado, usar HTML hardcodeado
         imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
         return
       }
 
-      // Verificar si hay configuración de impresora
-      if (!impresoraIp && !usarPredeterminada) {
-        imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
-        return
-      }
-
-      // Si está configurado para usar predeterminada, imprimir HTML
-      if (usarPredeterminada) {
-        imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
-        return
-      }
-
-      // Enviar a imprimir por TCP/IP
-      for (const sigla of SIGLAS) {
-        try {
-          const printRes = await fetch('/api/rotulos/imprimir', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              rotuloId: rotulo.id,
-              datos: {
-                garron: String(media.garron).padStart(3, '0'),
-                lado: media.lado === 'DERECHA' ? 'D' : 'I',
-                peso: media.peso.toFixed(1),
-                tropa: media.tropaCodigo || '-',
-                sigla: sigla,
-                fecha: fechaReimpresion
-              },
-              cantidad: 1,
-              impresoraIp: impresoraIp,
-              impresoraPuerto: 9100
+      // TCP/IP directo
+      if (!usarPredeterminada && impresoraIp) {
+        let exitos = 0
+        for (const sigla of SIGLAS) {
+          try {
+            const printRes = await fetch('/api/rotulos/imprimir', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rotuloId: rotulo.id,
+                datos: {
+                  garron: String(media.garron).padStart(3, '0'),
+                  lado: media.lado === 'DERECHA' ? 'D' : 'I',
+                  peso: media.peso.toFixed(1),
+                  tropa: media.tropaCodigo || '-',
+                  sigla: sigla,
+                  fecha: fechaReimpresion
+                },
+                cantidad: 1,
+                impresoraIp: impresoraIp,
+                impresoraPuerto: 9100
+              })
             })
-          })
-          
-          const printData = await printRes.json()
-          if (!printData.success) {
-            imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
-            return
+            
+            const printData = await printRes.json()
+            if (printData.success) exitos++
+          } catch (printError) {
+            console.error('Error al reimprimir por TCP:', printError)
           }
-        } catch (printError) {
-          console.error('Error al reimprimir por TCP:', printError)
-          imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
+        }
+        
+        if (exitos === 3) {
+          toast.success(`Rótulos enviados a impresora para garrón #${media.garron}`, {
+            description: `Impresora TCP: ${impresoraIp}`
+          })
           return
         }
       }
-      
-      toast.success(`Rótulos enviados a impresora para garrón #${media.garron}`, {
-        description: `Impresora TCP: ${impresoraIp}`
-      })
+
+      // Impresora predeterminada o TCP falló: renderizar plantilla como HTML
+      try {
+        const { zplToHTML } = await import('@/lib/zpl-to-html')
+        for (const sigla of SIGLAS) {
+          const datos = {
+            garron: String(media.garron).padStart(3, '0'),
+            lado: media.lado === 'DERECHA' ? 'D' : 'I',
+            peso: media.peso.toFixed(1),
+            tropa: media.tropaCodigo || '-',
+            sigla: sigla,
+            fecha: fechaReimpresion
+          }
+          const processRes = await fetch('/api/rotulos/imprimir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rotuloId: rotulo.id, datos, cantidad: 1 })
+          })
+          const processData = await processRes.json()
+          
+          if (processData.success && processData.contenido && processData.rotulo) {
+            const html = zplToHTML(processData.contenido, datos, {
+              anchoMm: processData.rotulo.ancho,
+              altoMm: processData.rotulo.alto,
+              dpi: processData.rotulo.dpi
+            })
+            const printWindow = window.open('', '_blank', 'width=500,height=400')
+            if (printWindow) {
+              printWindow.document.write(html)
+              printWindow.document.close()
+            }
+          }
+        }
+        toast.success('Rótulos generados desde plantilla', { description: `Plantilla: ${rotulo.nombre}` })
+      } catch (htmlError) {
+        console.error('Error al renderizar plantilla:', htmlError)
+        imprimirRotuloHTML(media.garron, media.lado as 'DERECHA' | 'IZQUIERDA', media.peso, media.decomisada || false)
+      }
     } catch (error) {
       console.error('Error al reimprimir:', error)
       toast.error('Error al reimprimir')

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Si no hay impresora, devolver contenido procesado
+    // Si no hay impresora, devolver contenido procesado + metadata del rótulo
     return NextResponse.json({
       success: true,
       contenido: contenidoFinal,
@@ -108,7 +108,10 @@ export async function POST(request: NextRequest) {
       rotulo: {
         id: rotulo.id,
         nombre: rotulo.nombre,
-        codigo: rotulo.codigo
+        codigo: rotulo.codigo,
+        ancho: rotulo.ancho,
+        alto: rotulo.alto,
+        dpi: rotulo.dpi
       }
     })
   } catch (error) {
