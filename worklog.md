@@ -4794,3 +4794,126 @@ Stage Summary:
 - **25 archivos dead code eliminados** (-5542 lineas)
 - **0 errores TypeScript / 0 errores ESLint**
 - **Push a GitHub completado**
+---
+Task ID: AUDIT-LOGGING-001
+Agent: main
+Task: Implementar auditoría completa en API routes + mejorar UI de auditoría
+
+Work Log:
+
+#### 1. Permisos Granulares (verificación)
+- Los APIs de transportistas ya aceptaban `puedePesajeCamiones` como permiso alternativo para POST/PUT
+- Los APIs de productores ya aceptaban `puedePesajeCamiones` como permiso alternativo para POST/PUT
+- Los APIs de clientes ya aceptaban `puedePesajeCamiones` como permiso alternativo para POST/PUT
+- El módulo pesaje-camiones ya tiene QuickAddButton (+Nuevo) para crear transportistas, productores y clientes
+- NO se requieren cambios de permisos: el operador de pesaje ya puede crear estas entidades desde el formulario de pesaje
+
+#### 2. Audit Logging en API Routes
+**Archivos modificados:**
+- `src/app/api/pesaje-camion/route.ts` - CREATE (pesaje con/sin tropa), UPDATE (registro de tara)
+- `src/app/api/transportistas/route.ts` - CREATE, UPDATE, DELETE
+- `src/app/api/productores/route.ts` - CREATE, UPDATE, DELETE
+- `src/app/api/clientes/route.ts` - CREATE, UPDATE, DELETE
+- `src/app/api/operadores/route.ts` - CREATE, UPDATE, DELETE + PERMISSION_CHANGE
+
+**Detalles de implementación:**
+- Uso de `auditCreate`, `auditUpdate`, `auditDelete` de `@/lib/audit-middleware`
+- Uso de `extractAuditInfo` para obtener IP del cliente
+- Uso de `getOperadorId` de `@/lib/auth-helpers` para identificar al operador
+- En updates y deletes: se obtiene `datosAntes` antes de la operación para auditoría diferencial
+- En operadores: `auditPermissionChange` adicional cuando cambian permisos o rol
+- Todas las llamadas son fire-and-forget con `.catch(() => {})` para no interrumpir la operación principal
+
+#### 3. Mejoras en UI de Auditoría
+**Archivo:** `src/modules-pending/auditoria-operador/index.tsx`
+
+- Agregados módulos: PESAJE_CAMION, EXPEDICION, SEGURIDAD, CLIENTES, TROPAS, ANIMALES, CAMARAS, CORRALES, BALANZAS
+- Agregados tipos de acción: LOGIN_PIN, LOGIN_FAILED, EXPORT, PRINT, IMPORT, PERMISSION_CHANGE, PASSWORD_CHANGE, LOCK, UNLOCK
+- Labels en español para todas las acciones (ACCION_LABELS)
+- Colores diferenciados para cada tipo de acción (ACCION_COLORS)
+- Íconos específicos por tipo de acción (ACCION_ICONS)
+- Filtros de acción actualizados con las nuevas opciones
+
+#### 4. Build y Push
+- Build exitoso (solo warning de pdfmake preexistente)
+- Commit: `feat: auditoría completa - logging en API routes + mejora UI auditoría`
+- Push exitoso a GitHub (master)
+
+Stage Summary:
+- **5 API routes con audit logging completo** ✅
+- **Pesaje camiones registra CREATE y UPDATE de tara** ✅
+- **Transportistas, productores, clientes, operadores con CRUD auditado** ✅
+- **Cambio de permisos registrado específicamente con PERMISSION_CHANGE** ✅
+- **UI de auditoría mejorada con más módulos y acciones** ✅
+- **Build exitoso, subido a GitHub** ✅
+---
+Task ID: IMPRESION-DIRECTA-1
+Agent: main
+Task: Implementar impresion directa TCP/IP con configuracion de velocidad, calor y tamaño de etiqueta en pesaje individual
+
+Work Log:
+
+#### 1. Analisis del flujo actual de impresion
+- El sistema tenia 2 caminos: ZPL via DB template (nunca se usaba por falta de template) y HTML fallback (abria ventana con window.print())
+- El usuario veia el "cuadro" del navegador porque siempre caia al fallback HTML
+- La configuracion de impresora solo tenia IP y puerto, sin velocidad ni calor
+
+#### 2. Nuevo API endpoint creado
+**Archivo:** `src/app/api/impresora/enviar/route.ts`
+- POST: Recibe contenido ZPL + IP + puerto + velocidad + calor + ancho/alto etiqueta
+- Inyecta comandos ZPL de configuracion antes de enviar:
+  - ^PW (print width en dots) y ^LL (label length en dots)
+  - ^PR (print rate/velocidad en ips)
+  - ~SD (set darkness/calor)
+- Envia via TCP socket al puerto 9100
+- Timeout de 10 segundos
+- Autenticacion via checkPermission('puedePesaje')
+
+#### 3. Generador ZPL inline creado
+**Archivo:** `src/components/pesaje-individual-module.tsx` - funcion `generarZPLPesaje()`
+- Genera etiqueta ZPL 100x50mm landscape (800x400 dots a 203dpi)
+- 3 filas como el diseno HTML existente:
+  - Fila 1: TROPA (label + valor grande)
+  - Fila 2: N. ANIMAL (grande) | PESO VIVO (fondo negro)
+  - Fila 3: Codigo de barras CODE128
+- Incluye tipo de animal y fecha
+- No requiere template en DB, se genera dinamicamente
+
+#### 4. Flujo de impresion actualizado
+**Prioridad de impresion:**
+1. Si impresora TCP/IP configurada → Genera ZPL inline + envia directo (sin dialogo del navegador)
+2. Si hay template PESAJE_INDIVIDUAL en DB + impresora → Usa template con API existente
+3. Fallback: Imprime HTML con window.print() (dialogo del navegador)
+
+#### 5. Campos de configuracion agregados
+Nuevos state variables en pesaje-individual-module.tsx:
+- impresoraPuerto (default 9100)
+- impresoraVelocidad (1-12 ips, default 4)
+- impresoraCalor (0-30, default 10)
+- impresoraAncho (mm, default 100)
+- impresoraAlto (mm, default 50)
+
+Todos guardados en localStorage con claves: impresoraRotulosPuerto, impresoraRotulosVelocidad, etc.
+
+#### 6. Dialogo de configuracion actualizado
+- Opcion TCP/IP ahora incluye campos adicionales:
+  - IP + Puerto (grid 2+1)
+  - Ancho/Alto etiqueta (grid 2)
+  - Velocidad (select con descripciones: Muy lenta, Lenta, Normal, etc.)
+  - Calor/Densidad (select: Minimo, Bajo, Normal, Alto, Maximo)
+- Informacion explicativa sobre velocidad y calor
+- Toast de confirmacion con todos los parametros configurados
+
+#### 7. Reimpresion actualizada
+- handleReimprimirRotulo ahora tambien usa ZPL directo cuando TCP/IP esta configurado
+- Imprime 2 copias (duplicado) enviando 2 veces a la impresora
+
+#### 8. Verificacion
+- TypeScript: Sin errores
+
+Stage Summary:
+- **API /api/impresora/enviar creada** con inyeccion de velocidad/calor/size
+- **ZPL generator inline** para pesaje individual (sin depender de DB template)
+- **Impresion directa** sin dialogo del navegador cuando TCP/IP esta configurado
+- **Configuracion completa**: IP, puerto, velocidad, calor, tamaño etiqueta
+- **Fallback HTML** mantenido para impresora predeterminada de Windows

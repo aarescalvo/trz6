@@ -322,6 +322,11 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
   const [configImpresoraOpen, setConfigImpresoraOpen] = useState(false)
   const [impresoraIp, setImpresoraIp] = useState('')
   const [usarPredeterminada, setUsarPredeterminada] = useState(false)
+  const [impresoraPuerto, setImpresoraPuerto] = useState(9100)
+  const [impresoraVelocidad, setImpresoraVelocidad] = useState(4)   // 1-12 ips
+  const [impresoraCalor, setImpresoraCalor] = useState(10)         // 0-30
+  const [impresoraAncho, setImpresoraAncho] = useState(100)        // mm
+  const [impresoraAlto, setImpresoraAlto] = useState(50)           // mm
 
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -381,8 +386,18 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
   useEffect(() => {
     const savedIp = localStorage.getItem('impresoraRotulosIp') || ''
     const savedPredeterminada = localStorage.getItem('impresoraRotulosPredeterminada') === 'true'
+    const savedPuerto = parseInt(localStorage.getItem('impresoraRotulosPuerto') || '9100')
+    const savedVelocidad = parseInt(localStorage.getItem('impresoraRotulosVelocidad') || '4')
+    const savedCalor = parseInt(localStorage.getItem('impresoraRotulosCalor') || '10')
+    const savedAncho = parseInt(localStorage.getItem('impresoraRotulosAncho') || '100')
+    const savedAlto = parseInt(localStorage.getItem('impresoraRotulosAlto') || '50')
     setImpresoraIp(savedIp)
     setUsarPredeterminada(savedPredeterminada)
+    setImpresoraPuerto(savedPuerto)
+    setImpresoraVelocidad(savedVelocidad)
+    setImpresoraCalor(savedCalor)
+    setImpresoraAncho(savedAncho)
+    setImpresoraAlto(savedAlto)
   }, [])
 
   useEffect(() => {
@@ -790,78 +805,113 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
     }
   }
 
-  // Imprimir rótulo usando la API de rótulos ZPL
+  // Generar ZPL para rótulo de pesaje individual
+  const generarZPLPesaje = (animal: Animal): string => {
+    const tropa = (tropaSeleccionada?.codigo || '').replace(/\s/g, '')
+    const numero = String(animal.numero).padStart(3, '0')
+    const peso = animal.pesoVivo?.toLocaleString('es-AR') || '0'
+    const tipo = animal.tipoAnimal || ''
+    const tipoLetra = tipo.charAt(0)?.toUpperCase() || '-'
+    const codigoBarras = `${tropa}-${numero}`
+    const fecha = new Date().toLocaleDateString('es-AR')
+
+    // ZPL para etiqueta 100x50mm landscape (800x400 dots a 203dpi)
+    // Estructura: 3 filas como el diseño HTML actual
+    return `^XA
+^CI28
+^BY2,2.0,50
+^FO30,15^A0N,22,22^FDTROPA^FS
+^FO520,15^A0N,40,40^FD${tropa}^FS
+^FO30,50^GB740,2,2^FS
+^FO30,65^A0N,18,18^FDN. ANIMAL^FS
+^FO30,110^A0N,60,60^FD${numero}^FS
+^FO280,50^GB2,120,2^FS
+^FO310,65^A0N,18,18^FDPESO VIVO^FS
+^FO310,130^A0N,50,50^FD${peso} kg^FS
+^FO30,195^GB740,2,2^FS
+^FO30,210^BCN,70,Y,N,N^FD${codigoBarras}^FS
+^FO30,300^A0N,16,16^FDCODE128 - ${codigoBarras}^FS
+^FO560,65^A0N,20,20^FDTIPO: ${tipoLetra}^FS
+^FO560,110^A0N,16,16^FD${fecha}^FS
+^XZ`
+  }
+
+  // Imprimir rótulo
   const imprimirRotulo = async (animal: Animal) => {
     try {
-      // Datos del animal para el rótulo - Formato compatible con Datamax DPL original
-      const fecha = new Date()
-      const codigoBarras = `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`
-      
+      // Si está configurado para usar impresora TCP/IP directa
+      if (!usarPredeterminada && impresoraIp) {
+        const zplContenido = generarZPLPesaje(animal)
+        
+        const printRes = await fetch('/api/impresora/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contenido: zplContenido,
+            impresoraIp: impresoraIp,
+            impresoraPuerto: impresoraPuerto,
+            velocidad: impresoraVelocidad,
+            calor: impresoraCalor,
+            anchoEtiqueta: impresoraAncho,
+            altoEtiqueta: impresoraAlto
+          })
+        })
+
+        const printData = await printRes.json()
+        
+        if (printData.success) {
+          toast.success('Rótulo enviado a impresora', { duration: 1500 })
+          return
+        } else {
+          console.error('Error impresora directa:', printData)
+          toast.error('Error al enviar a impresora, usando vista previa')
+          // Fallback a HTML
+          imprimirRotuloHTML(animal)
+          return
+        }
+      }
+
+      // Intentar con rótulo de la DB
       const datosRotulo = {
-        // Variables para formato DPL original Datamax
-        CODIGO_BARRAS: codigoBarras,
-        ANIO: fecha.getFullYear().toString(),
+        CODIGO_BARRAS: `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`,
+        ANIO: new Date().getFullYear().toString(),
         TROPA: tropaSeleccionada?.codigo || '',
         NUMERO: String(animal.numero).padStart(3, '0'),
-        ESTABFAENADOR: 'SOLEMAR ALIMENTARIA',
-        LETRA: animal.tipoAnimal?.charAt(0)?.toUpperCase() || '-',
         PESO: animal.pesoVivo?.toString() || '0',
-        // Variables adicionales para otros formatos
         TIPO: animal.tipoAnimal || '',
         CODIGO: animal.codigo,
         RAZA: animal.raza || '',
         CARAVANA: animal.caravana || ''
       }
 
-      // Buscar rótulo default para pesaje individual
       const rotuloRes = await fetch('/api/rotulos?tipo=PESAJE_INDIVIDUAL&esDefault=true')
       const rotuloData = await rotuloRes.json()
       
-      if (!rotuloData.success || !rotuloData.data || rotuloData.data.length === 0) {
-        // Si no hay rótulo configurado, imprimir HTML básico
-        imprimirRotuloHTML(animal)
-        return
-      }
-
-      const rotulo = rotuloData.data[0]
-
-      // Verificar si hay configuración de impresora
-      if (!impresoraIp && !usarPredeterminada) {
-        // Si no hay configuración, usar impresora predeterminada automáticamente
-        imprimirRotuloHTML(animal)
-        return
-      }
-
-      // Si está configurado para usar predeterminada, imprimir HTML
-      if (usarPredeterminada) {
-        imprimirRotuloHTML(animal)
-        return
-      }
-
-      // Enviar a imprimir
-      const printRes = await fetch('/api/rotulos/imprimir', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rotuloId: rotulo.id,
-          datos: datosRotulo,
-          cantidad: 1,
-          impresoraIp: impresoraIp,
-          impresoraPuerto: 9100
+      if (rotuloData.success && rotuloData.data && rotuloData.data.length > 0 && impresoraIp) {
+        const rotulo = rotuloData.data[0]
+        const printRes = await fetch('/api/rotulos/imprimir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rotuloId: rotulo.id,
+            datos: datosRotulo,
+            cantidad: 1,
+            impresoraIp: impresoraIp,
+            impresoraPuerto: impresoraPuerto
+          })
         })
-      })
 
-      const printData = await printRes.json()
-      
-      if (printData.success) {
-        toast.success('Rótulo enviado a impresora')
-      } else {
-        // Fallback a HTML
-        imprimirRotuloHTML(animal)
+        const printData = await printRes.json()
+        if (printData.success) {
+          toast.success('Rótulo enviado a impresora', { duration: 1500 })
+          return
+        }
       }
+
+      // Fallback a HTML (impresora predeterminada de Windows / sin impresora configurada)
+      imprimirRotuloHTML(animal)
     } catch (error) {
       console.error('Error al imprimir rótulo:', error)
-      // Fallback a HTML
       imprimirRotuloHTML(animal)
     }
   }
@@ -1146,44 +1196,76 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
       toast.error('El animal no tiene peso registrado')
       return
     }
-    
-    // Variables para formato DPL original Datamax
+
+    // Si hay impresora TCP/IP configurada, imprimir directo (2 copias)
+    if (!usarPredeterminada && impresoraIp) {
+      const zplContenido = generarZPLPesaje(animal)
+      try {
+        const printRes = await fetch('/api/impresora/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contenido: zplContenido,
+            impresoraIp: impresoraIp,
+            impresoraPuerto: impresoraPuerto,
+            velocidad: impresoraVelocidad,
+            calor: impresoraCalor,
+            anchoEtiqueta: impresoraAncho,
+            altoEtiqueta: impresoraAlto
+          })
+        })
+        const printData = await printRes.json()
+        if (printData.success) {
+          // Imprimir 2 copias: enviar de nuevo
+          await fetch('/api/impresora/enviar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contenido: zplContenido,
+              impresoraIp: impresoraIp,
+              impresoraPuerto: impresoraPuerto,
+              velocidad: impresoraVelocidad,
+              calor: impresoraCalor,
+              anchoEtiqueta: impresoraAncho,
+              altoEtiqueta: impresoraAlto
+            })
+          })
+          toast.success('Rótulo reimpreso (2 copias)')
+          return
+        }
+      } catch (error) {
+        console.error('Error al reimprimir directo:', error)
+      }
+    }
+
+    // Fallback: intentar con rótulo de la DB
     const fecha = new Date()
     const codigoBarras = `${tropaSeleccionada?.codigo || ''}-${String(animal.numero).padStart(3, '0')}`
-    
     const datosRotulo = {
-      // Variables para formato DPL original Datamax
       CODIGO_BARRAS: codigoBarras,
       ANIO: fecha.getFullYear().toString(),
       TROPA: tropaSeleccionada?.codigo || '',
       NUMERO: String(animal.numero).padStart(3, '0'),
-      ESTABFAENADOR: 'SOLEMAR ALIMENTARIA',
-      LETRA: animal.tipoAnimal?.charAt(0)?.toUpperCase() || '-',
       PESO: animal.pesoVivo?.toString() || '0',
-      // Variables adicionales para otros formatos
       TIPO: animal.tipoAnimal || '',
-      CODIGO: animal.codigo,
-      RAZA: animal.raza || '',
-      CARAVANA: animal.caravana || '',
       FECHA: fecha.toLocaleDateString('es-AR')
     }
 
     try {
-      // Buscar rótulo default para pesaje individual (Datamax)
       const rotuloRes = await fetch('/api/rotulos?tipo=PESAJE_INDIVIDUAL&esDefault=true')
       const rotuloData = await rotuloRes.json()
       
-      if (rotuloData.success && rotuloData.data && rotuloData.data.length > 0) {
+      if (rotuloData.success && rotuloData.data && rotuloData.data.length > 0 && impresoraIp) {
         const rotulo = rotuloData.data[0]
-        
-        // Imprimir 2 copias (duplicado)
         const printRes = await fetch('/api/rotulos/imprimir', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             rotuloId: rotulo.id,
             datos: datosRotulo,
-            cantidad: 2
+            cantidad: 2,
+            impresoraIp: impresoraIp,
+            impresoraPuerto: impresoraPuerto
           })
         })
         
@@ -1352,7 +1434,7 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
             size="icon" 
             onClick={() => setConfigImpresoraOpen(true)} 
             className={`shadow-lg h-10 w-10 ${(impresoraIp || usarPredeterminada) ? 'bg-green-50 border-green-300 text-green-600' : 'bg-red-50 border-red-300 text-red-600'}`}
-            title={usarPredeterminada ? 'Impresora predeterminada de Windows' : impresoraIp ? `Impresora TCP: ${impresoraIp}` : 'Configurar impresora'}
+            title={usarPredeterminada ? 'Impresora predeterminada de Windows' : impresoraIp ? `Impresora TCP: ${impresoraIp}:${impresoraPuerto} | ${impresoraVelocidad}ips | Calor ${impresoraCalor} | ${impresoraAncho}x${impresoraAlto}mm` : 'Configurar impresora'}
           >
             <Printer className="w-5 h-5" />
           </Button>
@@ -2101,12 +2183,12 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
                 </div>
                 <div>
                   <p className="font-medium text-sm">Impresora Predeterminada de Windows</p>
-                  <p className="text-xs text-stone-500">Usa la impresora configurada en el sistema</p>
+                  <p className="text-xs text-stone-500">Usa la impresora configurada en el sistema (muestra diálogo)</p>
                 </div>
               </div>
             </div>
 
-            {/* Opción: Impresora TCP/IP */}
+            {/* Opción: Impresora TCP/IP - Impresión directa */}
             <div 
               className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${!usarPredeterminada ? 'border-green-500 bg-green-50' : 'border-stone-200 hover:border-stone-300'}`}
               onClick={() => setUsarPredeterminada(false)}
@@ -2116,29 +2198,110 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
                   {!usarPredeterminada && <div className="w-2 h-2 bg-white rounded-full m-auto mt-0.5" />}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Impresora TCP/IP (Datamax)</p>
-                  <p className="text-xs text-stone-500">Conexión directa por red - Puerto 9100</p>
+                  <p className="font-medium text-sm">Impresora TCP/IP (Impresión Directa)</p>
+                  <p className="text-xs text-stone-500">Conexión por red - Imprime sin diálogo, Zebra/Datamax</p>
                 </div>
               </div>
               {!usarPredeterminada && (
-                <div className="ml-7">
-                  <Label className="text-xs">IP de la impresora</Label>
-                  <Input 
-                    value={impresoraIp} 
-                    onChange={(e) => setImpresoraIp(e.target.value)} 
-                    placeholder="192.168.1.100"
-                    className="mt-1"
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                <div className="ml-7 space-y-3">
+                  {/* IP y Puerto */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <Label className="text-xs">IP de la impresora</Label>
+                      <Input 
+                        value={impresoraIp} 
+                        onChange={(e) => setImpresoraIp(e.target.value)} 
+                        placeholder="192.168.1.100"
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Puerto</Label>
+                      <Input 
+                        type="number" 
+                        value={impresoraPuerto} 
+                        onChange={(e) => setImpresoraPuerto(parseInt(e.target.value) || 9100)} 
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tamaño de etiqueta */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Ancho (mm)</Label>
+                      <Input 
+                        type="number" 
+                        value={impresoraAncho} 
+                        onChange={(e) => setImpresoraAncho(parseInt(e.target.value) || 100)} 
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Alto (mm)</Label>
+                      <Input 
+                        type="number" 
+                        value={impresoraAlto} 
+                        onChange={(e) => setImpresoraAlto(parseInt(e.target.value) || 50)} 
+                        className="mt-1"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Velocidad y Calor */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Velocidad (ips)</Label>
+                      <Select value={String(impresoraVelocidad)} onValueChange={(v) => setImpresoraVelocidad(parseInt(v))}>
+                        <SelectTrigger className="mt-1" onClick={(e) => e.stopPropagation()}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2 - Muy lenta</SelectItem>
+                          <SelectItem value="3">3 - Lenta</SelectItem>
+                          <SelectItem value="4">4 - Normal</SelectItem>
+                          <SelectItem value="5">5 - Media</SelectItem>
+                          <SelectItem value="6">6 - Media-alta</SelectItem>
+                          <SelectItem value="8">8 - Rápida</SelectItem>
+                          <SelectItem value="10">10 - Muy rápida</SelectItem>
+                          <SelectItem value="12">12 - Máxima</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Calor / Densidad</Label>
+                      <Select value={String(impresoraCalor)} onValueChange={(v) => setImpresoraCalor(parseInt(v))}>
+                        <SelectTrigger className="mt-1" onClick={(e) => e.stopPropagation()}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">0 - Mínimo</SelectItem>
+                          <SelectItem value="5">5 - Bajo</SelectItem>
+                          <SelectItem value="8">8 - Medio-bajo</SelectItem>
+                          <SelectItem value="10">10 - Normal</SelectItem>
+                          <SelectItem value="12">12 - Medio-alto</SelectItem>
+                          <SelectItem value="15">15 - Alto</SelectItem>
+                          <SelectItem value="20">20 - Muy alto</SelectItem>
+                          <SelectItem value="25">25 - Intenso</SelectItem>
+                          <SelectItem value="30">30 - Máximo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="bg-amber-50 p-3 rounded-lg text-xs text-amber-700">
-              <p className="font-medium mb-1">📌 Información del rótulo:</p>
-              <p>• Tamaño etiqueta: 10 x 5 cm</p>
-              <p>• Datos: Tropa, Número Animal, KG Vivo</p>
-              <p>• Código de barras incluido</p>
+              <p className="font-medium mb-1">Información:</p>
+              <p>• <b>TCP/IP:</b> Imprime directamente sin mostrar diálogo del navegador</p>
+              <p>• <b>Windows:</b> Muestra el diálogo de impresión del sistema</p>
+              <p>• <b>Velocidad:</b> Mayor velocidad = impresión más rápida pero menos definición</p>
+              <p>• <b>Calor:</b> Mayor calor = etiqueta más oscura, mejor para código de barras</p>
             </div>
           </div>
           <DialogFooter>
@@ -2147,11 +2310,16 @@ export function PesajeIndividualModule({ tropas: propTropas, operador }: { tropa
               onClick={() => {
                 localStorage.setItem('impresoraRotulosIp', impresoraIp)
                 localStorage.setItem('impresoraRotulosPredeterminada', String(usarPredeterminada))
+                localStorage.setItem('impresoraRotulosPuerto', String(impresoraPuerto))
+                localStorage.setItem('impresoraRotulosVelocidad', String(impresoraVelocidad))
+                localStorage.setItem('impresoraRotulosCalor', String(impresoraCalor))
+                localStorage.setItem('impresoraRotulosAncho', String(impresoraAncho))
+                localStorage.setItem('impresoraRotulosAlto', String(impresoraAlto))
                 setConfigImpresoraOpen(false)
                 if (usarPredeterminada) {
                   toast.success('Usando impresora predeterminada de Windows')
                 } else {
-                  toast.success('IP de impresora guardada: ' + impresoraIp)
+                  toast.success(`Impresora configurada: ${impresoraIp}:${impresoraPuerto} | ${impresoraVelocidad}ips | Calor ${impresoraCalor}`)
                 }
               }} 
               size="sm"
