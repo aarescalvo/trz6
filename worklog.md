@@ -4956,3 +4956,48 @@ Stage Summary:
 - **Configuracion completa con velocidad, calor y tamaño** ✅
 - **Fallback HTML robusto** (no corta al primer error) ✅
 - **Push a GitHub completado** ✅
+---
+Task ID: IMPRESORA-PRED-1
+Agent: main
+Task: Impresora predeterminada usa plantilla de DB (no HTML hardcodeado) en romaneo y pesaje individual
+
+Work Log:
+
+#### 1. Problema
+- En romaneo y pesaje individual, cuando se usaba "impresora predeterminada de Windows" (sin TCP/IP), siempre se mostraba el HTML hardcodeado
+- Esto ignoraba la plantilla de DB que el usuario tenia cargada en Rotulos
+- El usuario necesitaba que la plantilla de DB se usara independientemente del tipo de impresora
+
+#### 2. Solucion: parser ZPL -> HTML
+- Creado src/lib/zpl-to-html.ts con dos funciones:
+  - parseZPL(): convierte string ZPL en elementos visuales (texto, barcode, lineas, cajas)
+  - zplToHTML(): genera HTML completo listo para window.print() a partir de ZPL procesado
+- Soporta comandos ZPL principales: ^FO, ^A0N, ^FD, ^BC, ^B3, ^GB, ^BY, ^PW, ^LL, ^CF, ^AD
+- Renderiza en HTML posicionado con CSS absolute, respetando el tamano de la plantilla
+
+#### 3. Modificaciones en Romaneo
+- handleImprimirRotulos reescrito:
+  1. Si hay plantilla DB + TCP/IP -> envia directo (igual que antes)
+  2. Si hay plantilla DB + impresora predeterminada -> renderiza ZPL como HTML via zplToHTML
+  3. Si no hay plantilla DB -> fallback a HTML hardcodeado
+- handleReimprimirGarron actualizado con la misma logica
+
+#### 4. Modificaciones en Pesaje Individual
+- imprimirRotulo reescrito con la misma estructura:
+  1. Busca plantilla DB primero
+  2. TCP/IP -> envia directo (ZPL hardcodeado + plantilla DB)
+  3. Impresora predeterminada -> renderiza plantilla como HTML
+  4. Sin plantilla -> fallback HTML hardcodeado
+
+#### 5. API actualizada
+- /api/rotulos/imprimir: cuando no hay impresoraIp, ahora devuelve ancho, alto y dpi del rotulo
+
+#### 6. Verificacion
+- TypeScript: Sin errores (tsc --noEmit)
+- Commit f0e78c5 subido a GitHub
+
+Stage Summary:
+- **Impresora predeterminada ahora usa plantilla de DB** via parser ZPL->HTML ✅
+- **HTML hardcodeado solo como fallback** cuando no hay plantilla en DB ✅
+- **Ambos modulos (romaneo + pesaje individual) actualizados** ✅
+- **Push a GitHub completado** ✅
