@@ -201,7 +201,7 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
               // Hide tab if search is active and item not in filtered results
               if (busquedaConfig && !filteredTabs.find(f => f.id === item.id)) return null
               return (
-                <TabsTrigger key={item.id} value={item.tab} className="flex items-center gap-1.5 text-xs md:text-sm px-2 md:px-3 flex-1 min-w-[calc(50%-2px)] lg:min-w-0">
+                <TabsTrigger key={item.id} value={item.tab} className="flex-none basis-[calc(50%-4px)] flex items-center gap-1.5 text-xs md:text-sm px-2 md:px-3">
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="hidden md:inline truncate">{item.label}</span>
                 </TabsTrigger>

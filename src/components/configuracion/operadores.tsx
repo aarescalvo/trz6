@@ -420,14 +420,13 @@ export function Operadores({ operador }: { operador: Operador }) {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
+                        <div
                           onClick={() => handleToggleActivo(op)}
                           disabled={op.id === operador.id}
+                          className={`cursor-pointer flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent ${op.id === operador.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          <Switch checked={op.activo} />
-                        </Button>
+                          <Switch checked={op.activo} disabled={op.id === operador.id} />
+                        </div>
                         <Button 
                           variant="ghost" 
                           size="icon"
