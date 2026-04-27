@@ -5026,3 +5026,93 @@ Stage Summary:
 - Archivo creado: install/src/lib/auth-helpers.ts
 - Archivo eliminado: src/lib/db-write.ts
 - Esquema Prisma actualizado: nuevo campo camaraId en DespachoItem
+
+---
+Task ID: R1-R5
+Agent: Main Agent + 5 Sub-agents
+Task: Segunda revisión completa post-correcciones del repositorio TRZ5
+
+Work Log:
+- Re-clonado repositorio desde GitHub (sandbox fue limpiado entre sesiones)
+- Lanzada revisión en paralelo: seguridad, API routes, schema/servicios, componentes/stores, rutas restantes
+- Verificadas las 11 correcciones previas (todas confirmadas correctamente aplicadas)
+- Identificados nuevos hallazgos organizados por severidad
+
+Stage Summary:
+- 11 correcciones previas: ✅ VERIFICADAS todas correctas
+- Nuevos hallazgos: 6 CRÍTICOS, 17 ALTOS, 35 MEDIOS, 25 BAJOS
+- Top issues pendientes documentados abajo
+
+====================================
+SEGUNDA REVISIÓN - HALLAZGOS PENDIENTES
+====================================
+
+🔴 CRÍTICOS (6):
+
+1. /api/admin/restaurar L90-106: COMMAND INJECTION - execAsync con fileName interpolado en shell
+2. /api/admin/actualizaciones L127-134: RCE - execAsync powershell.exe con script path, puedeConfiguracion basta
+3. /api/backup/descargar L29-34: ARBITRARY FILE READ - rutaArchivo de DB usada directamente sin validación de path
+4. /api/backup/ejecutar L15: PATH TRAVERSAL - tipo interpolado en filename sin sanitización
+5. /api/sigica/config L55: CONTRASEÑA SIGICA en texto plano en DB
+6. install/src/app/api/facturacion/route.ts L151: operadorId sigue tomándose del body (fix incompleto)
+
+🟠 ALTOS (17):
+
+7. expedicion/route.ts L401-449: agregarMediasADespacho sin transacción
+8. expedicion/route.ts L542-567: anularDespacho transacción parcial (items y despacho fuera)
+9. facturacion/route.ts L237-241: Numerador SIN transacción (race condition duplicando facturas)
+10. ingreso-cajon/route.ts L346: Stock SIEMPRE incrementa 2 sin importar medias creadas
+11. ingreso-cajon/route.ts L267-315: Reasignar media no decrementa stock de cámara vieja
+12. pesaje-individual/route.ts L196-213: PUT NO recalcula pesoTotalIndividual de tropa
+13. romaneo/pesar/route.ts L177-183: Al sobrescribir media, decrementa stock de cámara NUEVA no vieja
+14. lista-faena/aceptar/route.ts L51: Estado seteado a ABIERTA (no-op, ya estaba ABIERTA)
+15. cuarteo/route.ts L317-319: DELETE no limpia Cuartos ni restaura MediaRes a EN_CAMARA
+16. romaneo/cierre/route.ts L88-167: Cierre completo sin transacción
+17. movimiento-camaras/route.ts L68-180: Movimiento completo sin transacción
+18. page.tsx L307,311: pendingCount() no reactivo - UI no actualiza con cambios en cola
+19. page.tsx L670: DashboardContent definida dentro del render (remount en cada re-render)
+20. lib/offline/useOffline.ts L145,181: ERRORES DE SINTAXIS en log.warn (backtick roto)
+21. page.tsx L86-111: Tipo Operador missing puedeCalidad/puedeAutorizarReportes
+22. page.tsx L699: Cards del dashboard no verifican ADMINISTRADOR bypass
+23. afip-wsaa.ts L5,108: execSync aún usado (inconsistente con fix de backup.ts)
+
+🟡 MEDIOS (35):
+
+24-28. Race conditions en numeradores: lista-faena, empaque, c2-expedicion
+29-30. middleware.ts: ROUTE_PERMISSIONS map nunca consultado (código muerto 184 líneas)
+31. validaciones.ts: Password min 4 caracteres (contradice security.ts que usa 8)
+32. rate-limit.ts: Entries bloqueados nunca limpiados (memory leak)
+33. crypto.ts: SHA-256 como KDF en vez de pbkdf2/scrypt
+34. crypto.ts: Legacy plaintext fallback silencioso
+35. jwt.ts: Ejemplo de secreto en mensaje de error
+36. afip-wsaa.ts: Temp files de private keys pueden quedar en /tmp
+37. audit.ts: Sin límite máximo en queries de auditoría
+38. cache.ts: Sin tamaño máximo ni evicción LRU
+39. page.tsx L517: canAccess devuelve true para páginas desconocidas
+40. appStore.ts: Set serialization riesgo si partialize se remueve
+41. romaneo/route.ts L198-199: Falsy zero en PUT - peso 0 cae al valor viejo
+42. pesaje-individual L52-55: filtro tropaId en memoria rompe paginación
+43-44. offline: 3 sistemas paralelos de offline con estado inconsistente
+45-48. SIGICA routes: operadorId del body para audit, permisos insuficientes
+49-52. Conciliacion: sin transacciones, división por cero, race conditions
+53-57. Reportes: validación de fechas, tipos unsafe, dead code
+58-60. Backup: sin límite de tamaño, eliminación arbitraria por DB poisoning
+61. useAutoSave: lastSave siempre stale (ref en render)
+62. useBalanza: sin AbortController
+63. useWidgetLayout: JSON.parse sin try/catch
+64. offline/index.ts L341-353: clearSyncedItems no await transaction
+65. Facturación PUT permite cualquier transición de estado
+
+🟢 BAJOS (25+):
+
+- middleware.ts typo "identidy" → "identity"
+- substr deprecado en offline-db.ts y offline/index.ts
+- suppressHydrationWarning global en <html>
+- ~30 casts de operador as any en page.tsx switch
+- setState during render en use-pagination.ts
+- DraftRecoveryBanner: prop modulo unused
+- vehiculos error responses sin campo success
+- useOfflineInit + ResilienceProvider duplican listeners online/offline
+- Conciliación importar: sin validación MIME/size de archivo
+- N+1 queries en romaneo/cierre, c2-expedicion
+- etc.
