@@ -193,24 +193,49 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const pesaje = await db.pesajeIndividual.update({
-      where: { id },
-      data: {
-        peso: peso !== undefined ? parseFloat(peso) : undefined,
-        caravana,
-        observaciones
+    const result = await db.$transaction(async (tx) => {
+      const pesaje = await tx.pesajeIndividual.update({
+        where: { id },
+        data: {
+          peso: peso !== undefined ? parseFloat(peso) : undefined,
+          caravana,
+          observaciones
+        },
+        include: {
+          animal: {
+            include: { tropa: true }
+          }
+        }
+      })
+
+      // Si cambió el peso, actualizar el animal y recalcular pesoTotalIndividual de la tropa
+      if (peso !== undefined) {
+        const animal = await tx.animal.update({
+          where: { id: pesaje.animalId },
+          data: { pesoVivo: parseFloat(peso) },
+          include: { tropa: true }
+        })
+
+        // Recalcular peso total individual de la tropa
+        if (animal.tropaId) {
+          const totalPeso = await tx.pesajeIndividual.aggregate({
+            where: {
+              animal: { tropaId: animal.tropaId }
+            },
+            _sum: { peso: true }
+          })
+
+          await tx.tropa.update({
+            where: { id: animal.tropaId },
+            data: { pesoTotalIndividual: totalPeso._sum.peso || 0 }
+          })
+        }
       }
+
+      return pesaje
     })
 
-    // Si cambió el peso, actualizar el animal también
-    if (peso !== undefined) {
-      await db.animal.update({
-        where: { id: pesaje.animalId },
-        data: { pesoVivo: parseFloat(peso) }
-      })
-    }
-
-    return NextResponse.json({ success: true, data: pesaje })
+    return NextResponse.json({ success: true, data: result })
   } catch (error) {
     console.error('Error updating pesaje individual:', error)
     return NextResponse.json(

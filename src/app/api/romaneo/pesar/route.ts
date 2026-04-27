@@ -172,24 +172,27 @@ export async function POST(request: NextRequest) {
       if (mediaExistente && sobrescribir) {
         log.info(`Eliminando media existente para sobrescribir: ${mediaExistente.id}`)
         
-        // Actualizar stock (reducir el peso y cantidad anterior)
-        const tropaCodigo = romaneo.tropaCodigo || 'SIN-TROPA'
-        const stockExistente = await tx.stockMediaRes.findFirst({
-          where: {
-            camaraId,
-            tropaCodigo,
-            especie: 'BOVINO'
-          }
-        })
-        
-        if (stockExistente) {
-          await tx.stockMediaRes.update({
-            where: { id: stockExistente.id },
-            data: {
-              cantidad: { decrement: 1 },
-              pesoTotal: { decrement: mediaExistente.peso }
+        // Actualizar stock de la cámara VIEJA (reducir el peso y cantidad anterior)
+        // BUG FIX: usar mediaExistente.camaraId (cámara vieja), no camaraId (cámara nueva)
+        if (mediaExistente.camaraId) {
+          const tropaCodigo = romaneo.tropaCodigo || 'SIN-TROPA'
+          const stockExistente = await tx.stockMediaRes.findFirst({
+            where: {
+              camaraId: mediaExistente.camaraId,
+              tropaCodigo,
+              especie: 'BOVINO'
             }
           })
+          
+          if (stockExistente) {
+            await tx.stockMediaRes.update({
+              where: { id: stockExistente.id },
+              data: {
+                cantidad: { decrement: 1 },
+                pesoTotal: { decrement: mediaExistente.peso }
+              }
+            })
+          }
         }
         
         // Eliminar la media existente

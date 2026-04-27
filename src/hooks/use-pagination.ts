@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 
 interface UsePaginationOptions {
   totalItems?: number
@@ -29,28 +29,19 @@ export function usePagination<T>(
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSizeState] = useState(initialPageSize)
 
-  // Track the data length we last rendered with. When it changes (new search
-  // results, etc.) we reset the page to 1 automatically.
-  const [lastDataLength, setLastDataLength] = useState(data.length)
-
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize))
 
-  // Detect data length changes during render and reset page.
-  // This is React's "getDerivedStateFromProps" pattern — calling setState
-  // conditionally during render is safe as long as it converges (which it
-  // does here because we also update lastDataLength so the condition won't
-  // re-trigger).
-  let effectivePage = currentPage
-  if (data.length !== lastDataLength) {
-    setLastDataLength(data.length)
-    setCurrentPage(1)
-    effectivePage = 1
-  }
+  // Reset page to 1 when data length changes (via useEffect instead of during render)
+  const lastDataLengthRef = useRef(data.length)
+  useEffect(() => {
+    if (data.length !== lastDataLengthRef.current) {
+      lastDataLengthRef.current = data.length
+      setCurrentPage(1)
+    }
+  }, [data.length])
+
   // Clamp page when total pages shrink (e.g. pageSize increases)
-  if (effectivePage > totalPages) {
-    setCurrentPage(totalPages)
-    effectivePage = totalPages
-  }
+  const effectivePage = Math.min(currentPage, totalPages)
 
   const startIndex = (effectivePage - 1) * pageSize
   const endIndex = Math.min(startIndex + pageSize, data.length)

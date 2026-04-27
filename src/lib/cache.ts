@@ -21,6 +21,9 @@ interface CacheStats {
 // Store en memoria
 const cacheStore = new Map<string, CacheEntry<unknown>>()
 
+// Tamaño máximo del cache (LRU-like eviction al superar)
+const MAX_CACHE_SIZE = 500
+
 // Estadísticas
 let stats = {
   hits: 0,
@@ -72,6 +75,13 @@ export function cacheGet<T>(key: string): T | null {
  * Guardar valor en cache
  */
 export function cacheSet<T>(key: string, data: T, ttlMs: number = CACHE_TTL.MEDIUM): void {
+  // Evict oldest (first-inserted) entries when at capacity
+  if (cacheStore.size >= MAX_CACHE_SIZE && !cacheStore.has(key)) {
+    const oldestKey = cacheStore.keys().next().value
+    if (oldestKey !== undefined) {
+      cacheStore.delete(oldestKey)
+    }
+  }
   cacheStore.set(key, {
     data,
     expiresAt: Date.now() + ttlMs,

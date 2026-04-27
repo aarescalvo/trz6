@@ -54,7 +54,7 @@ export async function getAuditLogs(filters: {
     },
     include: { operador: true },
     orderBy: { fecha: 'desc' },
-    take: filters.limit || 50,
+    take: Math.min(filters.limit || 50, 1000),
     skip: filters.offset
   });
 }

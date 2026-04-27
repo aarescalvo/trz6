@@ -142,7 +142,7 @@ export function useOfflineAware<T>(storeName: string) {
         }
       } catch (error: any) {
         // Si falla la conexión, usar offline
-        log.warn(`'Error de conexión, guardando offline:' error`)
+        log.warn('Error de conexión, guardando offline', { error: String(error) })
         await saveOffline(storeName, data)
         await addToSyncQueue(storeName, action, data)
         return { success: true, data, offline: true }
@@ -178,7 +178,7 @@ export function useOfflineAware<T>(storeName: string) {
         }
       } catch (error: any) {
         // Si falla, usar caché local
-        log.warn(`'Error de conexión, usando caché local:' error`)
+        log.warn('Error de conexión, usando caché local', { error: String(error) })
         const cachedData = await getAllItems<T>(storeName)
         return { success: true, data: cachedData, offline: true }
       }

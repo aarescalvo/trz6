@@ -5,6 +5,9 @@ import path from 'path';
 import archiver from 'archiver';
 import { checkPermission } from '@/lib/auth-helpers'
 
+// Allowlist de tipos de backup válidos (previene path traversal)
+const VALID_BACKUP_TYPES = ['MANUAL', 'AUTOMATICO', 'DIARIO', 'SEMANAL', 'MENSUAL', 'PRE_RESTORE']
+
 // POST - Ejecutar backup manual
 export async function POST(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeConfiguracion')
@@ -13,6 +16,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const tipo = body.tipo || 'MANUAL';
+    
+    // Validar que el tipo de backup esté en la allowlist (previene path traversal en el nombre de archivo)
+    if (!VALID_BACKUP_TYPES.includes(tipo)) {
+      return NextResponse.json({ 
+        error: `Tipo de backup inválido. Tipos permitidos: ${VALID_BACKUP_TYPES.join(', ')}` 
+      }, { status: 400 });
+    }
     
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     const nombreArchivo = `backup-${tipo.toLowerCase()}-${timestamp}.zip`;

@@ -195,8 +195,8 @@ export async function PUT(request: NextRequest) {
     // Recalcular peso total y rinde
     const romaneoActual = await db.romaneo.findUnique({ where: { id } })
     if (romaneoActual) {
-      const pesoIzq = parseFloat(pesoMediaIzq) || romaneoActual.pesoMediaIzq || 0
-      const pesoDer = parseFloat(pesoMediaDer) || romaneoActual.pesoMediaDer || 0
+      const pesoIzq = pesoMediaIzq != null ? parseFloat(pesoMediaIzq) : (romaneoActual.pesoMediaIzq || 0)
+      const pesoDer = pesoMediaDer != null ? parseFloat(pesoMediaDer) : (romaneoActual.pesoMediaDer || 0)
       updateData.pesoTotal = pesoIzq + pesoDer
       if (romaneoActual.pesoVivo && (pesoIzq + pesoDer) > 0) {
         updateData.rinde = ((pesoIzq + pesoDer) / romaneoActual.pesoVivo) * 100

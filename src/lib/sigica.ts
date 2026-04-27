@@ -4,7 +4,7 @@
 
 import { db } from '@/lib/db'
 import { Prisma } from '@prisma/client'
-import { encrypt, decrypt } from '@/lib/crypto'
+import { decrypt } from '@/lib/crypto'
 
 // ==================== TIPOS ====================
 
@@ -145,12 +145,13 @@ export class SIGICAService {
       this.config = actualizado
       return actualizado
     } else {
+      // La contraseña ya viene encriptada desde el route handler
       const nuevo = await db.configuracionSIGICA.create({
         data: {
           habilitado: config.habilitado ?? false,
           urlServicio: config.urlServicio,
           usuario: config.usuario,
-          password: encrypt(config.password),
+          password: config.password,
           certificado: config.certificado,
           establecimiento: config.establecimiento
         }

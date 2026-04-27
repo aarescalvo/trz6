@@ -44,11 +44,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update lista status to ACEPTADA
+    // Update lista status to EN_PROCESO
     const updatedLista = await db.listaFaena.update({
       where: { id: listaFaenaId },
       data: {
-        estado: EstadoListaFaena.ABIERTA,
+        estado: EstadoListaFaena.EN_PROCESO,
         supervisorId: supervisorId,
       },
       include: {

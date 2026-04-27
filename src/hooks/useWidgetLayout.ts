@@ -90,7 +90,7 @@ export function useWidgetLayout({
       
       if (data.success && data.data?.widgets) {
         const savedWidgets = typeof data.data.widgets === 'string'
-          ? JSON.parse(data.data.widgets)
+          ? (() => { try { return JSON.parse(data.data.widgets) } catch { console.error('Error parseando widgets guardados'); return [] } })()
           : data.data.widgets
         
         if (Array.isArray(savedWidgets) && savedWidgets.length > 0) {

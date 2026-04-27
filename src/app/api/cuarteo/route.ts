@@ -299,7 +299,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Eliminar registro de cuarteo
+// DELETE - Eliminar registro de cuarteo (con cleanup en transacción)
 export async function DELETE(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeCuarteo')
   if (authError) return authError
@@ -314,8 +314,34 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await db.registroCuarteo.delete({
-      where: { id }
+    // Perform cleanup within a transaction: delete Cuartos, restore MediaRes, delete RegistroCuarteo
+    await db.$transaction(async (tx) => {
+      const registro = await tx.registroCuarteo.findUnique({
+        where: { id },
+        select: { mediaResId: true }
+      })
+
+      if (!registro) {
+        throw new Error('Registro de cuarteo no encontrado')
+      }
+
+      // Delete associated Cuartos linked to this registroCuarteo
+      await tx.cuarto.deleteMany({
+        where: { registroCuarteoId: id }
+      })
+
+      // Restore MediaRes to EN_CAMARA state if it was linked
+      if (registro.mediaResId) {
+        await tx.mediaRes.update({
+          where: { id: registro.mediaResId },
+          data: { estado: 'EN_CAMARA' }
+        })
+      }
+
+      // Delete the registro de cuarteo
+      await tx.registroCuarteo.delete({
+        where: { id }
+      })
     })
 
     return NextResponse.json({
@@ -324,9 +350,13 @@ export async function DELETE(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error deleting cuarteo:', error)
+    const message = error instanceof Error && error.message.includes('no encontrado')
+      ? 'Registro de cuarteo no encontrado'
+      : 'Error al eliminar registro'
+    const status = error instanceof Error && error.message.includes('no encontrado') ? 404 : 500
     return NextResponse.json(
-      { success: false, error: 'Error al eliminar registro' },
-      { status: 500 }
+      { success: false, error: message },
+      { status }
     )
   }
 }

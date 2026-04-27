@@ -32,10 +32,16 @@ export function useBalanza(options: UseBalanzaOptions = {}): UseBalanzaReturn {
   const [ultimaLectura, setUltimaLectura] = useState<BalanzaReading | null>(null)
   const [error, setError] = useState<string | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const leerBalanza = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    const controller = new AbortController()
+    abortControllerRef.current = controller
     try {
-      const res = await fetch('/api/balanza/lectura')
+      const res = await fetch('/api/balanza/lectura', { signal: controller.signal })
       const data = await res.json()
       if (data.success) {
         setPeso(data.data.peso)
@@ -43,8 +49,10 @@ export function useBalanza(options: UseBalanzaOptions = {}): UseBalanzaReturn {
         setUltimaLectura(data.data)
         setError(null)
       }
-    } catch {
-      setError('Error leyendo balanza')
+    } catch (err) {
+      if ((err as DOMException).name !== 'AbortError') {
+        setError('Error leyendo balanza')
+      }
     }
   }, [])
 
@@ -61,6 +69,10 @@ export function useBalanza(options: UseBalanzaOptions = {}): UseBalanzaReturn {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
   }, [])
 
   // Manage the polling interval based on leyendo state
@@ -72,6 +84,10 @@ export function useBalanza(options: UseBalanzaOptions = {}): UseBalanzaReturn {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
         intervalRef.current = null
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
       }
     }
   }, [leyendo, leerBalanza, intervalMs])

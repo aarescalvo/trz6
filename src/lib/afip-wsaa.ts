@@ -2,7 +2,8 @@
 // Referencia: https://www.afip.gob.ar/ws/WSAA/WSAA.HTM
 
 import crypto from 'crypto'
-import { execSync } from 'child_process'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
 import { writeFileSync, unlinkSync, existsSync, mkdirSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -46,6 +47,8 @@ export interface TokenAcceso {
   generationTime: Date
 }
 
+const execFileAsync = promisify(execFile)
+
 /**
  * Genera el TRA (Ticket de Requerimiento de Acceso) en XML
  */
@@ -72,7 +75,7 @@ export function generarTRA(service: string, ttl: number = 43200): string {
  * Firma el TRA con el certificado y clave privada usando OpenSSL
  * Genera un CMS (PKCS#7) válido para AFIP
  */
-export function firmarTRA(tra: string, certificado: string, clavePrivada: string): string {
+export async function firmarTRA(tra: string, certificado: string, clavePrivada: string): Promise<string> {
   const tmpDir = join(tmpdir(), 'afip-wsaa')
   
   // Ensure tmp directory exists
@@ -94,40 +97,34 @@ export function firmarTRA(tra: string, certificado: string, clavePrivada: string
     
     // Sign with OpenSSL to create PKCS#7
     // The -outform DER is important: AFIP expects DER format
-    const opensslCmd = [
-      'openssl', 'smime', '-sign',
+    const opensslArgs = [
+      'smime', '-sign',
       '-signer', certFile,
       '-inkey', keyFile,
       '-out', cmsFile,
       '-in', traFile,
       '-outform', 'DER',
       '-nodetach'
-    ].join(' ')
+    ]
     
     try {
-      execSync(opensslCmd, { 
-        encoding: 'utf8',
-        timeout: 30000
-      })
+      await execFileAsync('openssl', opensslArgs, { timeout: 30000 })
     } catch (error) {
       // If OpenSSL fails, try alternative approach
-      console.error('[WSAA] OpenSSL command failed, trying alternative approach:', error)
+      log.error('OpenSSL command failed, trying alternative approach', error)
       
       // Try with -binary flag
-      const altCmd = [
-        'openssl', 'smime', '-sign',
+      const altArgs = [
+        'smime', '-sign',
         '-signer', certFile,
         '-inkey', keyFile,
         '-out', cmsFile,
         '-in', traFile,
         '-outform', 'DER',
         '-binary'
-      ].join(' ')
+      ]
       
-      execSync(altCmd, { 
-        encoding: 'utf8',
-        timeout: 30000
-      })
+      await execFileAsync('openssl', altArgs, { timeout: 30000 })
     }
     
     // Read the signed CMS
@@ -137,7 +134,7 @@ export function firmarTRA(tra: string, certificado: string, clavePrivada: string
     return cmsBase64
     
   } catch (error) {
-    console.error('[WSAA] Error firmando TRA:', error)
+    log.error('Error firmando TRA', error)
     throw new Error('Error al firmar el TRA. Verifique el certificado y la clave privada.')
   } finally {
     // Clean up temporary files
@@ -261,7 +258,7 @@ export async function obtenerTokenAcceso(
   const tra = generarTRA(service)
 
   // Firmar TRA
-  const cms = firmarTRA(tra, cfg.certificado, cfg.clavePrivada)
+  const cms = await firmarTRA(tra, cfg.certificado, cfg.clavePrivada)
 
   // Enviar a AFIP
   const url = WSAA_URLS[cfg.ambiente]

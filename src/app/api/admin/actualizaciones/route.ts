@@ -4,6 +4,7 @@ import * as path from 'path'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { checkPermission } from '@/lib/auth-helpers'
+import { checkAdminRole } from '@/lib/auth-helpers'
 import { createLogger } from '@/lib/logger'
 const log = createLogger('app.api.admin.actualizaciones.route')
 
@@ -95,9 +96,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Ejecutar actualización
+// POST - Ejecutar actualización (solo ADMINISTRADOR)
 export async function POST(request: NextRequest) {
-  const authError = await checkPermission(request, 'puedeConfiguracion')
+  const authError = await checkAdminRole(request)
   if (authError) return authError
 
   try {
@@ -113,8 +114,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Verificar que existe el script de actualización
+    // Verificar que existe el script de actualización y que la ruta está dentro del proyecto
     const scriptPath = path.join(process.cwd(), 'installers', 'actualizar-sistema.ps1')
+    
+    // Validar que la ruta resuelta está dentro del directorio del proyecto (previene path traversal)
+    const resolvedScriptPath = path.resolve(scriptPath)
+    const projectDir = path.resolve(process.cwd())
+    if (!resolvedScriptPath.startsWith(projectDir)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Ruta de script no autorizada'
+      }, { status: 403 })
+    }
     
     if (!fs.existsSync(scriptPath)) {
       return NextResponse.json({

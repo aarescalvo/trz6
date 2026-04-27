@@ -25,13 +25,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Backup no encontrado' }, { status: 404 });
     }
     
+    // Validar que la ruta del archivo está dentro del directorio de backups (previene arbitrary file read)
+    const backupDir = path.resolve(path.join(process.cwd(), 'backups'));
+    const resolvedRutaArchivo = path.resolve(backup.rutaArchivo);
+    if (!resolvedRutaArchivo.startsWith(backupDir)) {
+      return NextResponse.json({ error: 'Ruta de archivo no autorizada' }, { status: 403 });
+    }
+    
     // Verificar si el archivo existe
     if (!fs.existsSync(backup.rutaArchivo)) {
       return NextResponse.json({ error: 'Archivo de backup no encontrado' }, { status: 404 });
     }
     
     // Leer archivo
-    const fileBuffer = fs.readFileSync(backup.rutaArchivo);
+    const fileBuffer = fs.readFileSync(resolvedRutaArchivo);
     
     // Devolver como descarga
     return new NextResponse(fileBuffer, {

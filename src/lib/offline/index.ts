@@ -247,7 +247,7 @@ export async function addToSyncQueue(
   data: any
 ): Promise<void> {
   const syncItem: SyncQueueItem = {
-    id: `${store}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `${store}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     store,
     action,
     data,

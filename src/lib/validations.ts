@@ -32,7 +32,7 @@ export const SupervisorAuthSchema = z.object({
 export const OperadorCreateSchema = z.object({
   nombre: z.string().min(1, 'Nombre requerido').max(100),
   usuario: z.string().min(1, 'Usuario requerido').max(50).toLowerCase(),
-  password: z.string().min(4, 'Password mínimo 4 caracteres').max(100),
+  password: z.string().min(8, 'Password mínimo 8 caracteres').max(100),
   email: z.string().email('Email inválido').optional().nullable(),
   pin: z.string().length(4, 'PIN debe tener 4 dígitos').optional().nullable(),
   rol: z.enum(['OPERADOR', 'SUPERVISOR', 'ADMINISTRADOR']),

@@ -18,11 +18,12 @@ interface RateLimitConfig {
 // Store en memoria (en producción usar Redis)
 const rateLimitStore = new Map<string, RateLimitEntry>()
 
-// Limpiar entradas expiradas cada minuto
+// Limpiar entradas expiradas cada minuto (incluye entradas bloqueadas cuyo blockDuration pasó)
 setInterval(() => {
   const now = Date.now()
   for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetAt < now && !entry.blocked) {
+    // Clean up entries whose window has expired (normal) or whose block duration has passed (blocked)
+    if (entry.resetAt < now) {
       rateLimitStore.delete(key)
     }
   }

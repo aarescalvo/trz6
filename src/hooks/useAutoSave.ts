@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 const log = createLogger('hooks.useAutoSave')
@@ -33,6 +33,7 @@ export function useAutoSave({
 }: UseAutoSaveOptions) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastSaveRef = useRef<Date | null>(null)
+  const [lastSave, setLastSave] = useState<Date | null>(null)
   const isSavingRef = useRef(false)
 
   const executeSave = useCallback(async () => {
@@ -42,6 +43,7 @@ export function useAutoSave({
     try {
       const result = await saveFn()
       lastSaveRef.current = new Date()
+      setLastSave(lastSaveRef.current)
 
       const success =
         typeof result === 'boolean' ? result : result?.success
@@ -90,7 +92,7 @@ export function useAutoSave({
   }, [executeSave, moduleName])
 
   return {
-    lastSave: lastSaveRef.current,
+    lastSave,
     saveNow,
   }
 }

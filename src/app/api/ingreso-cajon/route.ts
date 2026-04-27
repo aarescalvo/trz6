@@ -249,6 +249,8 @@ export async function POST(request: NextRequest) {
     }
 
     const mediasCreadas: Awaited<ReturnType<typeof db.mediaRes.create>>[] = []
+    // Track medias reassigned from a different camera (for stock decrement)
+    const mediasReasignadas: { camaraIdVieja: string, peso: number }[] = []
 
     // Media Izquierda
     if (romaneo.pesoMediaIzq) {
@@ -265,6 +267,10 @@ export async function POST(request: NextRequest) {
 
       let mediaIzq
       if (existingMediaIzq) {
+        // If reassigning to a different camera, track old camera for stock decrement
+        if (existingMediaIzq.camaraId && existingMediaIzq.camaraId !== camaraId) {
+          mediasReasignadas.push({ camaraIdVieja: existingMediaIzq.camaraId, peso: existingMediaIzq.peso })
+        }
         mediaIzq = await db.mediaRes.update({
           where: { id: existingMediaIzq.id },
           data: {
@@ -305,6 +311,10 @@ export async function POST(request: NextRequest) {
 
       let mediaDer
       if (existingMediaDer) {
+        // If reassigning to a different camera, track old camera for stock decrement
+        if (existingMediaDer.camaraId && existingMediaDer.camaraId !== camaraId) {
+          mediasReasignadas.push({ camaraIdVieja: existingMediaDer.camaraId, peso: existingMediaDer.peso })
+        }
         mediaDer = await db.mediaRes.update({
           where: { id: existingMediaDer.id },
           data: {
@@ -330,8 +340,36 @@ export async function POST(request: NextRequest) {
       mediasCreadas.push(mediaDer)
     }
 
-    // Update or create stock
+    // Decrement stock from old cameras for reassigned medias
     const tropaCodigo = romaneo.tropaCodigo || 'SIN-TROPA'
+    for (const reasignada of mediasReasignadas) {
+      const stockViejo = await db.stockMediaRes.findFirst({
+        where: {
+          camaraId: reasignada.camaraIdVieja,
+          tropaCodigo: tropaCodigo
+        }
+      })
+      if (stockViejo) {
+        await db.stockMediaRes.update({
+          where: { id: stockViejo.id },
+          data: {
+            cantidad: { decrement: 1 },
+            pesoTotal: { decrement: reasignada.peso }
+          }
+        })
+      }
+    }
+
+    // Use actual count of medias created/updated
+    const cantidadMedias = mediasCreadas.length
+    if (cantidadMedias === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No se crearon medias (faltan pesos de pesaje)' },
+        { status: 400 }
+      )
+    }
+
+    // Update or create stock for the new camera
     const existingStock = await db.stockMediaRes.findFirst({
       where: {
         camaraId: camaraId,
@@ -343,7 +381,7 @@ export async function POST(request: NextRequest) {
       await db.stockMediaRes.update({
         where: { id: existingStock.id },
         data: {
-          cantidad: { increment: 2 },
+          cantidad: { increment: cantidadMedias },
           pesoTotal: { increment: romaneo.pesoTotal || 0 }
         }
       })
@@ -353,7 +391,7 @@ export async function POST(request: NextRequest) {
           camaraId: camaraId,
           tropaCodigo: tropaCodigo,
           especie: 'BOVINO',
-          cantidad: 2,
+          cantidad: cantidadMedias,
           pesoTotal: romaneo.pesoTotal || 0
         }
       })
@@ -364,7 +402,7 @@ export async function POST(request: NextRequest) {
       data: {
         camaraDestinoId: camaraId,
         producto: 'Media Res',
-        cantidad: 2,
+        cantidad: cantidadMedias,
         peso: romaneo.pesoTotal,
         tropaCodigo: romaneo.tropaCodigo,
         operadorId: operadorId,

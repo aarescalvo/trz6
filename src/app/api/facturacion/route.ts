@@ -233,19 +233,9 @@ export async function POST(request: NextRequest) {
     // Determinar tipo de comprobante según condición IVA del cliente
     const tipoComprobante = getTipoComprobante(cliente.condicionIva || null)
     
-    // Obtener el último número de factura
-    const numerador = await db.numerador.upsert({
-      where: { nombre: 'FACTURA' },
-      update: { ultimoNumero: { increment: 1 } },
-      create: { nombre: 'FACTURA', ultimoNumero: 1 }
-    })
-    
-    const numeroInterno = numerador.ultimoNumero
-    const numero = String(numeroInterno).padStart(8, '0')
-    
+    // Calcular totales y obtener precios vigentes (read-only queries, outside transaction)
     const fechaFactura = fecha ? new Date(fecha) : new Date()
     
-    // Calcular totales y obtener precios vigentes
     let subtotal = 0
     let totalIva = 0
     
@@ -292,55 +282,68 @@ export async function POST(request: NextRequest) {
     // Prevent division by zero when subtotal is 0
     const porcentajeIvaCalculado = subtotal > 0 ? (totalIva / subtotal * 100) : 0
     
-    // Crear la factura con sus detalles
-    const factura = await db.factura.create({
-      data: {
-        numero,
-        numeroInterno,
-        tipoComprobante,
-        clienteId,
-        clienteNombre: cliente.razonSocial || cliente.nombre,
-        clienteCuit: cliente.cuit,
-        clienteCondicionIva: cliente.condicionIva as CondicionIva,
-        clienteDireccion: cliente.direccion,
-        fecha: fechaFactura,
-        subtotal,
-        iva,
-        porcentajeIva: porcentajeIvaCalculado,
-        total: totalFinal,
-        saldo: totalFinal,  // Inicialmente el saldo es el total
-        estado: 'PENDIENTE',
-        observaciones: observaciones || null,
-        condicionVenta: condicionVenta || 'CUENTA_CORRIENTE',
-        remito: remito || null,
-        despachoId: despachoId || null,
-        operadorId: operadorId || null,
-        detalles: {
-          create: detallesCalculados.map((d: any) => ({
-            tipoServicioId: d.tipoServicioId,
-            tipoProducto: d.tipoProducto || 'OTRO',
-            descripcion: d.descripcion,
-            cantidad: Number(d.cantidad),
-            unidad: d.unidad || 'KG',
-            precioUnitario: d.precioUnitario,
-            subtotal: d.subtotal,
-            tropaCodigo: d.tropaCodigo || null,
-            garron: d.garron || null,
-            mediaResId: d.mediaResId || null,
-            despachoId: d.despachoId || null,
-            pesoKg: d.pesoKg ? Number(d.pesoKg) : null
-          }))
-        }
-      },
-      include: {
-        cliente: true,
-        detalles: {
-          include: {
-            tipoServicio: true
+    // Crear la factura con numerador en una transacción atómica
+    // para evitar huecos en la numeración si la creación falla
+    const factura = await db.$transaction(async (tx) => {
+      // Obtener el último número de factura (atomic read + increment)
+      const numerador = await tx.numerador.upsert({
+        where: { nombre: 'FACTURA' },
+        update: { ultimoNumero: { increment: 1 } },
+        create: { nombre: 'FACTURA', ultimoNumero: 1 }
+      })
+      
+      const numeroInterno = numerador.ultimoNumero
+      const numero = String(numeroInterno).padStart(8, '0')
+      
+      return await tx.factura.create({
+        data: {
+          numero,
+          numeroInterno,
+          tipoComprobante,
+          clienteId,
+          clienteNombre: cliente.razonSocial || cliente.nombre,
+          clienteCuit: cliente.cuit,
+          clienteCondicionIva: cliente.condicionIva as CondicionIva,
+          clienteDireccion: cliente.direccion,
+          fecha: fechaFactura,
+          subtotal,
+          iva,
+          porcentajeIva: porcentajeIvaCalculado,
+          total: totalFinal,
+          saldo: totalFinal,  // Inicialmente el saldo es el total
+          estado: 'PENDIENTE',
+          observaciones: observaciones || null,
+          condicionVenta: condicionVenta || 'CUENTA_CORRIENTE',
+          remito: remito || null,
+          despachoId: despachoId || null,
+          operadorId: operadorId || null,
+          detalles: {
+            create: detallesCalculados.map((d: any) => ({
+              tipoServicioId: d.tipoServicioId,
+              tipoProducto: d.tipoProducto || 'OTRO',
+              descripcion: d.descripcion,
+              cantidad: Number(d.cantidad),
+              unidad: d.unidad || 'KG',
+              precioUnitario: d.precioUnitario,
+              subtotal: d.subtotal,
+              tropaCodigo: d.tropaCodigo || null,
+              garron: d.garron || null,
+              mediaResId: d.mediaResId || null,
+              despachoId: d.despachoId || null,
+              pesoKg: d.pesoKg ? Number(d.pesoKg) : null
+            }))
           }
         },
-        operador: true
-      }
+        include: {
+          cliente: true,
+          detalles: {
+            include: {
+              tipoServicio: true
+            }
+          },
+          operador: true
+        }
+      })
     })
     
     return NextResponse.json({
@@ -354,6 +357,21 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// Máquina de estados para transiciones válidas de factura
+const VALID_STATE_TRANSITIONS: Record<string, string[]> = {
+  'PENDIENTE': ['EMITIDA', 'ANULADA'],
+  'EMITIDA': ['CANCELADA', 'PAGADA'],
+  'CANCELADA': [],
+  'ANULADA': [],
+  'PAGADA': [],
+}
+
+function isValidStateTransition(currentState: string, newState: string): boolean {
+  if (!currentState || !newState || currentState === newState) return false
+  const allowed = VALID_STATE_TRANSITIONS[currentState]
+  return allowed ? allowed.includes(newState) : false
 }
 
 // PUT - Update factura
@@ -381,6 +399,28 @@ export async function PUT(request: NextRequest) {
         { success: false, error: 'ID es requerido' },
         { status: 400 }
       )
+    }
+    
+    // Si se quiere cambiar el estado, validar la transición
+    if (estado) {
+      const facturaExistente = await db.factura.findUnique({
+        where: { id },
+        select: { estado: true }
+      })
+      
+      if (!facturaExistente) {
+        return NextResponse.json(
+          { success: false, error: 'Factura no encontrada' },
+          { status: 404 }
+        )
+      }
+      
+      if (!isValidStateTransition(facturaExistente.estado, estado)) {
+        return NextResponse.json(
+          { success: false, error: `Transición de estado inválida: ${facturaExistente.estado} → ${estado}` },
+          { status: 400 }
+        )
+      }
     }
     
     const factura = await db.factura.update({

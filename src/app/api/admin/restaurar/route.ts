@@ -7,6 +7,9 @@ import { checkPermission } from '@/lib/auth-helpers'
 
 const execAsync = promisify(exec)
 
+// Regex para validar nombres de archivo de backup: solo alfanuméricos, guiones, guiones bajos y puntos
+const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9_\-]+(\.sql|\.zip|\.gz|\.bak)$/
+
 // POST - Restaurar desde backup
 export async function POST(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeConfiguracion')
@@ -20,6 +23,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Nombre de archivo requerido'
+      }, { status: 400 })
+    }
+
+    // Validar que el nombre de archivo solo contiene caracteres seguros (previene command injection)
+    if (!SAFE_FILENAME_REGEX.test(fileName)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Nombre de archivo inválido. Solo se permiten caracteres alfanuméricos, guiones, guiones bajos y extensiones .sql, .zip, .gz, .bak'
       }, { status: 400 })
     }
 
@@ -148,6 +159,14 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Validar que el nombre de archivo solo contiene caracteres seguros (previene command injection)
+    if (!SAFE_FILENAME_REGEX.test(fileName)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Nombre de archivo inválido. Solo se permiten caracteres alfanuméricos, guiones, guiones bajos y extensiones .sql, .zip, .gz, .bak'
+      }, { status: 400 })
+    }
+
     const backupDir = path.join(process.cwd(), 'backups')
     const filePath = path.join(backupDir, fileName)
 
@@ -156,6 +175,15 @@ export async function GET(request: NextRequest) {
         success: false,
         error: 'Archivo no encontrado'
       }, { status: 404 })
+    }
+
+    // Verificar path traversal
+    const resolvedPath = path.resolve(filePath)
+    if (!resolvedPath.startsWith(backupDir)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Acceso no autorizado'
+      }, { status: 403 })
     }
 
     const stats = fs.statSync(filePath)

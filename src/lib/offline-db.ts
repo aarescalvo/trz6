@@ -52,7 +52,7 @@ export async function saveOffline(storeName: string, data: Record<string, unknow
     
     const dataWithMeta = {
       ...data,
-      offlineId: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      offlineId: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       synced: false,
       createdAt: new Date().toISOString()
     }

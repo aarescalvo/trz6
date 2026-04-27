@@ -12,7 +12,6 @@ import { Card, CardContent } from '@/components/ui/card'
 // ============================================================
 
 interface DraftRecoveryBannerProps {
-  modulo: string
   moduleName: string
   updatedAt?: string
   onRecover: () => void
@@ -20,7 +19,6 @@ interface DraftRecoveryBannerProps {
 }
 
 export function DraftRecoveryBanner({
-  modulo,
   moduleName,
   updatedAt,
   onRecover,

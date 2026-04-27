@@ -93,9 +93,11 @@ export async function POST(request: NextRequest) {
       detalles,
       observaciones,
       condicionVenta,
-      remito,
-      operadorId 
+      remito 
     } = body
+    
+    // Obtener operadorId del header (middleware JWT), no del body (previene suplantación)
+    const operadorId = request.headers.get('x-operador-id')
     
     if (!clienteId) {
       return NextResponse.json(

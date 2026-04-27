@@ -399,54 +399,56 @@ async function agregarMediaDespacho(data: { despachoId: string; mediaId: string 
 
 // Agregar múltiples medias a un despacho
 async function agregarMediasADespacho(despachoId: string, mediasIds: string[]) {
-  // Obtener datos de las medias
-  const medias = await db.mediaRes.findMany({
-    where: { id: { in: mediasIds }, estado: 'EN_CAMARA' },
-    include: {
-      romaneo: { select: { tropaCodigo: true, garron: true } },
-      usuarioFaena: { select: { id: true, nombre: true } }
-    }
-  })
-
-  if (medias.length === 0) {
-    throw new Error('No hay medias res disponibles')
-  }
-
-  // Crear items del despacho (incluyendo camaraId para poder restaurar al anular)
-  await db.despachoItem.createMany({
-    data: medias.map(m => ({
-      despachoId,
-      mediaResId: m.id,
-      tropaCodigo: m.romaneo?.tropaCodigo,
-      garron: m.romaneo?.garron,
-      peso: m.peso,
-      camaraId: m.camaraId,
-      usuarioId: m.usuarioFaenaId,
-      usuarioNombre: m.usuarioFaena?.nombre
-    }))
-  })
-
-  // Actualizar estado de las medias a DESPACHADO
-  await db.mediaRes.updateMany({
-    where: { id: { in: medias.map(m => m.id) } },
-    data: { estado: 'DESPACHADO' }
-  })
-
-  // Actualizar totales del despacho
-  const despacho = await db.despacho.findUnique({
-    where: { id: despachoId },
-    include: { items: true }
-  })
-
-  if (despacho) {
-    await db.despacho.update({
-      where: { id: despachoId },
-      data: {
-        cantidadMedias: despacho.items.length,
-        kgTotal: despacho.items.reduce((sum, item) => sum + item.peso, 0)
+  await db.$transaction(async (tx) => {
+    // Obtener datos de las medias
+    const medias = await tx.mediaRes.findMany({
+      where: { id: { in: mediasIds }, estado: 'EN_CAMARA' },
+      include: {
+        romaneo: { select: { tropaCodigo: true, garron: true } },
+        usuarioFaena: { select: { id: true, nombre: true } }
       }
     })
-  }
+
+    if (medias.length === 0) {
+      throw new Error('No hay medias res disponibles')
+    }
+
+    // Crear items del despacho (incluyendo camaraId para poder restaurar al anular)
+    await tx.despachoItem.createMany({
+      data: medias.map(m => ({
+        despachoId,
+        mediaResId: m.id,
+        tropaCodigo: m.romaneo?.tropaCodigo,
+        garron: m.romaneo?.garron,
+        peso: m.peso,
+        camaraId: m.camaraId,
+        usuarioId: m.usuarioFaenaId,
+        usuarioNombre: m.usuarioFaena?.nombre
+      }))
+    })
+
+    // Actualizar estado de las medias a DESPACHADO
+    await tx.mediaRes.updateMany({
+      where: { id: { in: medias.map(m => m.id) } },
+      data: { estado: 'DESPACHADO' }
+    })
+
+    // Actualizar totales del despacho
+    const despacho = await tx.despacho.findUnique({
+      where: { id: despachoId },
+      include: { items: true }
+    })
+
+    if (despacho) {
+      await tx.despacho.update({
+        where: { id: despachoId },
+        data: {
+          cantidadMedias: despacho.items.length,
+          kgTotal: despacho.items.reduce((sum, item) => sum + item.peso, 0)
+        }
+      })
+    }
+  })
 }
 
 // Quitar media de un despacho
@@ -538,32 +540,36 @@ async function anularDespacho(data: { despachoId: string }) {
     return NextResponse.json({ success: false, error: 'Despacho no encontrado' }, { status: 404 })
   }
 
-  // Restaurar estado de todas las medias con su cámara de origen
-  await db.$transaction(
-    despacho.items.map(item =>
-      db.mediaRes.update({
-        where: { id: item.mediaResId },
-        data: {
-          estado: 'EN_CAMARA',
-          camaraId: item.camaraId
-        }
-      })
+  // Restaurar estado de todas las medias con su cámara de origen,
+  // eliminar items y marcar despacho como anulado todo en una sola transacción
+  await db.$transaction(async (tx) => {
+    // Restaurar medias
+    await Promise.all(
+      despacho.items.map(item =>
+        tx.mediaRes.update({
+          where: { id: item.mediaResId },
+          data: {
+            estado: 'EN_CAMARA',
+            camaraId: item.camaraId
+          }
+        })
+      )
     )
-  )
 
-  // Eliminar items
-  await db.despachoItem.deleteMany({
-    where: { despachoId }
-  })
+    // Eliminar items
+    await tx.despachoItem.deleteMany({
+      where: { despachoId }
+    })
 
-  // Marcar como anulado
-  await db.despacho.update({
-    where: { id: despachoId },
-    data: {
-      estado: 'ANULADO',
-      cantidadMedias: 0,
-      kgTotal: 0
-    }
+    // Marcar como anulado
+    await tx.despacho.update({
+      where: { id: despachoId },
+      data: {
+        estado: 'ANULADO',
+        cantidadMedias: 0,
+        kgTotal: 0
+      }
+    })
   })
 
   return NextResponse.json({ success: true, message: 'Despacho anulado correctamente' })

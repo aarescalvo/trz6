@@ -7,6 +7,7 @@ import {
 } from '@/lib/sigica'
 import { registrarAuditoria } from '@/lib/audit'
 import { checkPermission } from '@/lib/auth-helpers'
+import { encrypt } from '@/lib/crypto'
 
 // GET /api/sigica/config - Obtener configuración de SIGICA
 export async function GET(request: NextRequest) {
@@ -52,7 +53,8 @@ export async function PUT(request: NextRequest) {
 
     // Solo actualizar la contraseña si se proporcionó una nueva
     if (body.password && body.password !== '******') {
-      datosAGuardar.password = body.password
+      // Encriptar la contraseña antes de almacenar en la base de datos
+      datosAGuardar.password = encrypt(body.password)
     }
 
     // Guardar configuración

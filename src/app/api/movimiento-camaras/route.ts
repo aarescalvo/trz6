@@ -64,33 +64,80 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Actualizar las medias (mover a nueva cámara)
-    await db.mediaRes.updateMany({
-      where: { id: { in: mediaResIds } },
-      data: { camaraId: camaraDestinoId }
-    })
+    // Wrap entire movement operation in a transaction for atomicity
+    await db.$transaction(async (tx) => {
+      // Actualizar las medias (mover a nueva cámara)
+      await tx.mediaRes.updateMany({
+        where: { id: { in: mediaResIds } },
+        data: { camaraId: camaraDestinoId }
+      })
 
-    // Crear registro de movimiento para cada media
-    const movimientosData = medias.map(media => ({
-      camaraOrigenId: camaraOrigenId || null,
-      camaraDestinoId,
-      producto: 'Media Res',
-      cantidad: 1,
-      peso: media.peso,
-      tropaCodigo: media.romaneo?.tropaCodigo || null,
-      mediaResId: media.id,
-      operadorId: operadorId || null,
-      observaciones: observaciones || null
-    }))
+      // Crear registro de movimiento para cada media
+      const movimientosData = medias.map(media => ({
+        camaraOrigenId: camaraOrigenId || null,
+        camaraDestinoId,
+        producto: 'Media Res',
+        cantidad: 1,
+        peso: media.peso,
+        tropaCodigo: media.romaneo?.tropaCodigo || null,
+        mediaResId: media.id,
+        operadorId: operadorId || null,
+        observaciones: observaciones || null
+      }))
 
-    await db.movimientoCamara.createMany({
-      data: movimientosData
-    })
+      await tx.movimientoCamara.createMany({
+        data: movimientosData
+      })
 
-    // Actualizar stock de cámaras
-    if (camaraOrigenId) {
-      // Actualizar stock de la cámara de origen
-      const mediasPorTropaOrigen = medias.reduce((acc, m) => {
+      // Actualizar stock de cámaras
+      if (camaraOrigenId) {
+        // Actualizar stock de la cámara de origen
+        const mediasPorTropaOrigen = medias.reduce((acc, m) => {
+          const tropa = m.romaneo?.tropaCodigo
+          if (tropa) {
+            if (!acc[tropa]) acc[tropa] = { cantidad: 0, peso: 0 }
+            acc[tropa].cantidad++
+            acc[tropa].peso += m.peso
+          }
+          return acc
+        }, {} as Record<string, { cantidad: number; peso: number }>)
+
+        for (const [tropaCodigo, datos] of Object.entries(mediasPorTropaOrigen)) {
+          const stockExistente = await tx.stockMediaRes.findUnique({
+            where: {
+              camaraId_tropaCodigo_especie: {
+                camaraId: camaraOrigenId,
+                tropaCodigo,
+                especie: 'BOVINO'
+              }
+            }
+          })
+
+          if (stockExistente) {
+            const nuevaCantidad = stockExistente.cantidad - datos.cantidad
+            const nuevoPeso = stockExistente.pesoTotal - datos.peso
+
+            if (nuevaCantidad <= 0) {
+              // Eliminar registro si no queda stock
+              await tx.stockMediaRes.delete({
+                where: { id: stockExistente.id }
+              })
+            } else {
+              // Actualizar stock
+              await tx.stockMediaRes.update({
+                where: { id: stockExistente.id },
+                data: {
+                  cantidad: nuevaCantidad,
+                  pesoTotal: nuevoPeso
+                }
+              })
+            }
+          }
+        }
+      }
+
+      // Actualizar/Agregar stock de la cámara destino
+      const mediasPorTropaDestino = medias.reduce((acc, m) => {
         const tropa = m.romaneo?.tropaCodigo
         if (tropa) {
           if (!acc[tropa]) acc[tropa] = { cantidad: 0, peso: 0 }
@@ -100,98 +147,54 @@ export async function POST(request: NextRequest) {
         return acc
       }, {} as Record<string, { cantidad: number; peso: number }>)
 
-      for (const [tropaCodigo, datos] of Object.entries(mediasPorTropaOrigen)) {
-        const stockExistente = await db.stockMediaRes.findUnique({
+      for (const [tropaCodigo, datos] of Object.entries(mediasPorTropaDestino)) {
+        const stockExistenteDestino = await tx.stockMediaRes.findUnique({
           where: {
             camaraId_tropaCodigo_especie: {
-              camaraId: camaraOrigenId,
+              camaraId: camaraDestinoId,
               tropaCodigo,
               especie: 'BOVINO'
             }
           }
         })
 
-        if (stockExistente) {
-          const nuevaCantidad = stockExistente.cantidad - datos.cantidad
-          const nuevoPeso = stockExistente.pesoTotal - datos.peso
-
-          if (nuevaCantidad <= 0) {
-            // Eliminar registro si no queda stock
-            await db.stockMediaRes.delete({
-              where: { id: stockExistente.id }
-            })
-          } else {
-            // Actualizar stock
-            await db.stockMediaRes.update({
-              where: { id: stockExistente.id },
-              data: {
-                cantidad: nuevaCantidad,
-                pesoTotal: nuevoPeso
-              }
-            })
-          }
+        if (stockExistenteDestino) {
+          // Actualizar stock existente
+          await tx.stockMediaRes.update({
+            where: { id: stockExistenteDestino.id },
+            data: {
+              cantidad: { increment: datos.cantidad },
+              pesoTotal: { increment: datos.peso }
+            }
+          })
+        } else {
+          // Crear nuevo registro de stock
+          await tx.stockMediaRes.create({
+            data: {
+              camaraId: camaraDestinoId,
+              tropaCodigo,
+              especie: 'BOVINO',
+              cantidad: datos.cantidad,
+              pesoTotal: datos.peso
+            }
+          })
         }
       }
-    }
 
-    // Actualizar/Agregar stock de la cámara destino
-    const mediasPorTropaDestino = medias.reduce((acc, m) => {
-      const tropa = m.romaneo?.tropaCodigo
-      if (tropa) {
-        if (!acc[tropa]) acc[tropa] = { cantidad: 0, peso: 0 }
-        acc[tropa].cantidad++
-        acc[tropa].peso += m.peso
-      }
-      return acc
-    }, {} as Record<string, { cantidad: number; peso: number }>)
-
-    for (const [tropaCodigo, datos] of Object.entries(mediasPorTropaDestino)) {
-      const stockExistenteDestino = await db.stockMediaRes.findUnique({
-        where: {
-          camaraId_tropaCodigo_especie: {
-            camaraId: camaraDestinoId,
-            tropaCodigo,
-            especie: 'BOVINO'
-          }
-        }
-      })
-
-      if (stockExistenteDestino) {
-        // Actualizar stock existente
-        await db.stockMediaRes.update({
-          where: { id: stockExistenteDestino.id },
+      // Registrar auditoría
+      if (operadorId) {
+        await tx.auditoria.create({
           data: {
-            cantidad: { increment: datos.cantidad },
-            pesoTotal: { increment: datos.peso }
-          }
-        })
-      } else {
-        // Crear nuevo registro de stock
-        await db.stockMediaRes.create({
-          data: {
-            camaraId: camaraDestinoId,
-            tropaCodigo,
-            especie: 'BOVINO',
-            cantidad: datos.cantidad,
-            pesoTotal: datos.peso
+            operadorId,
+            modulo: 'MOVIMIENTO_CAMARAS',
+            accion: 'UPDATE',
+            entidad: 'MediaRes',
+            descripcion: `Movimiento de ${medias.length} media(s) de cámara ${camaraOrigenId || 'sin origen'} a ${camaraDestino.nombre}`,
+            datosDespues: JSON.stringify({ mediaResIds, camaraOrigenId, camaraDestinoId })
           }
         })
       }
-    }
-
-    // Registrar auditoría
-    if (operadorId) {
-      await db.auditoria.create({
-        data: {
-          operadorId,
-          modulo: 'MOVIMIENTO_CAMARAS',
-          accion: 'UPDATE',
-          entidad: 'MediaRes',
-          descripcion: `Movimiento de ${medias.length} media(s) de cámara ${camaraOrigenId || 'sin origen'} a ${camaraDestino.nombre}`,
-          datosDespues: JSON.stringify({ mediaResIds, camaraOrigenId, camaraDestinoId })
-        }
-      })
-    }
+    })
 
     return NextResponse.json({
       success: true,

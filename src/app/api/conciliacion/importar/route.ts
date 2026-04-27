@@ -155,6 +155,34 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Validación de MIME type (solo .csv, .xlsx)
+    const ALLOWED_MIME_TYPES = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',  // algunos navegadores envían CSV como text/plain
+    ]
+    const ALLOWED_EXTENSIONS = ['.csv', '.xlsx']
+
+    const fileName = file.name.toLowerCase()
+    const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext))
+
+    if (!hasValidExtension || !ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: 'Tipo de archivo no permitido. Solo se aceptan archivos .csv y .xlsx' },
+        { status: 400 }
+      )
+    }
+
+    // Validación de tamaño (máximo 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: `El archivo excede el tamaño máximo permitido (10MB). Tamaño actual: ${(file.size / (1024 * 1024)).toFixed(1)}MB` },
+        { status: 400 }
+      )
+    }
     
     // Verificar que la cuenta bancaria existe
     const cuentaBancaria = await db.cuentaBancaria.findUnique({
