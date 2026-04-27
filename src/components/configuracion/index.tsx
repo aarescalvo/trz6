@@ -195,13 +195,13 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex flex-wrap w-full gap-1 h-auto">
+          <TabsList className="grid grid-cols-4 md:grid-cols-7 w-full gap-1 h-auto">
             {configItems.map((item) => {
               const Icon = item.icon
               // Hide tab if search is active and item not in filtered results
               if (busquedaConfig && !filteredTabs.find(f => f.id === item.id)) return null
               return (
-                <TabsTrigger key={item.id} value={item.tab} className="flex-none basis-[calc(50%-4px)] flex items-center gap-1.5 text-xs md:text-sm px-2 md:px-3">
+                <TabsTrigger key={item.id} value={item.tab} className="flex items-center gap-1 text-xs md:text-sm px-1 md:px-2 justify-center">
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="hidden md:inline truncate">{item.label}</span>
                 </TabsTrigger>
