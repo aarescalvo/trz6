@@ -769,7 +769,11 @@ export default function FrigorificoApp() {
         }
       }
     }
-    return false // Default deny: unknown pages require explicit permission
+    // Default deny for truly unknown pages, but allow special pages (dashboard, configuracion)
+    // that exist in the switch but not in NAV_GROUPS
+    const specialPages: Page[] = ['dashboard', 'configuracion']
+    if (specialPages.includes(page)) return true
+    return false
   }
 
   // Toggle group expansion

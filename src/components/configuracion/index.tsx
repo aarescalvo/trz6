@@ -12,7 +12,7 @@ import {
   CommandList,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Settings, Building2, Warehouse, UserCheck, Package, Users, Truck, Beef, DollarSign, Receipt, Search, X } from 'lucide-react'
+import { Settings, Building2, Warehouse, UserCheck, Package, Users, Truck, Beef, DollarSign, Receipt, Search, X, Shield, Server } from 'lucide-react'
 import { ConfigFrigorifico } from './config-frigorifico'
 import { Corrales } from './corrales'
 import { Camaras } from './camaras'
@@ -23,6 +23,9 @@ import { Transportistas } from './transportistas'
 import { Clientes } from './clientes'
 import { TiposServicioConfig } from './tipos-servicio'
 import { PreciosServicioConfig } from './precios-servicio'
+import { AdminSistemaModule } from './admin-sistema'
+import { ConfigSistema } from './config-sistema'
+import { AuditoriaConfig } from './auditoria'
 
 interface Operador {
   id: string
@@ -46,6 +49,9 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
     { id: 'preciosServicio', label: 'Precios de Servicio', tab: 'preciosServicio', icon: DollarSign, group: 'Comercial' },
     { id: 'transportistas', label: 'Transportistas', tab: 'transportistas', icon: Truck, group: 'Logística' },
     { id: 'operadores', label: 'Operadores', tab: 'operadores', icon: Users, group: 'Sistema' },
+    { id: 'adminSistema', label: 'Admin. Sistema', tab: 'adminSistema', icon: Server, group: 'Sistema' },
+    { id: 'configSistema', label: 'Config. Sistema', tab: 'configSistema', icon: Settings, group: 'Sistema' },
+    { id: 'auditoria', label: 'Auditoría', tab: 'auditoria', icon: Shield, group: 'Sistema' },
   ]
 
   const filteredTabs = busquedaConfig
@@ -189,7 +195,7 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-10 gap-1 h-auto">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-13 gap-1 h-auto">
             {configItems.map((item) => {
               const Icon = item.icon
               // Hide tab if search is active and item not in filtered results
@@ -232,6 +238,15 @@ export function ConfiguracionModule({ operador }: { operador: Operador }) {
           </TabsContent>
           <TabsContent value="operadores">
             <Operadores operador={operador} />
+          </TabsContent>
+          <TabsContent value="adminSistema">
+            <AdminSistemaModule operador={{ ...operador, rol: ('rol' in operador ? operador.rol : 'ADMINISTRADOR') as string, permisos: ('permisos' in operador ? operador.permisos : { puedeConfiguracion: true }) } as any} />
+          </TabsContent>
+          <TabsContent value="configSistema">
+            <ConfigSistema operador={{ ...operador, rol: ('rol' in operador ? operador.rol : 'ADMINISTRADOR') as string } as any} />
+          </TabsContent>
+          <TabsContent value="auditoria">
+            <AuditoriaConfig operador={{ ...operador, rol: ('rol' in operador ? operador.rol : 'ADMINISTRADOR') as string, permisos: ('permisos' in operador ? operador.permisos : { puedeConfiguracion: true }) } as any} />
           </TabsContent>
         </Tabs>
       </div>
