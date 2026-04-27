@@ -265,6 +265,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Configuración',
     icon: Settings,
     items: [
+      { id: 'configuracion', label: 'Configuración General', icon: Settings, permiso: 'puedeConfiguracion' },
       { id: 'configRotulos', label: 'Rótulos', icon: Tag, permiso: 'puedeConfiguracion' },
       { id: 'configInsumos', label: 'Insumos', icon: Package, permiso: 'puedeConfiguracion' },
       { id: 'configUsuarios', label: 'Usuarios', icon: Users, permiso: 'puedeConfiguracion' },
@@ -372,7 +373,6 @@ const MODULOS_REPORTES = [
 
 const MODULOS_ADMIN = [
   { id: 'facturacion' as Page, label: 'Facturación', icon: FileText, color: 'bg-slate-700', desc: 'Gestión de facturación', permiso: 'puedeFacturacion' },
-  { id: 'configuracion' as Page, label: 'Configuración', icon: Settings, color: 'bg-stone-600', desc: 'Configuración del sistema', permiso: 'puedeConfiguracion' },
 ]
 
 interface DashboardContentProps {
