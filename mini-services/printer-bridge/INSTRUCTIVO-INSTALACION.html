@@ -1,581 +1,1848 @@
 <!DOCTYPE html>
-<html lang="es">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guia Completa - Impresoras por Red</title>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Instructivo de Instalación — Printer Bridge</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+
 <style>
-  @page { size: A4; margin: 20mm 18mm 22mm 18mm; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
+@page {
+    size: A4;
+    margin: 20mm 18mm 20mm 18mm;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
     font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 10.5pt;
-    line-height: 1.65;
-    color: #1c1917;
-    background: #ffffff;
-  }
-  .cover {
-    page-break-after: always;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    min-height: 100vh; text-align: center; padding: 40px;
-  }
-  .cover-icon { font-size: 56pt; margin-bottom: 20px; }
-  .cover h1 { font-size: 26pt; font-weight: 800; color: #1c1917; margin-bottom: 6px; }
-  .cover h2 { font-size: 13pt; font-weight: 400; color: #78716c; margin-bottom: 28px; }
-  .cover-line { width: 80px; height: 3px; background: #f59e0b; border-radius: 2px; margin-bottom: 28px; }
-  .cover-sub { font-size: 10.5pt; color: #57534e; line-height: 1.9; }
-  .section { page-break-before: always; padding-top: 6px; }
-  .section:first-of-type { page-break-before: auto; }
-  h2 { font-size: 17pt; font-weight: 700; color: #1c1917; margin: 28px 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid #e7e5e4; }
-  h3 { font-size: 12.5pt; font-weight: 600; color: #292524; margin: 18px 0 8px 0; }
-  h4 { font-size: 11pt; font-weight: 600; color: #44403c; margin: 14px 0 6px 0; }
-  p { margin-bottom: 10px; }
-  ul, ol { margin: 6px 0 12px 24px; }
-  li { margin-bottom: 5px; }
-  ul ul, ol ol { margin-top: 4px; margin-bottom: 6px; }
-  pre {
-    background: #1c1917; color: #e7e5e4; padding: 12px 16px; border-radius: 6px;
-    font-family: 'Consolas', 'Courier New', monospace; font-size: 8.5pt;
-    line-height: 1.55; overflow-x: auto; margin: 10px 0 14px 0; white-space: pre;
-  }
-  code {
-    font-family: 'Consolas', 'Courier New', monospace; background: #f5f5f4;
-    padding: 1px 5px; border-radius: 3px; font-size: 9pt; color: #b45309;
-  }
-  pre code { background: none; padding: 0; color: #e7e5e4; font-size: 8.5pt; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px 0; font-size: 10pt; }
-  thead th { background: #292524; color: #fff; padding: 8px 10px; text-align: left; font-weight: 600; font-size: 9.5pt; }
-  tbody td { padding: 7px 10px; border-bottom: 1px solid #e7e5e4; vertical-align: top; }
-  tbody tr:nth-child(even) { background: #fafaf9; }
-  .note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 10pt; }
-  .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 10pt; }
-  .error-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 10pt; }
-  .success-box { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 10pt; }
-  .concept-box { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 14px 18px; margin: 12px 0 16px 0; font-size: 10pt; }
-  .concept-box h4 { color: #7c3aed; margin-top: 0; margin-bottom: 6px; }
-  .checklist { list-style: none; padding-left: 0; margin: 6px 0 10px 0; }
-  .checklist li { padding: 3px 0 3px 26px; position: relative; }
-  .checklist li::before { content: ""; position: absolute; left: 4px; top: 5px; width: 13px; height: 13px; border: 2px solid #a8a29e; border-radius: 3px; }
-  .diagram-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin: 10px 0 14px 0; }
-  .page-footer { font-size: 8pt; color: #a8a29e; text-align: center; margin-top: 28px; padding-top: 10px; border-top: 1px solid #e7e5e4; }
-  strong { color: #1c1917; }
-  @media print {
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .section { page-break-inside: avoid; }
-    pre, table { break-inside: avoid; }
-  }
+    font-size: 10pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 100%;
+}
+
+h1 {
+    font-size: 18pt;
+    color: #0f4c3a;
+    border-bottom: 2px solid #0f4c3a;
+    padding-bottom: 6pt;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+h2 {
+    font-size: 14pt;
+    color: #1a6b50;
+    margin-top: 18pt;
+    margin-bottom: 8pt;
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+h3 {
+    font-size: 11pt;
+    color: #2d8f6f;
+    margin-top: 14pt;
+    margin-bottom: 6pt;
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+h4 {
+    font-size: 10pt;
+    color: #333;
+    margin-top: 10pt;
+    margin-bottom: 4pt;
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+pre {
+    background: #f5f5f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10pt;
+    font-size: 8pt;
+    line-height: 1.4;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 8pt 0;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 9pt;
+    background: #f0f0ec;
+    padding: 1pt 4pt;
+    border-radius: 3px;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+}
+
+blockquote {
+    border-left: 3px solid #0f4c3a;
+    padding: 8pt 12pt;
+    margin: 8pt 0;
+    background: #f9faf9;
+    font-style: normal;
+}
+
+blockquote p {
+    margin: 4pt 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10pt 0;
+    font-size: 9pt;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+th {
+    background: #0f4c3a;
+    color: white;
+    padding: 6pt 8pt;
+    text-align: left;
+    font-weight: 600;
+}
+
+td {
+    padding: 5pt 8pt;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+tr:nth-child(even) {
+    background: #f9faf9;
+}
+
+ul, ol {
+    padding-left: 20pt;
+    margin: 6pt 0;
+}
+
+li {
+    margin-bottom: 3pt;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 16pt 0;
+}
+
+a {
+    color: #0f4c3a;
+    text-decoration: none;
+}
+
+strong {
+    font-weight: 600;
+}
+
+/* Title page styling */
+h2:first-of-type {
+    font-size: 20pt;
+    text-align: center;
+    color: #0f4c3a;
+    border-bottom: none;
+    margin-top: 0;
+    margin-bottom: 4pt;
+}
+
+/* Cover area */
+body > hr:first-of-type {
+    margin-top: 40pt;
+    margin-bottom: 10pt;
+    border-top: 2px solid #0f4c3a;
+}
+
+body > blockquote:first-of-type {
+    text-align: center;
+    border-left: none;
+    background: none;
+    font-size: 10pt;
+    color: #666;
+}
+
+/* Checklist styling */
+ul.task-list {
+    list-style: none;
+    padding-left: 8pt;
+}
+
+ul.task-list li {
+    margin-bottom: 6pt;
+}
+
+ul.task-list li input[type=checkbox] {
+    margin-right: 8pt;
+    width: 12pt;
+    height: 12pt;
+}
 </style>
+
+  <link rel="stylesheet" href="" />
+  <link rel="stylesheet" href="" />
 </head>
 <body>
 
-<div class="cover">
-  <div class="cover-icon">&#128424;</div>
-  <h1>Impresoras por Red</h1>
-  <h2>Guia Completa Paso a Paso</h2>
-  <div class="cover-line"></div>
-  <div class="cover-sub">
-    <strong>Solemar Alimentaria</strong><br>
-    Sistema Frigorifico<br><br>
-    Zebra ZT230 + Datamax Mark II 4206<br>
-    Configuracion detallada de red, puertos e IP<br>
-    Para usuarios sin experiencia tecnica
-  </div>
-</div>
 
-<div class="section">
-  <h2>1. Como funciona todo esto</h2>
+<h2 id="solemar-alimentaria-sistema-frigorífico">Solemar Alimentaria —
+Sistema Frigorífico</h2>
+<hr />
+<blockquote>
+<p><strong>Guía para personal no técnico.</strong> Si alguna cosa no te
+queda clara, anotá tus dudas y consultá con soporte. Todo lo que
+necesitás hacer está explicado paso a paso acá.</p>
+</blockquote>
+<hr />
+<h2 id="índice">Índice</h2>
+<ol type="1">
+<li><a href="#1-qué-es-el-printer-bridge-y-cómo-funciona">¿Qué es el
+Printer Bridge y cómo funciona?</a></li>
+<li><a href="#2-conexión-física-muy-importante">Conexión física (¡MUY
+IMPORTANTE!)</a></li>
+<li><a href="#3-qué-es-una-dirección-ip-y-por-qué-la-necesitamos">¿Qué
+es una dirección IP y por qué la necesitamos?</a></li>
+<li><a
+href="#4-cómo-encontrar-la-dirección-ip-de-tu-pc-paso-a-paso">Cómo
+encontrar la dirección IP de tu PC (PASO A PASO)</a></li>
+<li><a href="#5-qué-son-los-puertos-y-por-qué-el-9100">¿Qué son los
+puertos y por qué el 9100?</a></li>
+<li><a href="#6-requisitos-previos">Requisitos previos</a></li>
+<li><a href="#7-instalación-en-pc-1-zebra-zt230">Instalación en PC 1
+(Zebra ZT230)</a></li>
+<li><a href="#8-instalación-en-pc-2-datamax-mark-ii-4206">Instalación en
+PC 2 (Datamax Mark II 4206)</a></li>
+<li><a
+href="#9-configurar-el-firewall-de-windows-paso-a-paso-detallado">Configurar
+el Firewall de Windows (PASO A PASO DETALLADO)</a></li>
+<li><a href="#10-verificar-que-funciona-paso-a-paso">Verificar que
+funciona (PASO A PASO)</a></li>
+<li><a href="#11-configurar-las-impresoras-en-el-sistema">Configurar las
+impresoras en el sistema</a></li>
+<li><a href="#12-servicio-windows-arranque-automático">Servicio Windows
+(arranque automático)</a></li>
+<li><a href="#13-solución-de-problemas">Solución de problemas</a></li>
+<li><a href="#14-preguntas-frecuentes">Preguntas frecuentes</a></li>
+<li><a href="#15-checklist-final">Checklist final</a></li>
+</ol>
+<hr />
+<h2 id="qué-es-el-printer-bridge-y-cómo-funciona">1. ¿Qué es el Printer
+Bridge y cómo funciona?</h2>
+<h3 id="el-problema">El problema</h3>
+<p>El sistema del frigorífico necesita imprimir etiquetas (rótulos) en
+dos impresoras que están en lugares distintos dentro de la planta. Pero
+las impresoras <strong>no están conectadas directamente a la
+red</strong> — están conectadas por <strong>cable USB</strong> a una
+PC.</p>
+<pre><code>                ¿Cómo llegan las órdenes de impresión
+                desde el sistema hasta la impresora?
 
-  <div class="concept-box">
-    <h4>Idea principal en palabras simples</h4>
-    <p>Tu impresora esta conectada por cable USB a una PC. El sistema frigorifico puede estar en otra PC (o en la misma). Para que el sistema pueda mandar a imprimir a tu impresora, necesitamos crear un "puente" entre ambos. Ese puente se llama <strong>Printer Bridge</strong> y funciona a traves de la red (WiFi o cable de red).</p>
-  </div>
+  Sistema            ???          PC             Impresora
+  Frigorífico   ───────────▶  ───────────▶  ───────────▶
+  (en un PC)                  (puente)</code></pre>
+<h3 id="la-solución-el-printer-bridge">La solución: el Printer
+Bridge</h3>
+<p>El <strong>Printer Bridge</strong> es un programita chico que
+instalás en cada PC que tiene una impresora conectada por USB. Este
+programita:</p>
+<ol type="1">
+<li><strong>Recibe</strong> las órdenes de impresión que llegan por la
+<strong>red</strong> (desde el sistema)</li>
+<li><strong>Manda</strong> esas órdenes a la impresora por <strong>cable
+USB</strong></li>
+</ol>
+<p>Es como un “puente” (bridge) entre la red y la impresora USB. Por eso
+se llama así.</p>
+<h3 id="diagrama-completo">Diagrama completo</h3>
+<pre><code>╔══════════════════════════════════════════════════════════════════════════════╗
+║                         PLANTA DEL FRIGORÍFICO                              ║
+║                                                                              ║
+║  ┌──────────────────┐                                                       ║
+║  │   Sistema del    │  Envía órdenes de impresión                           ║
+║  │   Frigorífico    │  por la red (TCP puerto 9100)                         ║
+║  │   (Next.js)      │                                                       ║
+║  └────────┬─────────┘                                                       ║
+║           │                                                                 ║
+║           │  Red (cables de red / switch / router)                          ║
+║           │                                                                 ║
+║     ┌─────┴──────────────────────────────┐                                  ║
+║     │                                    │                                  ║
+║     ▼                                    ▼                                  ║
+║  ┌─────────────────┐                ┌─────────────────┐                     ║
+║  │     PC 1        │                │     PC 2        │                     ║
+║  │  Printer Bridge │                │  Printer Bridge │                     ║
+║  │  (programita)   │                │  (programita)   │                     ║
+║  └────────┬────────┘                └────────┬────────┘                     ║
+║           │ cable USB                          │ cable USB                   ║
+║           ▼                                    ▼                            ║
+║  ┌─────────────────┐                ┌─────────────────┐                     ║
+║  │  Zebra ZT230    │                │  Datamax        │                     ║
+║  │  (Rótulos       │                │  Mark II 4206   │                     ║
+║  │   Media Res)    │                │  (Rótulos       │                     ║
+║  │                 │                │   Cuarto/Caja)  │                     ║
+║  └─────────────────┘                └─────────────────┘                     ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝</code></pre>
+<h3 id="cosas-muy-importantes-para-recordar">Cosas MUY importantes para
+recordar</h3>
+<blockquote>
+<p><strong>La impresora se conecta a la PC con cable USB, NO con cable
+de red.</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>La impresora NO tiene su propia dirección IP.</strong> La IP
+que necesitás es la de la PC donde está enchufada la impresora.</p>
+</blockquote>
+<blockquote>
+<p><strong>El Printer Bridge tiene que estar corriendo (funcionando) en
+la PC</strong> para que las etiquetas se impriman. Si cerrás el
+programa, no imprime nada.</p>
+</blockquote>
+<hr />
+<h2 id="conexión-física-muy-importante">2. Conexión física (¡MUY
+IMPORTANTE!)</h2>
+<p>Antes de tocar cualquier cosa en la computadora, asegurate de que
+todo esté bien conectado.</p>
+<h3 id="lo-que-necesitás">Lo que necesitás</h3>
+<pre><code>  Cable USB          Cable de red         Cable USB
+    ═══════             ═══════             ═══════
+      │                   │                   │
+      ▼                   ▼                   ▼
+┌──────────┐        ┌──────────┐        ┌──────────┐
+│ Impresora│  USB   │  PC 1    │  RED   │  Router/ │
+│  Zebra   │◄───────│          │◄───────│  Switch  │
+│  ZT230   │        └──────────┘        └────┬─────┘
+└──────────┘                                   │
+                                               │
+┌──────────┐        ┌──────────┐                │
+│ Impresora│  USB   │  PC 2    │  RED           │
+│ Datamax  │◄───────│          │◄───────────────┘
+│  4206    │        └──────────┘
+└──────────┘</code></pre>
+<h3 id="paso-a-paso">Paso a paso</h3>
+<h4 id="pc-1-con-la-zebra-zt230">PC 1 (con la Zebra ZT230)</h4>
+<ol type="1">
+<li><strong>Conectá el cable USB</strong> de la impresora Zebra a la PC
+<ul>
+<li>El cable USB es el chato, no el de red (el de red es más ancho)</li>
+<li>En la Zebra, el enchufe USB está en un costado o atrás</li>
+<li>En la PC, va en cualquier puerto USB (los rectangulares chicos)</li>
+</ul></li>
+<li><strong>Prendé la impresora</strong>
+<ul>
+<li>El botón de encendido suele estar en el frente o panel lateral</li>
+<li>Esperá a que la luz esté fija (no parpadeando)</li>
+</ul></li>
+<li><strong>Verificá que la PC tenga conexión de red</strong>
+<ul>
+<li>La PC debe estar conectada al router/switch de la planta con cable
+de red</li>
+<li>O por Wi-Fi, pero cable es más estable (ver FAQ)</li>
+</ul></li>
+</ol>
+<h4 id="pc-2-con-la-datamax-mark-ii-4206">PC 2 (con la Datamax Mark II
+4206)</h4>
+<ol type="1">
+<li><p><strong>Conectá el cable USB</strong> de la Datamax a la PC
+(mismo procedimiento)</p></li>
+<li><p><strong>Prendé la impresora</strong></p></li>
+<li><p><strong>Verificá que la PC tenga conexión de
+red</strong></p></li>
+</ol>
+<h3 id="lo-que-no-hay-que-hacer">Lo que NO hay que hacer</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>❌ NO hagas esto</th>
+<th>✅ Hacé esto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Conectar un cable de red a la impresora</td>
+<td>Conectar la impresora a la PC con cable USB</td>
+</tr>
+<tr class="even">
+<td>Buscar una IP para la impresora</td>
+<td>La IP es de la PC, no de la impresora</td>
+</tr>
+<tr class="odd">
+<td>Conectar la impresora al router directamente</td>
+<td>Conectar la impresora a la PC</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Resumen:</strong> Impresora → (cable USB) → PC → (cable de
+red) → Router. Listo.</p>
+</blockquote>
+<hr />
+<h2 id="qué-es-una-dirección-ip-y-por-qué-la-necesitamos">3. ¿Qué es una
+dirección IP y por qué la necesitamos?</h2>
+<h3 id="explicación-simple">Explicación simple</h3>
+<p>Imaginate que la red de la planta es como un edificio con muchos
+departamentos. Cada PC es un departamento.</p>
+<ul>
+<li>La <strong>dirección IP</strong> es como el <strong>número de
+departamento</strong>.</li>
+<li>Para que el sistema le mande una orden a la PC 1, necesita saber su
+“número” (IP).</li>
+<li>Para que le mande una orden a la PC 2, necesita saber el “número” de
+la PC 2.</li>
+</ul>
+<pre><code>  Edificio (Red del frigorífico - 192.168.1.x)
 
-  <h3>1.1 Como estan conectadas las cosas fisicamente</h3>
-  <p>En tu establecimiento probablemente tenes algo asi:</p>
-  <div class="diagram-box">
-    <pre style="background:transparent; color:#1c1917; padding:0; margin:0; font-size:8pt;">
-      ROUTER / MODEM (el aparato de internet)
-           |
-      +---------+---------+
-      |                   |
-   PC DEL SISTEMA      PC DE LA IMPRESORA
-   (Next.js)           (donde esta enchufada
-                        la impresora USB)
-                           |
-                      [IMPRESORA]
-                      (por cable USB)</pre>
-  </div>
-  <p>Ambas PCs estan conectadas al <strong>mismo router</strong> (el aparato que te da internet). Pueden estar conectadas por cable de red (Ethernet) o por WiFi. Lo importante es que ambas esten en la <strong>misma red</strong>.</p>
+  ┌─────────────────────────────────────────┐
+  │                                         │
+  │  Dpto 10 ──── PC 1 (Zebra ZT230)       │   → IP: 192.168.1.10
+  │  Dpto 20 ──── PC 2 (Datamax 4206)      │   → IP: 192.168.1.20
+  │  Dpto 50 ──── PC del Sistema            │   → IP: 192.168.1.50
+  │  ...                                    │
+  │                                         │
+  └─────────────────────────────────────────┘</code></pre>
+<p>Las IPs en una red doméstica/de planta suelen ser algo como:</p>
+<ul>
+<li><code>192.168.1.10</code></li>
+<li><code>192.168.1.20</code></li>
+<li><code>192.168.0.100</code></li>
+<li><code>10.0.0.5</code></li>
+</ul>
+<h3 id="la-confusión-más-común">La confusión más común</h3>
+<blockquote>
+<p><strong>“¿Tengo que poner la IP de la impresora?”</strong> →
+<strong>NO.</strong> La impresora no tiene IP porque está conectada por
+USB.</p>
+<p><strong>La IP que ponés en el sistema es la IP de la PC</strong>
+donde está conectada la impresora.</p>
+</blockquote>
+<pre><code>  ❌ INCORRECTO:                        ✅ CORRECTO:
 
-  <h3>1.2 Que es una direccion IP?</h3>
-  <div class="concept-box">
-    <h4>Direccion IP explicada facil</h4>
-    <p>Una direccion IP es como el <strong>numero de telefono</strong> de una PC en la red. Por ejemplo: <code>192.168.1.10</code>. Cada PC en tu red tiene una IP diferente. El sistema frigorifico necesita saber la IP de la PC donde esta la impresora para poder mandarle los datos.</p>
-    <p>Las IPs tipicas de una red casera o de oficina son: <code>192.168.0.X</code>, <code>192.168.1.X</code>, <code>10.0.0.X</code></p>
-  </div>
+  Sistema → IP de la impresora          Sistema → IP de la PC donde
+           (no existe, no tiene IP)              está la impresora</code></pre>
+<h3 id="puede-cambiar-la-ip">¿Puede cambiar la IP?</h3>
+<p><strong>Sí, si la PC obtiene la IP automáticamente (DHCP).</strong>
+Esto es normal y no es un problema. Solo anotá la IP actual y si alguna
+vez la PC se reinicia y no imprime, verificá la IP de nuevo (ver sección
+4).</p>
+<blockquote>
+<p><strong>Tip:</strong> Si querés evitar que cambie, podés configurar
+una IP fija en Windows. Pero no es obligatorio — con DHCP funciona bien,
+solo anotá la IP.</p>
+</blockquote>
+<hr />
+<h2 id="cómo-encontrar-la-dirección-ip-de-tu-pc-paso-a-paso">4. Cómo
+encontrar la dirección IP de tu PC (PASO A PASO)</h2>
+<h3 id="método-usar-ipconfig-el-más-confiable">Método: usar
+<code>ipconfig</code> (el más confiable)</h3>
+<h4 id="paso-1-abrir-la-ventana-de-comandos">Paso 1: Abrir la ventana de
+comandos</h4>
+<ol type="1">
+<li>Presioná las teclas <strong>Windows + R</strong> al mismo tiempo
+<ul>
+<li><code>Windows</code> es la tecla con el logo de Windows (abajo a la
+izquierda del teclado)</li>
+<li><code>R</code> es la letra R</li>
+</ul></li>
+<li>Se abre una ventanita chiquita que dice “Ejecutar”</li>
+<li>En el cuadro de texto, escribí: <code>cmd</code></li>
+<li>Hacé clic en <strong>“Aceptar”</strong> o presioná
+<strong>Enter</strong></li>
+</ol>
+<pre><code>  ┌─────────────────────────────────────┐
+  │  Ejecutar                    [X]   │
+  ├─────────────────────────────────────┤
+  │                                     │
+  │  Abrir:  ┌───────────┐              │
+  │          │  cmd       │              │
+  │          └───────────┘              │
+  │                                     │
+  │         [Aceptar] [Cancelar]        │
+  └─────────────────────────────────────┘</code></pre>
+<p>Se abre una ventana <strong>negra</strong> con texto blanco. No te
+asustes, es normal.</p>
+<h4 id="paso-2-ejecutar-el-comando">Paso 2: Ejecutar el comando</h4>
+<p>En esa ventana negra, escribí:</p>
+<pre><code>ipconfig</code></pre>
+<p>y presioná <strong>Enter</strong>.</p>
+<h4 id="paso-3-leer-el-resultado">Paso 3: Leer el resultado</h4>
+<p>Aparece un montón de texto. Buscá la parte que dice
+<strong>“Adaptador de Ethernet”</strong> o <strong>“Adaptador de red
+inalámbrica Wi-Fi”</strong> (depende de si estás conectado por cable o
+Wi-Fi). Debajo de eso, buscá la línea que dice <strong>“Dirección
+IPv4”</strong>.</p>
+<p>Ejemplo de lo que ves:</p>
+<pre><code>Configuración IP de Windows
 
-  <h3>1.3 Que es un puerto?</h3>
-  <div class="concept-box">
-    <h4>Puerto TCP explicado facil</h4>
-    <p>Si la IP es como el <strong>numero de edificio</strong>, el puerto es como el <strong>departamento</strong> dentro de ese edificio. La impresora "escucha" en el <strong>puerto 9100</strong> (este es el estandar universal para impresoras de etiquetas). El Printer Bridge tambien escucha en el 9100, simulando ser una impresora de red.</p>
-    <p>El panel web de control escucha en el <strong>puerto 9101</strong> (para configurar desde el navegador).</p>
-  </div>
+Adaptador de Ethernet Conexión de área local:
 
-  <h3>1.4 Que es el Printer Bridge?</h3>
-  <div class="concept-box">
-    <h4>El programa que hace la magia</h4>
-    <p>El Printer Bridge es un programa chico que se ejecuta en la PC donde esta conectada la impresora por USB. Lo que hace es:</p>
-    <ol>
-      <li><strong>Escucha</strong> en el puerto 9100 de esa PC (espera que le manden datos)</li>
-      <li>Cuando recibe datos (ZPL o DPL - los comandos de impresion), los <strong>manda directamente</strong> a la impresora USB</li>
-      <li>La impresora recibe los datos e <strong>imprime la etiqueta</strong></li>
-    </ol>
-    <p>Es como un traductor: recibe datos por red y los convierte en impresion USB.</p>
-  </div>
+   Estado de los medios. . . . . . . . : Conectado
+   Sufijo DNS específico de conexión . . :
+   Dirección IPv4. . . . . . . . . . . : 192.168.1.153    ◄── ESTA ES TU IP
+   Máscara de subred . . . . . . . . . : 255.255.255.0
+   Puerta de enlace predeterminada . . : 192.168.1.1
 
-  <h3>1.5 Flujo completo de impresion (paso a paso)</h3>
-  <div class="diagram-box">
-    <pre style="background:transparent; color:#1c1917; padding:0; margin:0; font-size:8pt;">
-PASO 1: El operador hace clic en "Imprimir" en el sistema frigorifico
+Adaptador de red inalámbrica Wi-Fi:
 
-PASO 2: El sistema genera los datos de la etiqueta (tropa, garroon, peso)
-         y los convierte a comandos ZPL o DPL
+   Estado de los medios. . . . . . . . : Desconectado</code></pre>
+<p>En este ejemplo, la IP es
+<strong><code>192.168.1.153</code></strong>.</p>
+<h4 id="paso-4-anotala">Paso 4: ¡Anotala!</h4>
+<p><strong>Escribí esa IP en un papel o en el celular.</strong> La vas a
+necesitar para configurar el sistema.</p>
+<pre><code>  ┌──────────────────────────────────┐
+  │  MIS IPS (anotá acá):            │
+  │                                  │
+  │  PC 1 (Zebra ZT230):             │
+  │  IP: _____._____._____._____     │
+  │                                  │
+  │  PC 2 (Datamax 4206):            │
+  │  IP: _____._____._____._____     │
+  │                                  │
+  └──────────────────────────────────┘</code></pre>
+<h3 id="dhcp-o-ip-fija">¿DHCP o IP fija?</h3>
+<p>Tu PC probablemente obtiene la IP automáticamente (DHCP). Eso está
+<strong>perfectamente bien</strong>. Solo acordate:</p>
+<ul>
+<li>Si la PC se reinicia o se desconecta de la red, <strong>la IP podría
+cambiar</strong></li>
+<li>Si un día no imprime, lo primero que hacés es verificar la IP de
+nuevo con <code>ipconfig</code></li>
+<li>Si querés que no cambie nunca, podés poner una IP fija, pero eso es
+opcional</li>
+</ul>
+<hr />
+<h2 id="qué-son-los-puertos-y-por-qué-el-9100">5. ¿Qué son los puertos y
+por qué el 9100?</h2>
+<h3 id="explicación-simple-1">Explicación simple</h3>
+<p>Si la IP es como la <strong>dirección de un edificio</strong>, los
+puertos son como los <strong>números de puerta o departamento</strong>
+dentro de ese edificio.</p>
+<pre><code>  La PC es como un edificio con muchas puertas:
 
-PASO 3: El sistema envia esos datos por red a la IP de la PC impresora
-         Ejemplo: envia a 192.168.1.10, puerto 9100
+  ┌─────────────────────────────────────────┐
+  │  PC (edificio)  →  IP: 192.168.1.153   │
+  │                                         │
+  │  Puerta 80   ──→  Navegador web        │
+  │  Puerta 9100 ──→  Printer Bridge       │  ◄── Por acá entran las
+  │  Puerta 9101 ──→  Panel de control     │       órdenes de impresión
+  │  Puerta 3389 ──→  Escritorio remoto    │
+  │  ...                                   │
+  └─────────────────────────────────────────┘</code></pre>
+<ul>
+<li>Cuando el sistema quiere mandar una orden de impresión, se conecta a
+la IP de la PC <strong>y al puerto 9100</strong></li>
+<li>El Printer Bridge está “escuchando” en esa puerta (puerto 9100)</li>
+<li>Cuando llega algo, lo toma y lo manda a la impresora por USB</li>
+</ul>
+<h3 id="por-qué-9100">¿Por qué 9100?</h3>
+<p>El puerto <strong>9100</strong> es un estándar mundial para
+impresoras de etiquetas. Casi todas las impresoras Zebra, Datamax, Sato,
+etc., usan ese puerto. Es como una convención: “si querés hablar con una
+impresora de etiquetas, llamá a la puerta 9100”.</p>
+<h3 id="y-el-9101">¿Y el 9101?</h3>
+<p>El puerto <strong>9101</strong> es para el <strong>panel de control
+web</strong>. Desde un navegador podés entrar a
+<code>http://192.168.1.153:9101</code> y ver un panel donde podés probar
+la impresión, ver estadísticas, etc.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 37%" />
+<col style="width: 42%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Puerto</th>
+<th>Para qué sirve</th>
+<th>¿En qué equipo?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>9100</strong></td>
+<td>Recibir datos de impresión (ZPL/DPL)</td>
+<td>En la PC (no en la impresora)</td>
+</tr>
+<tr class="even">
+<td><strong>9101</strong></td>
+<td>Panel de control web</td>
+<td>En la PC (no en la impresora)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Importante:</strong> Ambos puertos son de la PC, no de la
+impresora. La impresora no tiene puertos de red porque está conectada
+por USB.</p>
+</blockquote>
+<hr />
+<h2 id="requisitos-previos">6. Requisitos previos</h2>
+<p>Antes de instalar el Printer Bridge, necesitás tener todo esto listo
+<strong>en cada PC</strong> que tiene una impresora.</p>
+<h3 id="checklist-de-requisitos">Checklist de requisitos</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Windows 10 o 11</strong>
+instalado</label></li>
+<li><label><input type="checkbox" /><strong>Node.js</strong> instalado
+(ver paso a paso abajo)</label></li>
+<li><label><input type="checkbox" /><strong>Driver de la
+impresora</strong> instalado en Windows (ver paso a paso
+abajo)</label></li>
+<li><label><input type="checkbox" /><strong>Impresora prendida</strong>
+y conectada por cable USB</label></li>
+<li><label><input type="checkbox" /><strong>La PC conectada a la
+red</strong> (al mismo router/switch que las otras PCs)</label></li>
+<li><label><input type="checkbox" /><strong>La IP de la PC
+anotada</strong> (ver sección 4)</label></li>
+</ul>
+<h3 id="paso-a-paso-instalar-node.js">Paso a paso: Instalar Node.js</h3>
+<p>Node.js es un programa que necesita el Printer Bridge para funcionar.
+Es como un “motor” para ejecutar el programita.</p>
+<ol type="1">
+<li>Abrí el navegador (Chrome, Edge, Firefox, el que uses)</li>
+<li>Andá a: <strong>https://nodejs.org/</strong></li>
+<li>Descargá la versión que dice <strong>“LTS”</strong> (la que dice
+“Recommended for Most Users”)
+<ul>
+<li>Es el botón grande verde que dice algo como
+<code>20.x.x LTS</code></li>
+</ul></li>
+<li>Hacé doble clic en el archivo descargado para instalarlo</li>
+<li>Aparece un instalador. <strong>Dejá todo por defecto</strong> y hacé
+clic en “Next” hasta que termine
+<ul>
+<li>No cambies nada. Next → Next → Next → Install → Finish</li>
+</ul></li>
+<li>Listo</li>
+</ol>
+<p><strong>Para verificar que se instaló bien:</strong></p>
+<ol type="1">
+<li>Abrí CMD (Windows + R → <code>cmd</code> → Enter)</li>
+<li>Escribí: <code>node --version</code></li>
+<li>Presioná Enter</li>
+<li>Si aparece un número como <code>v20.11.0</code>, está todo bien
+✅</li>
+<li>Si dice “no se reconoce como comando interno”, Node.js no se instaló
+bien. Volvé a intentarlo.</li>
+</ol>
+<h3 id="paso-a-paso-instalar-el-driver-de-la-zebra-zt230">Paso a paso:
+Instalar el driver de la Zebra ZT230</h3>
+<p>El driver es el programita que hace que Windows sepa cómo hablar con
+la impresora.</p>
+<ol type="1">
+<li>Conectá la impresora Zebra por USB a la PC y prendela</li>
+<li>Descargá el driver desde:
+<strong>https://www.zebra.com/us/en/software/printer-software/drivers.html</strong></li>
+<li>Buscá “ZT230” en la lista</li>
+<li>Descargá e instalá el driver</li>
+<li>Al instalar, elegí el puerto USB donde está conectada</li>
+</ol>
+<p><strong>Para verificar que se instaló:</strong></p>
+<ol type="1">
+<li>Abrí el <strong>Panel de Control</strong> de Windows
+<ul>
+<li>Podés buscar “Panel de Control” en el menú Inicio</li>
+</ul></li>
+<li>Andá a <strong>“Dispositivos e Impresoras”</strong> (o “Impresoras y
+escáneres” en Windows 10/11)</li>
+<li>La <strong>Zebra ZT230</strong> tiene que aparecer en la lista</li>
+<li>Tiene que estar sin ningún ícono de error (sin triángulo
+amarillo)</li>
+</ol>
+<h3 id="paso-a-paso-instalar-el-driver-de-la-datamax-mark-ii-4206">Paso
+a paso: Instalar el driver de la Datamax Mark II 4206</h3>
+<ol type="1">
+<li>Conectá la Datamax por USB y prendela</li>
+<li>En Windows 10/11, la Datamax se puede detectar automáticamente.
+Probá:
+<ul>
+<li><strong>Configuración</strong> → <strong>Bluetooth y
+dispositivos</strong> → <strong>Impresoras y escáneres</strong> →
+<strong>“Agregar dispositivo”</strong></li>
+<li>Si la detecta, listísimo</li>
+</ul></li>
+<li>Si no la detecta automáticamente:
+<ul>
+<li>Descargá el driver desde:
+<strong>https://www.honeywellaidc.com/en-us/support/driver-downloads</strong></li>
+<li>Buscá “Datamax” o “Honeywell printer driver”</li>
+<li>Instalalo y verificá que aparezca en Dispositivos e Impresoras</li>
+</ul></li>
+</ol>
+<h3 id="verificar-que-ambas-pcs-están-en-la-misma-red">Verificar que
+ambas PCs están en la misma red</h3>
+<p>Las dos PCs (la de la Zebra y la de la Datamax) tienen que estar
+conectadas al <strong>mismo router o switch</strong>. Si una está en un
+Wi-Fi y la otra en otro Wi-Fi diferente, no se van a poder
+comunicar.</p>
+<pre><code>  ✅ CORRECTO: Ambas en el mismo router
 
-PASO 4: El Printer Bridge (que esta corriendo en esa PC) recibe los datos
+  ┌──────────┐      ┌──────────┐
+  │  PC 1    │──────│          │
+  │  (Zebra) │      │  Router  │
+  └──────────┘      │          │
+                    │  del     │
+  ┌──────────┐      │  frigo   │
+  │  PC 2    │──────│          │
+  │ (Datamax)│      │          │
+  └──────────┘      └──────────┘
 
-PASO 5: El Bridge le pasa los datos a la impresora por cable USB
 
-PASO 6: La impresora imprime la etiqueta</pre>
-  </div>
+  ❌ INCORRECTO: En redes diferentes
 
-  <div class="note">
-    <strong>Importante:</strong> La ventana negra del Printer Bridge tiene que quedar abierta todo el tiempo. Si la cerras, no se puede imprimir.
-  </div>
-</div>
+  ┌──────────┐      ┌──────────┐
+  │  PC 1    │──────│ Router 1 │    ← Red 1
+  │  (Zebra) │      └──────────┘
+  └──────────┘
 
-<div class="section">
-  <h2>2. Que necesitas antes de empezar</h2>
+  ┌──────────┐      ┌──────────┐
+  │  PC 2    │──────│ Router 2 │    ← Red 2 (¡no se comunican!)
+  │ (Datamax)│      └──────────┘
+  └──────────┘</code></pre>
+<hr />
+<h2 id="instalación-en-pc-1-zebra-zt230">7. Instalación en PC 1 (Zebra
+ZT230)</h2>
+<h3 id="paso-1-copiar-los-archivos">Paso 1: Copiar los archivos</h3>
+<p>Los archivos del Printer Bridge están en la carpeta
+<code>printer-bridge/</code>. Copiá <strong>TODA esa carpeta</strong> a
+la PC con la Zebra.</p>
+<ul>
+<li>Podés copiarla a un pendrive y pasarla</li>
+<li>O copiarla por la red (compartir carpeta)</li>
+<li>Destino recomendado:
+<code>C:\SolemarAlimentaria\printer-bridge\</code></li>
+</ul>
+<p>Los archivos que tienen que estar:</p>
+<pre><code>printer-bridge/
+├── index.ts              ← El programa principal
+├── package.json          ← Configuración del programa
+├── tsconfig.json         ← Configuración TypeScript
+├── install.bat           ← Ejecutá ESTO primero
+├── start.bat             ← Ejecutá ESTO después
+├── install-service.bat   ← Para arranque automático
+├── uninstall-service.bat ← Para desinstalar servicio
+└── bun.lock              ← No lo tocás</code></pre>
+<h3 id="paso-2-ejecutar-install.bat">Paso 2: Ejecutar
+<code>install.bat</code></h3>
+<ol type="1">
+<li>Abrí la carpeta <code>printer-bridge</code> en la PC</li>
+<li>Hacé <strong>doble clic</strong> en <code>install.bat</code></li>
+<li>Se abre una ventana negra. Aparece algo así:</li>
+</ol>
+<pre><code>============================================================
+  PRINTER BRIDGE - Solemar Alimentaria
+  Instalador para Windows
+============================================================
 
-  <h3>2.1 Requisitos obligatorios</h3>
-  <table>
-    <thead><tr><th>Requisito</th><th>Para que sirve</th><th>Como verificarlo</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Windows 10 u 11</strong></td><td>Sistema operativo de las PCs donde estan las impresoras</td><td>Clic derecho en "Inicio" - "Sistema"</td></tr>
-      <tr><td><strong>Node.js</strong></td><td>Programa que permite correr el Printer Bridge</td><td>Abrir CMD y escribir: <code>node --version</code></td></tr>
-      <tr><td><strong>Impresora con driver</strong></td><td>Windows necesita conocer la impresora</td><td>Panel de Control - Impresoras y escaneres</td></tr>
-      <tr><td><strong>Ambas PCs en la misma red</strong></td><td>Necesitan poder comunicarse entre si</td><td>CMD y hacer <code>ping</code> a la otra PC</td></tr>
-    </tbody>
-  </table>
+[OK] Node.js encontrado: v20.11.0
+[OK] npm encontrado: 10.2.4
 
-  <h3>2.2 Instalar Node.js (solo si no lo tenes)</h3>
-  <p>Node.js es un programa que necesita estar instalado en <strong>CADA PC que tenga una impresora</strong>. Se instala una sola vez.</p>
-  <ol>
-    <li>Abrir el navegador (Chrome, Edge, Firefox)</li>
-    <li>Ir a: <strong>https://nodejs.org/</strong></li>
-    <li>Clic en el boton verde grande que dice <strong>"LTS"</strong> (Recommended for Most Users)</li>
-    <li>Se descarga un archivo (ej: <code>node-v20.11.0-x64.msi</code>)</li>
-    <li>Hacer <strong>doble clic</strong> en el archivo descargado</li>
-    <li>Aparece un instalador. Clic en <strong>"Next"</strong> en todas las pantallas</li>
-    <li>Al final, clic en <strong>"Install"</strong> y esperar a que termine</li>
-    <li>Clic en <strong>"Finish"</strong></li>
-  </ol>
-  <p>Para verificar que se instalo correctamente:</p>
-  <ol>
-    <li>Abrir <strong>CMD</strong>: clic en "Inicio", escribir <code>cmd</code>, presionar Enter</li>
-    <li>Escribir: <code>node --version</code></li>
-    <li>Si muestra algo como <code>v20.11.0</code>, esta todo bien</li>
-    <li>Si dice "no se reconoce", cerrar y volver a abrir CMD, o reiniciar la PC</li>
-  </ol>
+Instalando en: C:\SolemarAlimentaria\printer-bridge
+[OK] Archivos copiados.
+Instalando dependencias...
+[OK] Dependencias instaladas.
 
-  <h3>2.3 Instalar el driver de la impresora (solo si no esta)</h3>
-  <p>Windows necesita tener instalado el driver para poder usar la impresora por USB.</p>
-  <p><strong>Zebra ZT230:</strong></p>
-  <ol>
-    <li>Ir a: <strong>https://www.zebra.com/us/en/software/printer-software/drivers.html</strong></li>
-    <li>Buscar "ZT230" y descargar el driver para Windows</li>
-    <li>Ejecutar el archivo descargado y seguir los pasos</li>
-    <li>Conectar la impresora por USB y encenderla</li>
-    <li>Windows deberia detectarla automaticamente</li>
-  </ol>
-  <p><strong>Datamax Mark II 4206:</strong></p>
-  <ol>
-    <li>Ir a: <strong>https://www.honeywellaidc.com/en-us/support/driver-downloads</strong></li>
-    <li>Buscar "Datamax" o "DMX-I-4206" y descargar</li>
-    <li>Si no encontra el driver, conectar la impresora, ir a Windows Update y buscar "Controladores opcionales"</li>
-  </ol>
-  <p><strong>Como verificar que la impresora esta instalada:</strong></p>
-  <ol>
-    <li>Clic en "Inicio", escribir <code>impresoras</code>, entrar a <strong>"Impresoras y escaneres"</strong></li>
-    <li>La impresora deberia aparecer en la lista y decir "Listo" o "En linea"</li>
-  </ol>
-  <div class="warning">
-    <strong>Si la impresora no aparece:</strong> asegurate de que este encendida, conectada por USB, y que el driver este instalado. Proba con otro cable USB.
-  </div>
-</div>
+Detectando impresoras...
 
-<div class="section">
-  <h2>3. Como encontrar la IP de cada PC</h2>
-  <p>Esto es <strong>fundamental</strong>. El sistema necesita saber la IP de la PC donde esta la impresora. <strong>Anota bien estos numeros.</strong></p>
+Name                  PortName          DriverName
+----                  --------          ----------
+Zebra ZT230           USB001            ZDesigner ZT230-203dpi ZPL
+Microsoft Print to    PORTPROMPT:       Microsoft Print to Image
+Microsoft XPS Doc...  PORTPROMPT:       Microsoft XPS Document Writer
 
-  <h3>3.1 Metodo por CMD (recomendado)</h3>
-  <ol>
-    <li>Ir a la PC donde esta conectada la impresora</li>
-    <li>Abrir <strong>CMD</strong>: clic en "Inicio", escribir <code>cmd</code>, presionar Enter</li>
-    <li>Escribir <code>ipconfig</code> y presionar Enter</li>
-    <li>Va a aparecer bastante texto. Busca la seccion que dice <strong>"Adaptador de Ethernet"</strong> o <strong>"Adaptador de Wi-Fi"</strong></li>
-    <li>Dentro de esa seccion, busca la linea <strong>"IPv4"</strong>. Va a ser algo como:
-      <pre>   Conexion de area local Ethernet:
-  Estado de los medios . . . : Conectado
-  IPv4. . . . . . . . . . . : 192.168.1.10
-  Mascara de subred . . . . . : 255.255.255.0</pre>
-    </li>
-    <li><strong>Ese numero</strong> (ej: <code>192.168.1.10</code>) es la IP de esta PC. <strong>Anotalo.</strong></li>
-  </ol>
-  <div class="warning">
-    <strong>Atencion:</strong> Si ves varias secciones (Ethernet, Wi-Fi, etc.), usa la que este <strong>"Conectado"</strong> y sea la conexion que usa normalmente.
-  </div>
+Escribi el nombre EXACTO de la impresora tal como aparece arriba.
 
-  <h3>3.2 Verificar que ambas PCs se pueden comunicar</h3>
-  <ol>
-    <li>Ir a la PC del sistema frigorifico (o cualquier otra PC de la red)</li>
-    <li>Abrir CMD</li>
-    <li>Escribir: <code>ping</code> + la IP de la PC con la impresora. Ejemplo:
-      <pre>ping 192.168.1.10</pre>
-    </li>
-    <li>Deberia ver:
-      <pre>Respuesta desde 192.168.1.10: bytes=32 tiempo&lt;1ms TTL=128
-Respuesta desde 192.168.1.10: bytes=32 tiempo&lt;1ms TTL=128</pre>
-    </li>
-  </ol>
-  <div class="success-box"><strong>Si responde</strong> ("Respuesta desde..."): Todo bien, las PCs se comunican.</div>
-  <div class="error-box"><strong>Si dice "Tiempo de espera agotado":</strong> Las PCs no se comunican. Verifica que ambas esten conectadas al mismo router.</div>
-</div>
+Nombre de la impresora (ej: Zebra ZT230): _</code></pre>
+<ol start="4" type="1">
+<li><strong>Escribí el nombre exacto</strong> de la Zebra tal como
+aparece en la lista
+<ul>
+<li>Por ejemplo: <code>Zebra ZT230</code></li>
+<li><strong>Tip:</strong> Para evitar errores de tipeo, seleccioná el
+nombre en la ventana, copialo (Ctrl+C) y pegalo (Ctrl+V)</li>
+</ul></li>
+<li>Presioná <strong>Enter</strong></li>
+<li>Aparece:</li>
+</ol>
+<pre><code>[OK] Configuracion guardada.
 
-<div class="section">
-  <h2>4. Instalar el Printer Bridge en cada PC</h2>
-  <p>Esto tenes que hacerlo en <strong>CADA PC que tenga una impresora conectada por USB</strong>.</p>
+============================================================
+  INSTALACION COMPLETADA
+============================================================
 
-  <h3>4.1 Copiar los archivos</h3>
-  <p>Descarga la carpeta <code>printer-bridge</code> del repositorio de GitHub del sistema. La carpeta tiene estos archivos:</p>
-  <pre>printer-bridge/
-  index.ts              El programa principal
-  package.json          Archivo de configuracion
-  tsconfig.json         Configuracion
-  install.bat           Instalador automatico
-  start.bat             Para iniciar el bridge
-  install-service.bat   Para que arranque solo con Windows
-  uninstall-service.bat Para desinstalar
-  README.md             Documentacion</pre>
-  <p>Podes copiarla al escritorio o a <code>C:\SolemarAlimentaria\printer-bridge\</code></p>
+  Impresora: Zebra ZT230
+  Puerto TCP: 9100 (para recibir datos del sistema)
+  Panel Web:  http://192.168.1.153:9101
 
-  <h3>4.2 Ejecutar el instalador</h3>
-  <ol>
-    <li>Abrir la carpeta <code>printer-bridge</code></li>
-    <li>Hacer <strong>doble clic</strong> en <code>install.bat</code></li>
-    <li>Se abre una ventana negra. Espera pacientemente (1-2 minutos).</li>
-    <li>El instalador hace todo automaticamente: verifica Node.js, copia archivos, instala dependencias, busca impresoras</li>
-    <li>Se muestra una lista de impresoras detectadas:
-      <pre>Detectando impresoras...
-Name                  DriverName
-----                  ----------
-Zebra ZT230           ZDesigner ZT230-203dpi ZPL
-Microsoft Print to    Microsoft Print to Image</pre>
-    </li>
-    <li>Escribe el <strong>nombre exacto</strong> de la impresora tal como aparece (ej: <code>Zebra ZT230</code>). <strong>Tip:</strong> Copia y pega para evitar errores.</li>
-    <li>Presiona <strong>Enter</strong></li>
-    <li>El instalador muestra la IP y la confirmacion:
-      <pre>[OK] Configuracion guardada.
-  Puerto TCP: 9100
-  Panel Web: http://192.168.1.10:9101</pre>
-    </li>
-    <li><strong>Anota la IP que muestra</strong> (ej: <code>192.168.1.10</code>)</li>
-    <li>Presiona una tecla para cerrar</li>
-  </ol>
+  ARCHIVOS EN: C:\SolemarAlimentaria\printer-bridge
 
-  <h3>4.3 Iniciar el Printer Bridge</h3>
-  <ol>
-    <li>Hacer <strong>doble clic</strong> en <code>start.bat</code></li>
-    <li>Se abre una ventana negra que queda corriendo:
-      <pre>============================================================
+============================================================
+  PROXIMOS PASOS:
+============================================================
+
+  1. Ejecuta START.BAT para iniciar el bridge
+  2. Abri http://localhost:9101 en el navegador
+  3. Hace clic en &quot;Imprimir prueba&quot; para verificar
+  4. En el sistema (Configuracion -&gt; Impresoras) configura:
+       - Puerto: RED
+       - IP: 192.168.1.153
+       - Puerto TCP: 9100
+
+Presione una tecla para continuar . . .</code></pre>
+<ol start="7" type="1">
+<li><strong>ANOTÁ LA IP</strong> que muestra (en este ejemplo,
+<code>192.168.1.153</code>)</li>
+<li>Presioná una tecla para cerrar</li>
+</ol>
+<h3 id="paso-3-ejecutar-start.bat">Paso 3: Ejecutar
+<code>start.bat</code></h3>
+<ol type="1">
+<li>Hacé <strong>doble clic</strong> en <code>start.bat</code></li>
+<li>Se abre una ventana negra que queda corriendo:</li>
+</ol>
+<pre><code>============================================================
          PRINTER BRIDGE - Solemar Alimentaria
 ============================================================
-  TCP:  192.168.1.10:9100 (recibe datos ZPL/DPL)
-  HTTP: http://192.168.1.10:9101 (panel de control)
-  Impresora: Zebra ZT230
-============================================================</pre>
-    </li>
-  </ol>
-  <div class="warning"><strong>IMPORTANTE:</strong> Esta ventana negra tiene que quedar <strong>abierta todo el tiempo</strong>. Si la cerras, el bridge se detiene y no se puede imprimir. Si la cerras por error, volvela a abrir con doble clic en <code>start.bat</code>.</div>
+║  TCP:  192.168.1.153:9100 (recibe datos ZPL/DPL)
+║  HTTP: http://192.168.1.153:9101 (panel de control)
+║  Impresora: Zebra ZT230
+============================================================
 
-  <h3>4.4 Probar que funciona</h3>
-  <ol>
-    <li>Abrir el navegador (Chrome, Edge)</li>
-    <li>Escribir en la barra de direcciones: <code>http://localhost:9101</code></li>
-    <li>Se abre el panel de control del bridge</li>
-    <li>Verifica que aparezca el nombre de tu impresora</li>
-    <li>Hacer clic en <strong>"Imprimir prueba"</strong></li>
-    <li>La impresora deberia emitir una etiqueta: <strong>"PRUEBA - Bridge OK - Solemar Alimentaria"</strong></li>
-  </ol>
-  <div class="success-box"><strong>Si la etiqueta se imprimo:</strong> El bridge funciona. Repeti los pasos en la otra PC con la otra impresora.</div>
-  <div class="error-box"><strong>Si no imprime:</strong> Verifica que la impresora este encendida, tenga etiquetas, y que el nombre en el panel web sea correcto.</div>
-</div>
+Abrí http://localhost:9101 en tu navegador para configurar</code></pre>
+<blockquote>
+<p>⚠️ <strong>¡MUY IMPORTANTE! Esta ventana negra tiene que quedar
+abierta.</strong> No la cierres. Mientras esté abierta, el bridge
+funciona. Si la cerrás, no imprime nada.</p>
+</blockquote>
+<blockquote>
+<p><strong>Tip:</strong> Si te molesta tener la ventana abierta, después
+podés instalarlo como servicio (ver sección 12) para que corra en
+segundo plano.</p>
+</blockquote>
+<h3 id="paso-4-probar-desde-el-panel-web">Paso 4: Probar desde el panel
+web</h3>
+<ol type="1">
+<li>Abrí el navegador en esa PC (Chrome, Edge, el que uses)</li>
+<li>En la barra de direcciones, escribí:
+<strong><code>http://localhost:9101</code></strong></li>
+<li>Se abre el panel de control del Printer Bridge</li>
+<li>Verificá que diga “Zebra ZT230” donde dice “Impresora”</li>
+<li>Hacé clic en el botón <strong>“🖨️ Imprimir prueba”</strong></li>
+<li>La Zebra debería imprimir una etiqueta que dice:</li>
+</ol>
+<pre><code>  ** PRUEBA **
+  Zebra ZT230 - Bridge OK
+  15/1/2025 10:30:00
+  Solemar Alimentaria</code></pre>
+<ul>
+<li>✅ <strong>Si imprimió</strong> → La PC 1 está lista. Pasá a la PC
+2.</li>
+<li>❌ <strong>Si no imprimió</strong> → Andá a la sección <a
+href="#13-solución-de-problemas">Solución de problemas</a></li>
+</ul>
+<hr />
+<h2 id="instalación-en-pc-2-datamax-mark-ii-4206">8. Instalación en PC 2
+(Datamax Mark II 4206)</h2>
+<p>Los pasos son <strong>exactamente los mismos</strong> que en la PC 1.
+Solo cambia la impresora.</p>
+<h3 id="paso-1-copiar-los-archivos-1">Paso 1: Copiar los archivos</h3>
+<p>Mismo que PC 1. Copiá la carpeta <code>printer-bridge/</code>
+completa a esta PC.</p>
+<h3 id="paso-2-ejecutar-install.bat-1">Paso 2: Ejecutar
+<code>install.bat</code></h3>
+<ol type="1">
+<li>Doble clic en <code>install.bat</code></li>
+<li>Cuando detecte las impresoras, escribí el nombre exacto de la
+Datamax:</li>
+</ol>
+<pre><code>Detectando impresoras...
 
-<div class="section">
-  <h2>5. Abrir los puertos en el Firewall de Windows</h2>
-  <p>El Firewall de Windows bloquea las comunicaciones entrantes por seguridad. Tenemos que <strong>permitir</strong> los puertos 9100 y 9101.</p>
-  <div class="note"><strong>Esto se hace UNA SOLA VEZ</strong> en cada PC. No hay que repetirlo.</div>
+Name                    PortName          DriverName
+----                    --------          ----------
+Datamax Mark II 4206    USB002            Datamax DMX-I-4206
 
-  <h3>5.1 Metodo rapido (con CMD como Administrador)</h3>
-  <ol>
-    <li>Abrir <strong>CMD como Administrador</strong>:
-      <ul>
-        <li>Clic en "Inicio", escribir <code>cmd</code></li>
-        <li>Clic derecho en "Simbolo del sistema"</li>
-        <li>Clic en <strong>"Ejecutar como administrador"</strong></li>
-        <li>Si pregunta permisos, clic en <strong>"Si"</strong></li>
-      </ul>
-    </li>
-    <li>Escribir estos comandos (uno por uno, Enter despues de cada uno):
-      <pre>netsh advfirewall firewall add rule name="Printer Bridge 9100" dir=in action=allow protocol=TCP localport=9100
-netsh advfirewall firewall add rule name="Printer Bridge 9101" dir=in action=allow protocol=TCP localport=9101</pre>
-    </li>
-    <li>Despues de cada comando deberia decir <strong>"Aceptado."</strong></li>
-  </ol>
+Nombre de la impresora (ej: Datamax Mark II 4206): Datamax Mark II 4206</code></pre>
+<ol start="3" type="1">
+<li><strong>Anotá la IP</strong> que muestra (puede ser distinta a la PC
+1)</li>
+</ol>
+<blockquote>
+<p><strong>Nota:</strong> Cada PC tiene su propia IP. Que ambas usen el
+puerto 9100 no es un problema porque están en PCs distintas. Es como dos
+edificios que ambos tienen un “departamento 9100” — son edificios
+diferentes.</p>
+</blockquote>
+<h3 id="paso-3-ejecutar-start.bat-1">Paso 3: Ejecutar
+<code>start.bat</code></h3>
+<ol type="1">
+<li>Doble clic en <code>start.bat</code></li>
+<li>Verificá que muestre la IP correcta y “Datamax Mark II 4206”</li>
+<li>Dejá la ventana abierta</li>
+</ol>
+<h3 id="paso-4-probar">Paso 4: Probar</h3>
+<ol type="1">
+<li>Abrí <strong><code>http://localhost:9101</code></strong> en esta
+PC</li>
+<li>Hacé clic en <strong>“🖨️ Imprimir prueba”</strong></li>
+<li>La Datamax debería imprimir una etiqueta de prueba</li>
+</ol>
+<ul>
+<li>✅ <strong>Si imprimió</strong> → La PC 2 está lista.</li>
+<li>❌ <strong>Si no imprimió</strong> → Andá a <a
+href="#13-solución-de-problemas">Solución de problemas</a></li>
+</ul>
+<hr />
+<h2 id="configurar-el-firewall-de-windows-paso-a-paso-detallado">9.
+Configurar el Firewall de Windows (PASO A PASO DETALLADO)</h2>
+<blockquote>
+<p>⚠️ <strong>ESTA ES LA PARTE MÁS IMPORTANTE Y LA QUE MÁS PROBLEMAS
+CAUSA.</strong> Si no hacés esto, el sistema no puede comunicarse con el
+Printer Bridge aunque todo lo demás esté bien.</p>
+</blockquote>
+<h3 id="qué-es-el-firewall-y-por-qué-lo-tenemos-que-configurar">¿Qué es
+el Firewall y por qué lo tenemos que configurar?</h3>
+<p>El Firewall de Windows es como un <strong>guardia de
+seguridad</strong> en la puerta de tu PC. Su trabajo es
+<strong>bloquear</strong> las conexiones que vienen de afuera para
+protegerte.</p>
+<p>El problema es que este guardia <strong>bloquea por defecto
+TODO</strong> lo que viene de otra PC. Así que cuando el sistema del
+frigorífico intenta hablar con el Printer Bridge, el guardia lo
+frena.</p>
+<p>Lo que tenemos que hacer es decirle al guardia: <em>“Mirá, las
+conexiones a los puertos 9100 y 9101 dejalas pasar, son de
+confianza”</em>.</p>
+<pre><code>  ANTES del firewall:
 
-  <h3>5.2 Metodo grafico (con mouse)</h3>
-  <ol>
-    <li>Clic en "Inicio", escribir <code>firewall</code></li>
-    <li>Clic en <strong>"Firewall de Windows Defender"</strong></li>
-    <li>A la izquierda, clic en <strong>"Configuracion avanzada"</strong></li>
-    <li>Clic en <strong>"Reglas de entrada"</strong> (a la izquierda)</li>
-    <li>A la derecha, clic en <strong>"Nueva regla..."</strong></li>
-    <li>Seleccionar <strong>"Puerto"</strong> - Siguiente</li>
-    <li>Seleccionar <strong>"TCP"</strong>, escribir <code>9100</code> - Siguiente</li>
-    <li>Seleccionar <strong>"Permitir la conexion"</strong> - Siguiente</li>
-    <li>Dejar marcadas las tres opciones - Siguiente</li>
-    <li>Nombre: <code>Printer Bridge 9100</code> - Finalizar</li>
-    <li><strong>Repetir</strong> con puerto <code>9101</code> y nombre <code>Printer Bridge 9101</code></li>
-  </ol>
-  <div class="success-box"><strong>Listo.</strong> Ahora el Firewall permite comunicacion por los puertos del Printer Bridge.</div>
-</div>
+  Sistema ──&quot;¡Quiero imprimir!&quot;──▶ GUARDIA ──&quot;NO, no pasás&quot; ──✗
 
-<div class="section">
-  <h2>6. Configurar las impresoras en el sistema frigorifico</h2>
-  <p>Ahora vamos a decirle al sistema <strong>donde estan las impresoras</strong> usando las IPs que anotaste.</p>
+  DESPUÉS del firewall:
 
-  <h3>6.1 Configurar la Zebra ZT230</h3>
-  <ol>
-    <li>Abrir el sistema frigorifico en el navegador e iniciar sesion</li>
-    <li>En el menu lateral, ir a <strong>Configuracion</strong> (icono de engranaje)</li>
-    <li>Clic en <strong>Impresoras</strong></li>
-    <li>Agrear una nueva impresora y completar:</li>
-  </ol>
-  <table>
-    <thead><tr><th>Campo</th><th>Que escribir</th><th>Por que</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Nombre</strong></td><td><code>Zebra ZT230 - Rotulos</code></td><td>Para identificarla</td></tr>
-      <tr><td><strong>Tipo de rotulo</strong></td><td><code>MEDIA_RES</code></td><td>Que tipo de etiquetas imprime</td></tr>
-      <tr><td><strong>Marca</strong></td><td><code>ZEBRA</code></td><td>Define el lenguaje de impresion (ZPL)</td></tr>
-      <tr><td><strong>Modelo</strong></td><td><code>ZT230</code></td><td>Modelo exacto</td></tr>
-      <tr><td><strong>Puerto</strong></td><td><code>RED</code></td><td>Se conecta por red, no USB directo</td></tr>
-      <tr><td><strong>Direccion IP</strong></td><td><strong>La IP de la PC 1</strong> (ej: <code>192.168.1.10</code>)</td><td>Donde escucha el bridge</td></tr>
-      <tr><td><strong>Ancho etiqueta</strong></td><td><code>100</code> mm</td><td>Ancho del papel</td></tr>
-      <tr><td><strong>Alto etiqueta</strong></td><td><code>50</code> mm</td><td>Alto del papel</td></tr>
-      <tr><td><strong>DPI</strong></td><td><code>203</code></td><td>Resolucion de impresion</td></tr>
-      <tr><td><strong>Activa</strong></td><td>Si</td><td>Para que este disponible</td></tr>
-      <tr><td><strong>Predeterminada</strong></td><td>Si</td><td>Impresora por defecto para MEDIA_RES</td></tr>
-    </tbody>
-  </table>
-  <div class="note">
-    <strong>Direccion IP:</strong> Es el dato MAS importante. Tiene que ser la IP de la PC donde esta la Zebra por USB. Es el numero que anotaste con <code>ipconfig</code> (seccion 3). No es la IP del router ni del sistema.
-  </div>
+  Sistema ──&quot;¡Quiero imprimir!&quot;──▶ GUARDIA ──&quot;OK, pasá&quot; ──▶ Printer Bridge ──▶ Impresora
+                                                (puertos 9100 y 9101 habilitados)</code></pre>
+<h3
+id="instrucciones-paso-a-paso-seguilo-al-pie-de-la-letra">Instrucciones
+paso a paso (¡seguilo al pie de la letra!)</h3>
+<p><strong>Esto tenés que hacerlo en LAS DOS PCs</strong> (la de la
+Zebra y la de la Datamax).</p>
+<h4 id="paso-1-abrir-el-firewall">Paso 1: Abrir el Firewall</h4>
+<ol type="1">
+<li>Hacé clic en el botón <strong>Inicio</strong> de Windows (el logo de
+Windows abajo a la izquierda)</li>
+<li>Escribí la palabra <strong><code>Firewall</code></strong></li>
+<li>En los resultados, aparecen varias opciones. Hacé clic en la que
+dice <strong>“Firewall de Windows Defender”</strong>
+<ul>
+<li>También puede aparecer como <strong>“Windows Defender Firewall con
+seguridad avanzada”</strong> — si es esa, directamente abrí esa</li>
+</ul></li>
+</ol>
+<pre><code>  ┌─────────────────────────────────────┐
+  │  Inicio            🔍  [Firewall]  │  ← Escribí &quot;Firewall&quot; acá
+  ├─────────────────────────────────────┤
+  │                                     │
+  │  Resultados:                        │
+  │  ┌─────────────────────────────┐    │
+  │  │ Firewall de Windows Defender│    │  ← Hacé clic acá
+  │  └─────────────────────────────┘    │
+  │                                     │
+  └─────────────────────────────────────┘</code></pre>
+<h4 id="paso-2-entrar-a-la-configuración-avanzada">Paso 2: Entrar a la
+configuración avanzada</h4>
+<ol type="1">
+<li>En la ventana del Firewall, mirá a la
+<strong>izquierda</strong></li>
+<li>Hacé clic en <strong>“Configuración avanzada”</strong>
+<ul>
+<li>Puede pedirte permiso de administrador. Hacé clic en
+<strong>“Sí”</strong></li>
+</ul></li>
+</ol>
+<pre><code>  ┌──────────────────────────────────────────────────────┐
+  │  Firewall de Windows Defender                        │
+  │                                                      │
+  │  ← Panel de control                                  │
+  │     Configuración avanzada  ← HACÉ CLIC ACÁ         │
+  │     ...                                              │
+  └──────────────────────────────────────────────────────┘</code></pre>
+<p>Se abre una ventana más grande con un árbol de opciones a la
+izquierda.</p>
+<h4 id="paso-3-ir-a-reglas-de-entrada">Paso 3: Ir a “Reglas de
+entrada”</h4>
+<ol type="1">
+<li>En el panel izquierdo, expandí (hacé clic en la flechita)
+<strong>“Reglas de seguridad de conexión local”</strong> si no está
+expandido</li>
+<li>Hacé clic en <strong>“Reglas de entrada”</strong> (el segundo
+item)</li>
+</ol>
+<pre><code>  Panel izquierdo:
 
-  <h3>6.2 Configurar la Datamax Mark II 4206</h3>
-  <p>Agregar otra impresora con estos datos:</p>
-  <table>
-    <thead><tr><th>Campo</th><th>Que escribir</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Nombre</strong></td><td><code>Datamax 4206 - Cuartos</code></td></tr>
-      <tr><td><strong>Tipo de rotulo</strong></td><td><code>CUARTO</code></td></tr>
-      <tr><td><strong>Marca</strong></td><td><code>DATAMAX</code></td></tr>
-      <tr><td><strong>Modelo</strong></td><td><code>Mark II 4206</code></td></tr>
-      <tr><td><strong>Puerto</strong></td><td><code>RED</code></td></tr>
-      <tr><td><strong>Direccion IP</strong></td><td><strong>La IP de la PC 2</strong> (ej: <code>192.168.1.20</code>)</td></tr>
-      <tr><td><strong>Ancho etiqueta</strong></td><td><code>100</code> mm</td></tr>
-      <tr><td><strong>Alto etiqueta</strong></td><td><code>50</code> mm</td></tr>
-      <tr><td><strong>DPI</strong></td><td><code>203</code></td></tr>
-      <tr><td><strong>Activa</strong></td><td>Si</td></tr>
-      <tr><td><strong>Predeterminada</strong></td><td>Si (para CUARTO)</td></tr>
-    </tbody>
-  </table>
-</div>
+  ▼ Firewall de Windows Defender con seguridad avanzada
+    ▼ Reglas de seguridad de conexión local
+      ▶ Reglas de entrada       ← HACÉ CLIC ACÁ
+        Reglas de salida
+        ...</code></pre>
+<p>A la derecha vas a ver una lista larga de reglas (muchas, no te
+asustes).</p>
+<h4 id="paso-4-crear-una-nueva-regla">Paso 4: Crear una nueva regla</h4>
+<ol type="1">
+<li>Mirá a la <strong>derecha</strong> de la ventana</li>
+<li>Hacé clic en <strong>“Nueva regla…”</strong></li>
+</ol>
+<pre><code>  Panel derecho (acciones):
 
-<div class="section">
-  <h2>7. Como imprimir las plantillas</h2>
+  ┌──────────────────────┐
+  │ Nueva regla...       │  ← HACÉ CLIC ACÁ
+  │ Importar regla...    │
+  │ ...                  │
+  └──────────────────────┘</code></pre>
+<p>Se abre un asistente (una ventanita que te va guiando).</p>
+<h4 id="paso-5-elegir-puerto">Paso 5: Elegir “Puerto”</h4>
+<ol type="1">
+<li>En el asistente, seleccioná <strong>“Puerto”</strong> (el segundo
+círculo)</li>
+<li>Hacé clic en <strong>“Siguiente”</strong></li>
+</ol>
+<pre><code>  ┌──────────────────────────────────────────────┐
+  │  Tipo de regla                               │
+  │                                              │
+  │  ○ Programa                                  │
+  │  ● Puerto                          ← ESTE   │
+  │  ○ Predefinida                               │
+  │  ○ Personalizada                              │
+  │                                              │
+  │                              [Siguiente &gt;]   │
+  └──────────────────────────────────────────────┘</code></pre>
+<h4 id="paso-6-configurar-los-puertos">Paso 6: Configurar los
+puertos</h4>
+<ol type="1">
+<li>Dejá marcado <strong>“TCP”</strong> (tiene que estar con el
+puntito)</li>
+<li>En el cuadro de texto que dice <strong>“Puertos locales
+específicos”</strong>, escribí: <strong><code>9100, 9101</code></strong>
+<ul>
+<li>Fijate que sea con coma, no con punto: <code>9100, 9101</code></li>
+</ul></li>
+<li>Hacé clic en <strong>“Siguiente”</strong></li>
+</ol>
+<pre><code>  ┌──────────────────────────────────────────────┐
+  │  Protocolo y puertos                          │
+  │                                              │
+  │  ¿Se aplica a TCP o UDP?                     │
+  │  ● TCP                                       │
+  │  ○ UDP                                       │
+  │                                              │
+  │  Puertos locales específicos:                │
+  │  ┌──────────────────┐                        │
+  │  │ 9100, 9101       │  ← Escribí esto       │
+  │  └──────────────────┘                        │
+  │                                              │
+  │                              [Siguiente &gt;]   │
+  └──────────────────────────────────────────────┘</code></pre>
+<h4 id="paso-7-permitir-la-conexión">Paso 7: Permitir la conexión</h4>
+<ol type="1">
+<li>Seleccioná <strong>“Permitir la conexión”</strong> (el primer
+círculo)</li>
+<li>Hacé clic en <strong>“Siguiente”</strong></li>
+</ol>
+<pre><code>  ┌──────────────────────────────────────────────┐
+  │  Acción                                      │
+  │                                              │
+  │  ● Permitir la conexión          ← ESTE     │
+  │  ○ Permitir la conexión si es segura         │
+  │  ○ Bloquear la conexión                      │
+  │                                              │
+  │                              [Siguiente &gt;]   │
+  └──────────────────────────────────────────────┘</code></pre>
+<h4 id="paso-8-elegir-los-perfiles-de-red">Paso 8: Elegir los perfiles
+de red</h4>
+<ol type="1">
+<li><strong>Marcá las tres casillas:</strong> Dominio, Privada y Pública
+<ul>
+<li>“Dominio” = red de la empresa</li>
+<li>“Privada” = tu red casera/oficina</li>
+<li>“Pública” = red pública (Wi-Fi de un café, etc.)</li>
+<li>Al marcar las tres, te asegurás de que funcione en cualquier
+situación</li>
+</ul></li>
+<li>Hacé clic en <strong>“Siguiente”</strong></li>
+</ol>
+<pre><code>  ┌──────────────────────────────────────────────┐
+  │  Perfil                                      │
+  │                                              │
+  │  ☑ Dominio                                   │
+  │  ☑ Privada                                   │
+  │  ☑ Pública                                   │
+  │                                              │
+  │  (marcá las tres)                            │
+  │                                              │
+  │                              [Siguiente &gt;]   │
+  └──────────────────────────────────────────────┘</code></pre>
+<h4 id="paso-9-ponerle-nombre">Paso 9: Ponerle nombre</h4>
+<ol type="1">
+<li>En <strong>“Nombre”</strong>, escribí:
+<strong><code>Printer Bridge</code></strong></li>
+<li>En <strong>“Descripción”</strong> (opcional), escribí:
+<strong><code>Puertos para el sistema de impresión del frigorífico</code></strong></li>
+<li>Hacé clic en <strong>“Finalizar”</strong></li>
+</ol>
+<pre><code>  ┌──────────────────────────────────────────────┐
+  │  Nombre                                      │
+  │                                              │
+  │  Nombre:     ┌──────────────────────┐        │
+  │              │ Printer Bridge       │        │
+  │              └──────────────────────┘        │
+  │                                              │
+  │  Descripción: ┌──────────────────────┐      │
+  │              │ Puertos para el       │      │
+  │              │ sistema de impresión  │      │
+  │              │ del frigorífico       │      │
+  │              └──────────────────────┘        │
+  │                                              │
+  │                              [Finalizar]     │
+  └──────────────────────────────────────────────┘</code></pre>
+<p>¡Listo! La regla está creada. Ahora el Firewall va a permitir que
+lleguen las órdenes de impresión.</p>
+<h4 id="repetí-todo-esto-en-la-otra-pc">Repetí todo esto en la otra
+PC</h4>
+<p><strong>Tenés que hacer los mismos 9 pasos en la PC 2</strong> (la de
+la Datamax).</p>
+<h3 id="cómo-verificar-que-el-firewall-está-bien-configurado">¿Cómo
+verificar que el firewall está bien configurado?</h3>
+<ol type="1">
+<li>En la ventana de “Reglas de entrada”, buscá la regla
+<strong>“Printer Bridge”</strong> en la lista</li>
+<li>Tiene que estar con un <strong>ícono verde</strong> (con un cachito
+verde)</li>
+<li>Si está deshabilitada (ícono gris), hacé clic derecho →
+<strong>“Habilitar regla”</strong></li>
+</ol>
+<h3
+id="alternativa-desactivar-el-firewall-temporalmente-solo-para-probar">Alternativa:
+Desactivar el firewall temporalmente (SOLO para probar)</h3>
+<blockquote>
+<p>⚠️ <strong>NO recomendado para uso normal.</strong> Solo hacelo si
+querés probar rápido y luego volvé a activarlo.</p>
+</blockquote>
+<ol type="1">
+<li>En el Firewall de Windows Defender, hacé clic en <strong>“Activar o
+desactivar el Firewall”</strong> a la izquierda</li>
+<li>Elegí <strong>“Desactivar”</strong> en la red que estés usando</li>
+<li>Probá si funciona</li>
+<li><strong>Volvé a activarlo</strong> cuando termines de probar</li>
+</ol>
+<hr />
+<h2 id="verificar-que-funciona-paso-a-paso">10. Verificar que funciona
+(PASO A PASO)</h2>
+<p>Ahora vamos a verificar que el sistema puede comunicarse con los
+Printer Bridges.</p>
+<h3 id="prueba-desde-el-navegador-la-prueba-real">Prueba desde el
+navegador (LA PRUEBA REAL)</h3>
+<p>Esta es la prueba que importa. Olvidate del ping (ver explicación más
+abajo).</p>
+<h4 id="paso-1-desde-otra-pc-de-la-red">Paso 1: Desde otra PC de la
+red</h4>
+<p>Parate en otra PC que esté en la misma red (por ejemplo, la PC donde
+corre el sistema).</p>
+<h4 id="paso-2-abrí-el-navegador-y-navegá-a-la-ip-del-bridge">Paso 2:
+Abrí el navegador y navegá a la IP del bridge</h4>
+<p>Escribí en la barra de direcciones:</p>
+<pre><code>http://192.168.1.153:9101</code></pre>
+<p><em>(Reemplazá <code>192.168.1.153</code> por la IP real de la PC
+donde instalaste el bridge)</em></p>
+<h4 id="paso-3-verificá-el-resultado">Paso 3: Verificá el resultado</h4>
+<ul>
+<li>✅ <strong>Se abre el panel de control del Printer Bridge</strong> →
+¡Todo bien! El sistema puede comunicarse con esa PC.</li>
+<li>❌ <strong>No se abre, se queda cargando o da error</strong> → Hay
+un problema. Verificá:
+<ol type="1">
+<li>¿La IP es correcta? (ejecutá <code>ipconfig</code> en la PC del
+bridge)</li>
+<li>¿El firewall está configurado? (ver sección 9)</li>
+<li>¿El bridge está corriendo? (¿la ventana negra de
+<code>start.bat</code> está abierta?)</li>
+<li>¿Ambas PCs están en la misma red?</li>
+</ol></li>
+</ul>
+<p>Hacé lo mismo para la otra PC:</p>
+<pre><code>http://192.168.1.20:9101</code></pre>
+<p><em>(Con la IP de la PC 2)</em></p>
+<h3 id="y-el-ping">¿Y el ping?</h3>
+<blockquote>
+<p><strong>IMPORTANTE: Que el ping no funcione es TOTALMENTE
+NORMAL.</strong></p>
+</blockquote>
+<p>El <code>ping</code> es otra forma de verificar si una PC es
+alcanzable, pero <strong>Windows Firewall bloquea el ping por
+defecto</strong> (bloquea un protocolo llamado ICMP). Así que es muy
+probable que al hacer ping te dé error aunque todo funcione
+perfectamente.</p>
+<pre><code>  Ejemplo de lo que vas a ver:
 
-  <h3>7.1 Probar desde el Disenador de Etiquetas</h3>
-  <ol>
-    <li>Ir a <strong>Configuracion - Rotulos</strong> (o Disenador de Etiquetas)</li>
-    <li>Seleccionar la plantilla de <strong>Media Res</strong></li>
-    <li>Verificar que el tipo de impresora sea <strong>ZEBRA</strong></li>
-    <li>Hacer clic en <strong>"Imprimir"</strong> o <strong>"Probar"</strong></li>
-    <li>Seleccionar la impresora <strong>Zebra ZT230 - Rotulos</strong></li>
-    <li>La etiqueta deberia salir por la Zebra</li>
-  </ol>
+  C:\&gt; ping 192.168.1.153
 
-  <h3>7.2 Impresion automatica desde los modulos de trabajo</h3>
-  <p>Cuando los operadores usan Ingreso a Cajon, Romaneo, VB Romaneo, etc., la impresion es automatica. El sistema:</p>
-  <ol>
-    <li>Toma la plantilla asignada (Media Res, Cuarto, etc.)</li>
-    <li>Reemplaza las variables con datos reales: tropa, garroon, peso, fecha, etc.</li>
-    <li>Envia los datos por red a la impresora correspondiente</li>
-    <li>La impresora imprime la etiqueta</li>
-  </ol>
+  Haciendo ping a 192.168.1.153 con 32 bytes de datos:
+  Tiempo de espera agotado para esta solicitud.
+  Tiempo de espera agotado para esta solicitud.
+  Tiempo de espera agotado para esta solicitud.
+  Tiempo de espera agotado para esta solicitud.
 
-  <h3>7.3 Si no imprime desde el sistema pero si desde el panel</h3>
-  <ol>
-    <li><strong>Verifica la IP</strong> en Configuracion - Impresoras vs la IP real de la PC</li>
-    <li><strong>Hace ping</strong> desde la PC del sistema a la IP de la impresora</li>
-    <li><strong>Verifica el firewall</strong> (seccion 5) en la PC con la impresora</li>
-    <li><strong>Verifica que el bridge este corriendo</strong> (ventana negra abierta)</li>
-  </ol>
-</div>
+  Estadísticas de ping para 192.168.1.153:
+      Paquetes: enviados = 4, recibidos = 0, perdidos = 4 (100% perdidos)
 
-<div class="section">
-  <h2>8. Para que arranque solo con Windows (opcional)</h2>
-  <p>Si no queres abrir <code>start.bat</code> a mano cada vez, instala el Printer Bridge como un <strong>Servicio de Windows</strong>. Los servicios arrancan automaticamente cuando encendes la PC.</p>
 
-  <h3>8.1 Instalar como servicio</h3>
-  <ol>
-    <li>Ir a <code>C:\SolemarAlimentaria\printer-bridge\</code></li>
-    <li><strong>Clic derecho</strong> en <code>install-service.bat</code></li>
-    <li>Clic en <strong>"Ejecutar como administrador"</strong></li>
-    <li>Esperar a que termine (1-2 minutos)</li>
-    <li>Deberia decir <strong>"Servicio instalado"</strong></li>
-  </ol>
-  <div class="note"><strong>Solo se hace UNA VEZ.</strong> Despues arranca solo con cada reinicio.</div>
+  ...PERO el navegador SÍ puede abrir http://192.168.1.153:9101
 
-  <h3>8.2 Verificar</h3>
-  <ol>
-    <li>Inicio - escribir <code>servicios</code> - "Ver servicios locales"</li>
-    <li>Buscar <strong>"PrinterBridge"</strong> - Estado: <strong>"En ejecucion"</strong></li>
-  </ol>
-
-  <h3>8.3 Comandos utiles (CMD como admin)</h3>
-  <pre>net stop PrinterBridge    Detener
-net start PrinterBridge   Iniciar</pre>
-
-  <h3>8.4 Desinstalar</h3>
-  <ol>
-    <li>Clic derecho en <code>uninstall-service.bat</code> - "Ejecutar como administrador"</li>
-  </ol>
-</div>
-
-<div class="section">
-  <h2>9. Solucion de problemas</h2>
-
-  <h3>"No imprime nada"</h3>
-  <table>
-    <thead><tr><th>Paso</th><th>Que hacer</th></tr></thead>
-    <tbody>
-      <tr><td>1</td><td>El bridge esta corriendo? Busca la ventana negra de <code>start.bat</code>. Si no esta, abrilo.</td></tr>
-      <tr><td>2</td><td>La impresora esta encendida? Verifica la luz. Si esta apagada, prendela y esperá 1 minuto.</td></tr>
-      <tr><td>3</td><td>Tiene etiquetas? Verifica la bobina de papel.</td></tr>
-      <tr><td>4</td><td>La prueba del panel funciona? Abri <code>http://localhost:9101</code> y proba.</td></tr>
-      <tr><td>5</td><td>Reinicia todo: cerrar bridge, apagar impresora, esperar 10 seg, prender, abrir bridge.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>"Error al conectar" desde el sistema</h3>
-  <table>
-    <thead><tr><th>Paso</th><th>Que hacer</th></tr></thead>
-    <tbody>
-      <tr><td>1</td><td>Verifica la IP. Tiene que ser EXACTAMENTE la de la PC con la impresora. Ejecuta <code>ipconfig</code>.</td></tr>
-      <tr><td>2</td><td>Hace ping: <code>ping 192.168.1.10</code> desde la PC del sistema.</td></tr>
-      <tr><td>3</td><td>Firewall: verifica que abriste los puertos 9100 y 9101 (seccion 5).</td></tr>
-      <tr><td>4</td><td>Ambas PCs en el mismo router? Verifica los cables o conexiones WiFi.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>"La IP de la PC cambio"</h3>
-  <p>Si la PC se conecta por WiFi, la IP puede cambiar. Soluciones:</p>
-  <ol>
-    <li>Entra al router (<code>http://192.168.1.1</code>) y busca "Reserva DHCP" para asignar una IP fija</li>
-    <li>O conecta la PC por cable en vez de WiFi</li>
-  </ol>
-
-  <h3>"Puerto 9100 ya esta en uso"</h3>
-  <p>Ya hay otra instancia del bridge corriendo. Cierra todas las ventanas de <code>start.bat</code> y abri solo una.</p>
-
-  <h3>"Sale etiqueta en blanco"</h3>
-  <ul>
-    <li>Verifica que la <strong>marca</strong> sea correcta (ZEBRA para Zebra, DATAMAX para Datamax)</li>
-    <li>Verifica que la plantilla sea del tipo correcto (ZPL para Zebra, DPL para Datamax)</li>
-  </ul>
-
-  <h3>"La etiqueta sale cortada o mal alineada"</h3>
-  <ul>
-    <li>Verifica que el <strong>ancho y alto</strong> coincidan con el papel fisico</li>
-    <li>Medi las etiquetas con una regla y actualiza los valores en Configuracion - Impresoras</li>
-    <li>Ancho estandar: 100mm (4 pulgadas), Alto: 50mm o 25mm</li>
-  </ul>
-</div>
-
-<div class="section">
-  <h2>10. Checklist de verificacion final</h2>
-
-  <h3>PC 1 - Donde esta la Zebra ZT230</h3>
-  <ul class="checklist">
-    <li>Windows 10/11 funcionando</li>
-    <li>Node.js instalado (<code>node --version</code> muestra un numero)</li>
-    <li>Zebra ZT230 conectada por USB y encendida</li>
-    <li>Driver de la Zebra instalado (aparece en "Impresoras y escaneres")</li>
-    <li>Archivos del printer-bridge copiados</li>
-    <li><code>install.bat</code> ejecutado correctamente</li>
-    <li><code>start.bat</code> corriendo (ventana negra abierta)</li>
-    <li>Prueba de impresion exitosa desde http://localhost:9101</li>
-    <li>IP de esta PC anotada (ej: 192.168.1.10)</li>
-    <li>Puertos 9100 y 9101 abiertos en el Firewall</li>
-    <li>Desde la PC del sistema se puede hacer ping a esta IP</li>
-  </ul>
-
-  <h3>PC 2 - Donde esta la Datamax Mark II 4206</h3>
-  <ul class="checklist">
-    <li>Windows 10/11 funcionando</li>
-    <li>Node.js instalado</li>
-    <li>Datamax 4206 conectada por USB y encendida</li>
-    <li>Driver de la Datamax instalado</li>
-    <li>Archivos del printer-bridge copiados</li>
-    <li><code>install.bat</code> ejecutado correctamente</li>
-    <li><code>start.bat</code> corriendo (ventana negra abierta)</li>
-    <li>Prueba de impresion exitosa desde http://localhost:9101</li>
-    <li>IP de esta PC anotada (ej: 192.168.1.20)</li>
-    <li>Puertos 9100 y 9101 abiertos en el Firewall</li>
-    <li>Desde la PC del sistema se puede hacer ping a esta IP</li>
-  </ul>
-
-  <h3>Sistema Frigorifico</h3>
-  <ul class="checklist">
-    <li>Zebra ZT230 configurada con IP correcta</li>
-    <li>Datamax 4206 configurada con IP correcta</li>
-    <li>Ambas impresoras marcadas como "Activas"</li>
-    <li>Plantillas asignadas correctamente (Media Res = ZEBRA, Cuarto = DATAMAX)</li>
-    <li>Impresion de prueba exitosa desde el Disenador de Etiquetas</li>
-  </ul>
-
-  <h3>Opcional (recomendado)</h3>
-  <ul class="checklist">
-    <li>Printer Bridge como servicio de Windows (arranque automatico)</li>
-    <li>IPs fijas asignadas en el router (reserva DHCP)</li>
-  </ul>
-
-  <div class="page-footer">
-    Documentacion preparada para Solemar Alimentaria - Sistema Frigorifico
-  </div>
-</div>
-
+  ¿Eso está bien? → ¡SÍ! Es completamente normal.</code></pre>
+<p><strong>No te preocupes por el ping.</strong> La prueba que importa
+es la del <strong>navegador</strong>. Si el navegador puede abrir
+<code>http://IP:9101</code>, todo funciona.</p>
+<h3 id="prueba-final-imprimir-desde-el-sistema">Prueba final: imprimir
+desde el sistema</h3>
+<p>Una vez que verificaste que el navegador puede abrir el panel de
+control, ya podés configurar las impresoras en el sistema (ver sección
+11).</p>
+<hr />
+<h2 id="configurar-las-impresoras-en-el-sistema">11. Configurar las
+impresoras en el sistema</h2>
+<p>Ahora vamos a decirle al sistema del frigorífico dónde están las
+impresoras.</p>
+<h3 id="configurar-la-zebra-zt230-rótulos-de-media-res">Configurar la
+Zebra ZT230 (Rótulos de Media Res)</h3>
+<ol type="1">
+<li>Entrá al sistema del frigorífico</li>
+<li>Andá a <strong>Configuración → Impresoras</strong></li>
+<li>Hacé clic en <strong>“Agregar impresora”</strong> o en el botón
+<strong>“+”</strong></li>
+<li>Completá los datos según esta tabla:</li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th>Campo</th>
+<th>Valor que tenés que poner</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Nombre</strong></td>
+<td><code>Zebra ZT230 - Rótulos</code></td>
+</tr>
+<tr class="even">
+<td><strong>Tipo de rótulo</strong></td>
+<td><code>MEDIA_RES</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Marca</strong></td>
+<td><code>ZEBRA</code></td>
+</tr>
+<tr class="even">
+<td><strong>Modelo</strong></td>
+<td><code>ZT230</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Puerto</strong></td>
+<td><code>RED</code></td>
+</tr>
+<tr class="even">
+<td><strong>Dirección IP</strong></td>
+<td>La IP de la PC 1 (ej: <code>192.168.1.153</code>)</td>
+</tr>
+<tr class="odd">
+<td><strong>Ancho etiqueta</strong></td>
+<td><code>100</code> mm</td>
+</tr>
+<tr class="even">
+<td><strong>Alto etiqueta</strong></td>
+<td><code>50</code> mm</td>
+</tr>
+<tr class="odd">
+<td><strong>DPI</strong></td>
+<td><code>203</code></td>
+</tr>
+<tr class="even">
+<td><strong>Activa</strong></td>
+<td>✅ Sí</td>
+</tr>
+<tr class="odd">
+<td><strong>Predeterminada</strong></td>
+<td>✅ Sí (para tipo MEDIA_RES)</td>
+</tr>
+</tbody>
+</table>
+<ol start="5" type="1">
+<li>Hacé clic en <strong>Guardar</strong></li>
+</ol>
+<h3
+id="configurar-la-datamax-mark-ii-4206-rótulos-de-cuartocaja">Configurar
+la Datamax Mark II 4206 (Rótulos de Cuarto/Caja)</h3>
+<ol type="1">
+<li>En la misma pantalla de <strong>Configuración →
+Impresoras</strong></li>
+<li>Agregá otra impresora:</li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th>Campo</th>
+<th>Valor que tenés que poner</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Nombre</strong></td>
+<td><code>Datamax 4206 - Cuartos</code></td>
+</tr>
+<tr class="even">
+<td><strong>Tipo de rótulo</strong></td>
+<td><code>CUARTO</code> (o el que uses)</td>
+</tr>
+<tr class="odd">
+<td><strong>Marca</strong></td>
+<td><code>DATAMAX</code></td>
+</tr>
+<tr class="even">
+<td><strong>Modelo</strong></td>
+<td><code>Mark II 4206</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Puerto</strong></td>
+<td><code>RED</code></td>
+</tr>
+<tr class="even">
+<td><strong>Dirección IP</strong></td>
+<td>La IP de la PC 2 (ej: <code>192.168.1.20</code>)</td>
+</tr>
+<tr class="odd">
+<td><strong>Ancho etiqueta</strong></td>
+<td><code>100</code> mm</td>
+</tr>
+<tr class="even">
+<td><strong>Alto etiqueta</strong></td>
+<td><code>50</code> mm</td>
+</tr>
+<tr class="odd">
+<td><strong>DPI</strong></td>
+<td><code>203</code></td>
+</tr>
+<tr class="even">
+<td><strong>Activa</strong></td>
+<td>✅ Sí</td>
+</tr>
+<tr class="odd">
+<td><strong>Predeterminada</strong></td>
+<td>✅ Sí (para tipo CUARTO)</td>
+</tr>
+</tbody>
+</table>
+<ol start="3" type="1">
+<li>Hacé clic en <strong>Guardar</strong></li>
+</ol>
+<h3 id="resumen-de-ips">Resumen de IPs</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Impresora</th>
+<th>PC</th>
+<th>IP que ponés en el sistema</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Zebra ZT230</td>
+<td>PC 1</td>
+<td>La IP de la PC 1</td>
+</tr>
+<tr class="even">
+<td>Datamax 4206</td>
+<td>PC 2</td>
+<td>La IP de la PC 2</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Recordá:</strong> La IP es de la PC, NO de la impresora. La
+impresora no tiene IP porque está conectada por USB.</p>
+</blockquote>
+<hr />
+<h2 id="servicio-windows-arranque-automático">12. Servicio Windows
+(arranque automático)</h2>
+<p>Si no querés tener que abrir <code>start.bat</code> cada vez que
+encendés la PC, podés instalar el Printer Bridge como <strong>servicio
+de Windows</strong>. Así se inicia solo cuando prendés la PC, sin que
+tengas que hacer nada.</p>
+<h3 id="instalar-como-servicio">Instalar como servicio</h3>
+<ol type="1">
+<li>Buscá el archivo <code>install-service.bat</code> en la carpeta
+<code>C:\SolemarAlimentaria\printer-bridge\</code></li>
+<li>Hacé <strong>clic derecho</strong> sobre
+<code>install-service.bat</code></li>
+<li>Elegí <strong>“Ejecutar como administrador”</strong></li>
+<li>Si pregunta “¿Querés permitir que esta app haga cambios?”, hacé clic
+en <strong>“Sí”</strong></li>
+<li>Esperá a que termine el proceso (tarda un ratito, puede que baje
+cosas de internet)</li>
+<li>Cuando diga “SERVICIO INSTALADO”, listo</li>
+</ol>
+<blockquote>
+<p><strong>Nota:</strong> Si ya tenías <code>start.bat</code> corriendo,
+podés cerrar esa ventana. El servicio lo reemplaza.</p>
+</blockquote>
+<h3 id="verificar-que-está-corriendo">Verificar que está corriendo</h3>
+<ol type="1">
+<li>Presioná <strong>Windows + R</strong></li>
+<li>Escribí <code>services.msc</code> y presioná Enter</li>
+<li>Se abre la ventana de “Servicios”</li>
+<li>Buscá en la lista <strong>“PrinterBridge”</strong></li>
+<li>El estado debería decir <strong>“En ejecución”</strong> y el tipo de
+inicio <strong>“Automático”</strong></li>
+</ol>
+<pre><code>  Nombre                Estado        Tipo de inicio
+  ──────────────────────────────────────────────────────
+  ...
+  PrinterBridge         En ejecución  Automático     ← Tiene que verse así
+  ...</code></pre>
+<h3 id="comandos-útiles-ejecutar-en-cmd-como-administrador">Comandos
+útiles (ejecutar en CMD como administrador)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Comando</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>net stop PrinterBridge</code></td>
+<td>Detener el servicio</td>
+</tr>
+<tr class="even">
+<td><code>net start PrinterBridge</code></td>
+<td>Iniciar el servicio</td>
+</tr>
+<tr class="odd">
+<td><code>sc query PrinterBridge</code></td>
+<td>Ver si está corriendo</td>
+</tr>
+</tbody>
+</table>
+<h3 id="desinstalar-el-servicio">Desinstalar el servicio</h3>
+<p>Si alguna vez necesitás sacarlo:</p>
+<ol type="1">
+<li>Clic derecho en <code>uninstall-service.bat</code></li>
+<li><strong>“Ejecutar como administrador”</strong></li>
+<li>Esperá a que termine</li>
+</ol>
+<hr />
+<h2 id="solución-de-problemas">13. Solución de problemas</h2>
+<h3 id="no-imprime-nada">“No imprime nada”</h3>
+<p>Seguí este checklist en orden:</p>
+<ol type="1">
+<li><strong>¿El bridge está corriendo?</strong>
+<ul>
+<li>Si usás <code>start.bat</code>: la ventana negra tiene que estar
+abierta</li>
+<li>Si usás servicio: verificá en “Servicios” que PrinterBridge esté “En
+ejecución”</li>
+<li>Si no está corriendo, ejecutá <code>start.bat</code> o iniciá el
+servicio</li>
+</ul></li>
+<li><strong>¿La impresora está prendida?</strong>
+<ul>
+<li>Fijate que la luz de la impresora esté prendida</li>
+<li>Verificá que tenga etiquetas cargadas</li>
+<li>Fijate que no tenga pilas de luz parpadeando (error)</li>
+</ul></li>
+<li><strong>¿La impresora está bien conectada por USB?</strong>
+<ul>
+<li>Desconectá el cable USB y volvelo a conectar</li>
+<li>Probá otro puerto USB de la PC</li>
+<li>Fijate que el cable no esté dañado</li>
+</ul></li>
+<li><strong>¿Funciona la prueba desde el panel web?</strong>
+<ul>
+<li>Abrí <code>http://localhost:9101</code> en la PC con la
+impresora</li>
+<li>Hacé clic en “Imprimir prueba”</li>
+<li><strong>Si acá funciona</strong> pero desde el sistema no → es
+problema de red/firewall</li>
+<li><strong>Si acá tampoco funciona</strong> → es problema de la
+impresora (driver, conexión USB)</li>
+</ul></li>
+<li><strong>¿La IP en el sistema es correcta?</strong>
+<ul>
+<li>Ejecutá <code>ipconfig</code> en la PC del bridge</li>
+<li>Verificá que la IP en el sistema coincida con la IP real de la
+PC</li>
+</ul></li>
+<li><strong>¿El firewall está configurado?</strong>
+<ul>
+<li>Verificá que creaste la regla “Printer Bridge” (ver sección 9)</li>
+<li>Verificá que la regla esté habilitada (ícono verde)</li>
+</ul></li>
+</ol>
+<h3 id="error-al-conectar-desde-el-sistema">“Error al conectar” (desde
+el sistema)</h3>
+<p>El sistema no puede llegar al Printer Bridge. Verificá:</p>
+<ol type="1">
+<li><p><strong>IP correcta:</strong> Ejecutá <code>ipconfig</code> en la
+PC del bridge y verificá que coincida con lo que pusiste en el
+sistema</p></li>
+<li><p><strong>Firewall:</strong> ¿Creaste la regla? (ver sección 9).
+Hacé la prueba del navegador: abrí
+<code>http://IP-DEL-BRIDGE:9101</code> desde otra PC</p></li>
+<li><p><strong>Red:</strong> ¿Ambas PCs están en el mismo
+router/switch?</p></li>
+<li><p><strong>Bridge corriendo:</strong> ¿El bridge está funcionando?
+(¿ventana negra abierta o servicio corriendo?)</p></li>
+</ol>
+<h3
+id="ping-no-funciona-host-unreachable-tiempo-de-espera-agotado">“Ping no
+funciona” / “Host unreachable” / “Tiempo de espera agotado”</h3>
+<blockquote>
+<p><strong>ESTO ES NORMAL. No te preocupes.</strong></p>
+</blockquote>
+<p>Windows Firewall <strong>bloquea el ping por defecto</strong>. El
+ping puede dar “host unreachable”, “tiempo de espera agotado” o “Request
+timed out” y aún así todo funcionar perfectamente.</p>
+<p><strong>La prueba real es el navegador, no el ping.</strong></p>
+<p>Si abrís <code>http://IP:9101</code> en el navegador y se abre el
+panel, todo funciona. El ping es irrelevante.</p>
+<p>Si querés que el ping funcione (no es necesario), tendrías que crear
+otra regla en el firewall para permitir ICMP. Pero no hace falta.</p>
+<h3 id="puerto-9100-ya-está-en-uso-eaddrinuse">“Puerto 9100 ya está en
+uso” / “EADDRINUSE”</h3>
+<p>Significa que ya hay otro programa usando ese puerto en la PC.
+Probablemente el bridge ya está corriendo.</p>
+<ol type="1">
+<li>Cerrá la ventana de <code>start.bat</code> si está abierta</li>
+<li>O detené el servicio: <code>net stop PrinterBridge</code></li>
+<li>Esperá unos segundos</li>
+<li>Volvé a iniciar</li>
+</ol>
+<p>Si persiste, verificá qué está usando el puerto:</p>
+<ol type="1">
+<li>Abrí CMD</li>
+<li>Escribí: <code>netstat -ano | findstr :9100</code></li>
+<li>Si aparece un número en la última columna (PID), ese es el proceso
+que lo está usando</li>
+<li>Para ver qué proceso es: abrí el <strong>Administrador de
+tareas</strong> → Details → buscá el PID</li>
+</ol>
+<h3
+id="no-detecta-la-impresora-en-el-panel-web-o-durante-la-instalación">“No
+detecta la impresora” (en el panel web o durante la instalación)</h3>
+<ol type="1">
+<li>Verificá que la impresora esté en <strong>Panel de Control →
+Dispositivos e Impresoras</strong> (o Configuración → Bluetooth y
+dispositivos → Impresoras y escáneres)</li>
+<li>Si no aparece:
+<ul>
+<li>Desconectá y volvé a conectar el cable USB</li>
+<li>Reiniciá la PC</li>
+<li>Instalá el driver de la impresora (ver sección 6)</li>
+</ul></li>
+<li>Si aparece con un triángulo amarillo: hay un problema con el driver.
+Desinstalá la impresora y volvé a instalar el driver</li>
+</ol>
+<h3 id="la-impresora-hace-ruido-pero-sale-etiqueta-en-blanco">“La
+impresora hace ruido pero sale etiqueta en blanco”</h3>
+<p>La impresora recibe la orden pero no imprime nada. Probablemente es
+un problema de calor o densidad de impresión:</p>
+<ol type="1">
+<li>Verificá que no se terminó el ribbon (cinta de transferencia
+térmica)</li>
+<li>Probá aumentar la densidad en la configuración de la impresora</li>
+<li>Si usás plantillas ZPL, el comando <code>~SD</code> controla la
+densidad (valores de 0 a 30). Probá <code>~SD20</code></li>
+</ol>
+<h3 id="la-etiqueta-sale-cortada-o-mal-alineada">“La etiqueta sale
+cortada o mal alineada”</h3>
+<ol type="1">
+<li><strong>Verificá que el tamaño de etiqueta en el sistema coincida
+con el papel físico:</strong></li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th>Papel físico</th>
+<th>En el sistema</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>100 mm de ancho</td>
+<td>Ancho: 100 mm</td>
+</tr>
+<tr class="even">
+<td>50 mm de alto</td>
+<td>Alto: 50 mm</td>
+</tr>
+<tr class="odd">
+<td>25 mm de alto</td>
+<td>Alto: 25 mm</td>
+</tr>
+</tbody>
+</table>
+<ol start="2" type="1">
+<li>Verificá que los <strong>sensores</strong> de la impresora estén
+limpios (los que detectan el inicio de la etiqueta)</li>
+<li>Calibrá la impresora (generalmente manteniendo presionado el botón
+de “Feed” por unos segundos)</li>
+</ol>
+<h3 id="no-imprime-después-de-reiniciar-la-pc">“No imprime después de
+reiniciar la PC”</h3>
+<ol type="1">
+<li>Si usás <code>start.bat</code>: tenés que ejecutarlo de nuevo
+después de reiniciar. Instalá el servicio (sección 12) para que sea
+automático</li>
+<li>Si usás servicio: verificá que el servicio esté “En ejecución” en la
+ventana de Servicios</li>
+<li>Si la PC obtiene IP por DHCP, la IP puede haber cambiado. Ejecutá
+<code>ipconfig</code> y verificá que coincida con lo que hay en el
+sistema</li>
+</ol>
+<hr />
+<h2 id="preguntas-frecuentes">14. Preguntas frecuentes</h2>
+<h3 id="la-impresora-necesita-cable-de-red">¿La impresora necesita cable
+de red?</h3>
+<p><strong>NO.</strong> La impresora se conecta a la PC con
+<strong>cable USB</strong> (el chato). No conectes un cable de red a la
+impresora.</p>
+<pre><code>  Impresora ──cable USB──▶ PC ──cable de red──▶ Router
+                (sí)                 (sí)
+  Impresora ──cable de red──▶ Router  ← NO, esto no</code></pre>
+<h3 id="la-impresora-tiene-su-propia-dirección-ip">¿La impresora tiene
+su propia dirección IP?</h3>
+<p><strong>NO.</strong> Como la impresora está conectada por USB (no por
+red), no tiene una IP propia. La IP que necesitás es la de la
+<strong>PC</strong> donde está enchufada la impresora.</p>
+<h3 id="puedo-usar-wi-fi-en-lugar-de-cable-de-red">¿Puedo usar Wi-Fi en
+lugar de cable de red?</h3>
+<p><strong>Sí, podés.</strong> Si la PC está conectada por Wi-Fi a la
+red del frigorífico, funciona igual. Pero cable de red es más estable y
+recomendado:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>Cable de red</th>
+<th>Wi-Fi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Velocidad</td>
+<td>Más rápida</td>
+<td>Más lenta</td>
+</tr>
+<tr class="even">
+<td>Estabilidad</td>
+<td>Muy estable</td>
+<td>Puede fluctuar</td>
+</tr>
+<tr class="odd">
+<td>Recomendado</td>
+<td>✅ Sí</td>
+<td>Funciona, pero no es ideal</td>
+</tr>
+</tbody>
+</table>
+<h3 id="el-ping-tiene-que-funcionar-para-que-imprima">¿El ping tiene que
+funcionar para que imprima?</h3>
+<p><strong>NO.</strong> Es completamente normal que el ping no funcione.
+Windows bloquea el ping por defecto. Lo que importa es que el navegador
+pueda abrir <code>http://IP:9101</code>.</p>
+<h3 id="se-pierde-la-ip-si-reinicio-la-pc">¿Se pierde la IP si reinicio
+la PC?</h3>
+<p><strong>Puede pasar, sí.</strong> Si la PC tiene configuración
+automática (DHCP), el router le puede asignar una IP distinta después de
+reiniciar. Esto es normal.</p>
+<p><strong>¿Qué hacer?</strong></p>
+<ul>
+<li>La opción fácil: Si un día no imprime, ejecutá <code>ipconfig</code>
+en la PC del bridge, verificá la nueva IP y actualizala en el
+sistema</li>
+<li>La opción pro: Configurar una IP fija en Windows para que no cambie
+nunca (consultá con soporte si querés hacer esto)</li>
+</ul>
+<h3 id="puedo-tener-ambas-impresoras-en-la-misma-pc">¿Puedo tener ambas
+impresoras en la misma PC?</h3>
+<p><strong>Sí, pero no es lo ideal.</strong> Podés instalar el Printer
+Bridge una vez por PC, y cada bridge maneja una sola impresora. Si tenés
+dos impresoras en la misma PC, necesitarías configurar algo distinto.
+Consultá con soporte.</p>
+<h3 id="qué-pasa-si-cierro-la-ventana-negra-de-start.bat">¿Qué pasa si
+cierro la ventana negra de start.bat?</h3>
+<p>El bridge se deja de running y no se imprime nada más. Tenés que
+volver a ejecutar <code>start.bat</code> o mejor, instalá el servicio
+para que no tengas que preocuparte (ver sección 12).</p>
+<h3 id="puedo-apagar-la-impresora">¿Puedo apagar la impresora?</h3>
+<p><strong>Sí, podés.</strong> Pero obviamente mientras esté apagada no
+va a imprimir. Cuando la prendas de nuevo, el bridge va a seguir
+funcionando e intentará imprimir lo que llegue.</p>
+<hr />
+<h2 id="checklist-final">15. Checklist final</h2>
+<p>Usá esta lista para verificar que todo está bien hecho. Marcá cada
+item con un ✅ cuando lo termines.</p>
+<h3 id="pc-1-zebra-zt230">PC 1 — Zebra ZT230</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Cable USB conectado entre la Zebra y
+la PC</label></li>
+<li><label><input type="checkbox" />Zebra prendida y con
+etiquetas</label></li>
+<li><label><input type="checkbox" />Zebra aparece en “Dispositivos e
+Impresoras” de Windows</label></li>
+<li><label><input type="checkbox" />Node.js instalado
+(<code>node --version</code> muestra un número)</label></li>
+<li><label><input type="checkbox" />Driver de la Zebra
+instalado</label></li>
+<li><label><input type="checkbox" />PC conectada a la red (mismo router
+que las otras PCs)</label></li>
+<li><label><input type="checkbox" />Archivos del printer-bridge copiados
+a la PC</label></li>
+<li><label><input type="checkbox" /><code>install.bat</code> ejecutado
+(nombre de impresora correcto)</label></li>
+<li><label><input type="checkbox" />IP de la PC anotada:
+<code>_____._____._____._____</code></label></li>
+<li><label><input type="checkbox" /><code>start.bat</code> corriendo
+(ventana negra abierta) <strong>O</strong> servicio
+instalado</label></li>
+<li><label><input type="checkbox" />Prueba de impresión exitosa desde
+<code>http://localhost:9101</code></label></li>
+<li><label><input type="checkbox" />Firewall configurado (regla “Printer
+Bridge” creada y habilitada)</label></li>
+<li><label><input type="checkbox" />Prueba desde otra PC:
+<code>http://IP-PC1:9101</code> se abre en el navegador</label></li>
+</ul>
+<h3 id="pc-2-datamax-mark-ii-4206">PC 2 — Datamax Mark II 4206</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Cable USB conectado entre la Datamax
+y la PC</label></li>
+<li><label><input type="checkbox" />Datamax prendida y con
+etiquetas</label></li>
+<li><label><input type="checkbox" />Datamax aparece en “Dispositivos e
+Impresoras” de Windows</label></li>
+<li><label><input type="checkbox" />Node.js instalado
+(<code>node --version</code> muestra un número)</label></li>
+<li><label><input type="checkbox" />Driver de la Datamax
+instalado</label></li>
+<li><label><input type="checkbox" />PC conectada a la red (mismo router
+que las otras PCs)</label></li>
+<li><label><input type="checkbox" />Archivos del printer-bridge copiados
+a la PC</label></li>
+<li><label><input type="checkbox" /><code>install.bat</code> ejecutado
+(nombre de impresora correcto)</label></li>
+<li><label><input type="checkbox" />IP de la PC anotada:
+<code>_____._____._____._____</code></label></li>
+<li><label><input type="checkbox" /><code>start.bat</code> corriendo
+(ventana negra abierta) <strong>O</strong> servicio
+instalado</label></li>
+<li><label><input type="checkbox" />Prueba de impresión exitosa desde
+<code>http://localhost:9101</code></label></li>
+<li><label><input type="checkbox" />Firewall configurado (regla “Printer
+Bridge” creada y habilitada)</label></li>
+<li><label><input type="checkbox" />Prueba desde otra PC:
+<code>http://IP-PC2:9101</code> se abre en el navegador</label></li>
+</ul>
+<h3 id="sistema-del-frigorífico">Sistema del Frigorífico</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Zebra ZT230 configurada
+(Configuración → Impresoras → RED → IP de la PC 1)</label></li>
+<li><label><input type="checkbox" />Datamax 4206 configurada
+(Configuración → Impresoras → RED → IP de la PC 2)</label></li>
+<li><label><input type="checkbox" />Plantillas asignadas correctamente
+(Media Res → Zebra, Cuarto → Datamax)</label></li>
+<li><label><input type="checkbox" />Prueba de impresión real desde el
+sistema exitosa</label></li>
+</ul>
+<h3 id="notas">Notas</h3>
+<table>
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 26%" />
+<col style="width: 20%" />
+<col style="width: 13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>PC</th>
+<th>Impresora</th>
+<th>IP anotada</th>
+<th>Bridge corriendo</th>
+<th>Firewall OK</th>
+<th>Imprime</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PC 1</td>
+<td>Zebra ZT230</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>PC 2</td>
+<td>Datamax 4206</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="datos-de-contacto">Datos de contacto</h2>
+<p>Si tenés algún problema que no lográs resolver con esta guía,
+contactá a soporte:</p>
+<ul>
+<li><strong>Soporte técnico:</strong> (número o email de soporte)</li>
+<li><strong>Horario:</strong> (horario de atención)</li>
+</ul>
+<hr />
+<p><em>Instructivo preparado para Solemar Alimentaria — Sistema
+Frigorífico</em> <em>Última actualización: Enero 2025</em></p>
 </body>
 </html>
