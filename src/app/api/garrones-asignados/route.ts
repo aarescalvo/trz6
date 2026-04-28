@@ -11,29 +11,67 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const fecha = searchParams.get('fecha')
+    const listaId = searchParams.get('listaId')
     
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
     
     const fechaFiltro = fecha ? new Date(fecha) : hoy
 
+    // Construir filtro
+    const whereClause: any = {
+      horaIngreso: {
+        gte: fechaFiltro,
+        lt: new Date(fechaFiltro.getTime() + 24 * 60 * 60 * 1000)
+      }
+    }
+    
+    // Si se pasa listaId, filtrar por esa lista
+    if (listaId) {
+      whereClause.listaFaenaId = listaId
+    }
+
     // Buscar asignaciones de garrones del día
     const asignaciones = await db.asignacionGarron.findMany({
-      where: {
-        horaIngreso: {
-          gte: fechaFiltro,
-          lt: new Date(fechaFiltro.getTime() + 24 * 60 * 60 * 1000)
-        }
-      },
+      where: whereClause,
       include: {
         animal: {
           include: {
             tropa: true,
             pesajeIndividual: true
           }
+        },
+        listaFaena: {
+          select: {
+            id: true,
+            numero: true,
+            fecha: true,
+            estado: true
+          }
         }
       },
       orderBy: { garron: 'asc' }
+    })
+
+    // Obtener info de la lista de faena (si hay asignaciones)
+    let listaFaenaInfo: { id: string; numero: number; fecha: Date; estado: string } | null = null
+    if (asignaciones.length > 0 && asignaciones[0].listaFaena) {
+      const lf = asignaciones[0].listaFaena
+      listaFaenaInfo = { id: lf.id, numero: lf.numero, fecha: lf.fecha, estado: lf.estado }
+    }
+
+    // Obtener todas las listas disponibles del día para el dropdown
+    const listasDisponibles = await db.listaFaena.findMany({
+      where: {
+        estado: { in: ['ABIERTA', 'EN_PROCESO', 'CERRADA'] },
+        tropas: { some: {} },
+        fecha: {
+          gte: fechaFiltro,
+          lt: new Date(fechaFiltro.getTime() + 7 * 24 * 60 * 60 * 1000)
+        }
+      },
+      select: { id: true, numero: true, fecha: true, estado: true },
+      orderBy: { numero: 'desc' }
     })
 
     // Formatear respuesta usando los campos del schema
@@ -53,7 +91,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data
+      data,
+      listaFaena: listaFaenaInfo,
+      listasDisponibles
     })
 
   } catch (error) {

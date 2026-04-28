@@ -10,16 +10,21 @@ export async function GET(request: NextRequest) {
   const authError = await checkPermission(request, 'puedeListaFaena')
   if (authError) return authError
   try {
-    log.info('[garrones-lista] Buscando lista de faena activa...')
+    const { searchParams } = new URL(request.url)
+    const listaIdParam = searchParams.get('listaId')
 
-    // Buscar la lista de faena más reciente con tropas asignadas
-    const listaFaena = await db.listaFaena.findFirst({
-      where: {
-        estado: { in: ['ABIERTA', 'EN_PROCESO', 'CERRADA'] },
-        tropas: {
-          some: {}
+    log.info('[garrones-lista] Buscando lista de faena activa...', { listaIdParam })
+
+    // Si se pasa listaId, usar esa lista específica
+    const whereClause: any = listaIdParam
+      ? { id: listaIdParam }
+      : {
+          estado: { in: ['ABIERTA', 'EN_PROCESO', 'CERRADA'] },
+          tropas: { some: {} }
         }
-      },
+
+    const listaFaena = await db.listaFaena.findFirst({
+      where: whereClause,
       include: {
         tropas: {
           include: {
@@ -128,6 +133,7 @@ export async function GET(request: NextRequest) {
       data: {
         listaId: listaFaena.id,
         listaNumero: listaFaena.numero,
+        listaFecha: listaFaena.fecha,
         listaEstado: listaFaena.estado,
         garrones,
         proximoGarron,

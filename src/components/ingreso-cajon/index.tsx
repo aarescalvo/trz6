@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -147,6 +148,9 @@ export function IngresoCajonModule({ operador }: { operador: Operador }) {
   const [totalAsignados, setTotalAsignados] = useState(0)
   const [totalPendientes, setTotalPendientes] = useState(0)
   const [listaFaenaId, setListaFaenaId] = useState<string | null>(null)
+  const [listaFaenaNumero, setListaFaenaNumero] = useState<number | null>(null)
+  const [listaFaenaFecha, setListaFaenaFecha] = useState<string | null>(null)
+  const [listasDisponibles, setListasDisponibles] = useState<{id: string; numero: number; fecha: string; estado: string}[]>([])
   const [garronesAsignados, setGarronesAsignados] = useState<GarronAsignado[]>([])
   
   // Estado
@@ -192,22 +196,44 @@ export function IngresoCajonModule({ operador }: { operador: Operador }) {
   }
 
   // Obtener garrones ordenados con tropa asignada
-  const fetchData = async () => {
+  const fetchData = async (listaIdOverride?: string | null) => {
     setLoading(true)
     try {
-      const [garronesRes, asignacionesRes] = await Promise.all([
-        fetch('/api/lista-faena/garrones'),
-        fetch('/api/garrones-asignados')
+      const listaQueryParam = listaIdOverride || listaFaenaId
+      const garronesUrl = listaQueryParam 
+        ? `/api/lista-faena/garrones?listaId=${listaQueryParam}` 
+        : '/api/lista-faena/garrones'
+      const [garronesRes, asignacionesRes, listasRes] = await Promise.all([
+        fetch(garronesUrl),
+        fetch('/api/garrones-asignados'),
+        fetch('/api/lista-faena')
       ])
       
       const garronesData = await garronesRes.json()
       const asignacionesData = await asignacionesRes.json()
+      const listasData = await listasRes.json()
+      
+      // Cargar listas disponibles para el dropdown
+      if (listasData.success) {
+        const listasActivas = listasData.data
+          .filter((l: any) => ['ABIERTA', 'EN_PROCESO', 'CERRADA'].includes(l.estado))
+          .map((l: any) => ({
+            id: l.id,
+            numero: l.numero,
+            fecha: l.fecha,
+            estado: l.estado
+          }))
+          .sort((a: any, b: any) => b.numero - a.numero)
+        setListasDisponibles(listasActivas)
+      }
       
       if (garronesData.success) {
         setGarrones(garronesData.data.garrones || [])
         setTotalAsignados(garronesData.data.totalAsignados || 0)
         setTotalPendientes(garronesData.data.totalPendientes || 0)
         setListaFaenaId(garronesData.data.listaId)
+        setListaFaenaNumero(garronesData.data.listaNumero)
+        setListaFaenaFecha(garronesData.data.listaFecha)
         setProximoGarron(garronesData.data.proximoGarron || 1)
         
         // Encontrar el garrón actual (próximo pendiente)
@@ -234,6 +260,18 @@ export function IngresoCajonModule({ operador }: { operador: Operador }) {
       setNumeroAnimal(newNumber)
       if (newNumber.length >= 1) buscarAnimal(newNumber)
     }
+  }
+
+  // Cambiar lista de faena seleccionada
+  const handleCambiarLista = (nuevoListaId: string) => {
+    fetchData(nuevoListaId)
+  }
+
+  // Formatear fecha
+  const formatearFecha = (fecha: string | null) => {
+    if (!fecha) return ''
+    const d = new Date(fecha)
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
   // Buscar animal por número en la tropa del garrón actual
@@ -540,8 +578,30 @@ export function IngresoCajonModule({ operador }: { operador: Operador }) {
               <h1 className="text-lg font-bold text-white">{textos.tituloModulo}</h1>
               <p className="text-stone-300 text-xs">{textos.subtituloModulo}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={fetchData} className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-7 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              {listaFaenaNumero !== null && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs px-2 py-1 bg-white/10 border-white/20 text-white">
+                    Lista N° <span className="font-bold">{String(listaFaenaNumero).padStart(4, '0')}</span>
+                    {listaFaenaFecha && <span className="ml-1 opacity-75">({formatearFecha(listaFaenaFecha)})</span>}
+                  </Badge>
+                  {listasDisponibles.length > 1 && (
+                    <Select value={listaFaenaId || ''} onValueChange={handleCambiarLista}>
+                      <SelectTrigger className="w-[180px] h-7 text-xs bg-white/10 border-white/20 text-white">
+                        <SelectValue placeholder="Cambiar lista" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {listasDisponibles.map((lista) => (
+                          <SelectItem key={lista.id} value={lista.id} className="text-xs">
+                            N° {String(lista.numero).padStart(4, '0')} — {formatearFecha(lista.fecha)} ({lista.estado})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+              <Button variant="outline" size="sm" onClick={() => fetchData()} className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-7 text-xs">
                 <RefreshCw className="w-3 h-3 mr-1" /> Actualizar
               </Button>
               <Badge variant="outline" className="text-sm px-2 py-1 bg-amber-500 border-amber-600 text-white">

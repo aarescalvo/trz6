@@ -113,6 +113,10 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
   const [faenaTerminada, setFaenaTerminada] = useState(false)
   const [modoEdicion, setModoEdicion] = useState(false)
   const [fechaFaena, setFechaFaena] = useState(new Date().toLocaleDateString('es-AR'))
+  const [listaFaenaNumero, setListaFaenaNumero] = useState<number | null>(null)
+  const [listaFaenaFecha, setListaFaenaFecha] = useState<string | null>(null)
+  const [listaFaenaId, setListaFaenaId] = useState<string | null>(null)
+  const [listasDisponibles, setListasDisponibles] = useState<{id: string; numero: number; fecha: string; estado: string}[]>([])
   
   // Datos maestros
   const [tipificadores, setTipificadores] = useState<Tipificador[]>([])
@@ -171,13 +175,17 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (listaIdOverride?: string | null) => {
     setLoading(true)
     try {
+      const listaParam = listaIdOverride || listaFaenaId
+      const garronesUrl = listaParam
+        ? `/api/garrones-asignados?listaId=${listaParam}`
+        : '/api/garrones-asignados'
       const [tipRes, camRes, garronesRes] = await Promise.all([
         fetch('/api/tipificadores'),
         fetch('/api/camaras'),
-        fetch('/api/garrones-asignados')
+        fetch(garronesUrl)
       ])
       
       const tipData = await tipRes.json()
@@ -202,6 +210,27 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
       if (garronesData.success) {
         setGarronesAsignados(garronesData.data || [])
         setFaenaTerminada(false)
+        
+        // Info de lista de faena
+        if (garronesData.listaFaena) {
+          setListaFaenaNumero(garronesData.listaFaena.numero)
+          setListaFaenaFecha(garronesData.listaFaena.fecha)
+          setListaFaenaId(garronesData.listaFaena.id)
+        } else {
+          setListaFaenaNumero(null)
+          setListaFaenaFecha(null)
+          setListaFaenaId(null)
+        }
+        
+        // Listas disponibles para dropdown
+        if (garronesData.listasDisponibles) {
+          setListasDisponibles(garronesData.listasDisponibles.map((l: any) => ({
+            id: l.id,
+            numero: l.numero,
+            fecha: l.fecha,
+            estado: l.estado
+          })))
+        }
         
         const pendientes = (garronesData.data || []).filter((g: AsignacionGarron) => 
           !g.tieneMediaDer || !g.tieneMediaIzq
@@ -1018,7 +1047,32 @@ export function RomaneoModule({ operador }: { operador: Operador }) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-stone-800">Romaneo - Pesaje de Medias</h1>
-            <p className="text-stone-500 text-xs">Faena: {fechaFaena}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {listaFaenaNumero !== null && (
+                <>
+                  <Badge variant="outline" className="text-xs px-2 py-0.5">
+                    Lista N° <span className="font-bold">{String(listaFaenaNumero).padStart(4, '0')}</span>
+                  </Badge>
+                  <span className="text-stone-500 text-xs">
+                    Faena: {listaFaenaFecha ? new Date(listaFaenaFecha).toLocaleDateString('es-AR') : fechaFaena}
+                  </span>
+                </>
+              )}
+              {listasDisponibles.length > 1 && (
+                <Select value={listaFaenaId || ''} onValueChange={(id) => fetchData(id)}>
+                  <SelectTrigger className="w-[160px] h-7 text-xs">
+                    <SelectValue placeholder="Cambiar lista" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {listasDisponibles.map((lista) => (
+                      <SelectItem key={lista.id} value={lista.id} className="text-xs">
+                        N° {String(lista.numero).padStart(4, '0')} — {new Date(lista.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })} ({lista.estado})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {faenaTerminada && !modoEdicion && (

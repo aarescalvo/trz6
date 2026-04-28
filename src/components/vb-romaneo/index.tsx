@@ -655,7 +655,10 @@ export function VBRomaneoModule({ operador }: Props) {
                           <div>
                             <p className="font-bold text-lg">{fecha.fechaStr}</p>
                             <p className="text-sm text-stone-500">
-                              {fecha.totalAnimales} animales • {fecha.listas.length} lista(s)
+                              {fecha.totalAnimales} animales • {fecha.listas.map((l) => `N°${String(l.numero).padStart(4, '0')}`).join(', ')}
+                            </p>
+                            <p className="text-xs text-stone-400">
+                              {fecha.listas.map((l) => new Date(l.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })).join(' | ')}
                             </p>
                             <div className="flex gap-2 mt-1">
                               {fecha.listas[0]?.tropas.map((t, i) => (
