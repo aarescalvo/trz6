@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
     if (rotulo.tipoImpresora === 'ZEBRA') {
       // ZPL: Agregar cantidad de etiquetas
       contenidoFinal = agregarCantidadZPL(contenidoProcesado, cantidad)
-    } else if (rotulo.tipoImpresora === 'DATAMAX') {
-      // DPL: Agregar cantidad de etiquetas
+    } else if (rotulo.tipoImpresora === 'DATAMAX' || rotulo.tipoImpresora === 'NETTIRA') {
+      // DPL: Agregar cantidad de etiquetas (Nettira usa DPL)
       contenidoFinal = agregarCantidadDPL(contenidoProcesado, cantidad)
     }
 
@@ -194,8 +194,8 @@ function reemplazarVariables(contenido: string, datos: Record<string, any>, tipo
   let resultado = contenido
 
   // Regex según tipo de impresora
-  const regex = tipoImpresora === 'DATAMAX'
-    ? /\{([A-Z_0-9]+)\}/g  // Datamax: {VARIABLE}
+  const regex = tipoImpresora === 'DATAMAX' || tipoImpresora === 'NETTIRA'
+    ? /\{([A-Z_0-9]+)\}/g  // Datamax/Nettira: {VARIABLE}
     : /\{\{([A-Z_0-9]+)\}\}/g  // Zebra: {{VARIABLE}}
 
   resultado = resultado.replace(regex, (match, variable) => {

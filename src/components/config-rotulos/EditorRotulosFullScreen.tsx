@@ -69,6 +69,11 @@ const MODELOS_IMPRESORA = {
     { value: 'MARK_II', label: 'Datamax Mark II (203 DPI)', dpi: 203 },
     { value: 'I-4208', label: 'Datamax I-4208 (203 DPI)', dpi: 203 },
     { value: 'I-4210', label: 'Datamax I-4210 (203 DPI)', dpi: 203 },
+  ],
+  NETTIRA: [
+    { value: 'NTE-200', label: 'Nettira NTE-200 (203 DPI)', dpi: 203 },
+    { value: 'NTE-300', label: 'Nettira NTE-300 (300 DPI)', dpi: 300 },
+    { value: 'NT-3300', label: 'Nettira NT-3300 (300 DPI)', dpi: 300 },
   ]
 }
 
@@ -286,7 +291,7 @@ export function EditorRotulosFullScreen({ rotuloInicial, onGuardar, onVolver }: 
     
     setGuardando(true)
     try {
-      const contenido = tipoImpresora === 'DATAMAX' ? generarDPL() : generarZPL()
+      const contenido = tipoImpresora === 'DATAMAX' || tipoImpresora === 'NETTIRA' ? generarDPL() : generarZPL()
       await onGuardar({
         id: rotuloInicial?.id,
         nombre,
@@ -582,11 +587,11 @@ export function EditorRotulosFullScreen({ rotuloInicial, onGuardar, onVolver }: 
           {/* Código generado */}
           <Card className="border shadow-sm mt-3">
             <CardHeader className="py-2 px-3">
-              <CardTitle className="text-sm">Código {tipoImpresora === 'DATAMAX' ? 'DPL' : 'ZPL'}</CardTitle>
+              <CardTitle className="text-sm">Código {(tipoImpresora === 'DATAMAX' || tipoImpresora === 'NETTIRA') ? 'DPL' : 'ZPL'}</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
               <Textarea
-                value={tipoImpresora === 'DATAMAX' ? generarDPL() : generarZPL()}
+                value={(tipoImpresora === 'DATAMAX' || tipoImpresora === 'NETTIRA') ? generarDPL() : generarZPL()}
                 readOnly
                 className="font-mono text-xs h-32 bg-stone-50"
               />

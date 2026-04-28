@@ -44,6 +44,7 @@ const TIPOS_IMPRESORA = [
 const MARCAS = [
   { value: 'ZEBRA', label: 'Zebra' },
   { value: 'DATAMAX', label: 'Datamax-O Neil' },
+  { value: 'NETTIRA', label: 'Nettira (Datamax)' },
   { value: 'OTRA', label: 'Otra' }
 ]
 

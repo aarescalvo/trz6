@@ -52,6 +52,7 @@ interface Props { operador: Operador }
 const MARCAS = [
   { id: 'ZEBRA', nombre: 'Zebra Technologies', modelos: ['GK420d', 'GK420t', 'ZD420', 'ZT410', 'ZT420'] },
   { id: 'DATAMAX', nombre: 'Datamax-O\'Neil', modelos: ['I-4208', 'I-4212', 'I-4406', 'W-6208', 'W-6308'] },
+  { id: 'NETTIRA', nombre: 'Nettira (Datamax)', modelos: ['NTE-200', 'NTE-300', 'NT-3300'] },
   { id: 'EPSON', nombre: 'Epson', modelos: ['TM-T20', 'TM-T88', 'TM-L90', 'TM-C3500'] },
   { id: 'OTRA', nombre: 'Otra marca', modelos: [] }
 ]

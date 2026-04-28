@@ -43,6 +43,7 @@ const CATEGORIAS_USO = [
 const TIPOS_IMPRESORA = [
   { value: 'ZEBRA', label: 'Zebra (ZPL)', extensiones: ['.zpl', '.prn', '.nlbl'] },
   { value: 'DATAMAX', label: 'Datamax (DPL)', extensiones: ['.dpl'] },
+  { value: 'NETTIRA', label: 'Nettira Label Designer', extensiones: ['.nrx', '.prn'] },
 ]
 
 const MODELOS_IMPRESORA = {
@@ -58,6 +59,12 @@ const MODELOS_IMPRESORA = {
     { value: 'I-4208', label: 'Datamax I-4208 (203 DPI)', dpi: 203, descripcion: 'Industrial' },
     { value: 'I-4210', label: 'Datamax I-4210 (203 DPI)', dpi: 203, descripcion: 'Industrial, alta velocidad' },
     { value: 'OTRO_DATAMAX', label: 'Otra Datamax', dpi: 203, descripcion: 'Otro modelo Datamax' },
+  ],
+  NETTIRA: [
+    { value: 'NTE-200', label: 'Nettira NTE-200 (203 DPI)', dpi: 203, descripcion: 'Datamax con Nettira' },
+    { value: 'NTE-300', label: 'Nettira NTE-300 (300 DPI)', dpi: 300, descripcion: 'Datamax con Nettira, alta resolución' },
+    { value: 'NT-3300', label: 'Nettira NT-3300 (300 DPI)', dpi: 300, descripcion: 'Industrial, alta velocidad' },
+    { value: 'OTRO_NETTIRA', label: 'Otra Nettira', dpi: 203, descripcion: 'Otro modelo con Nettira' },
   ]
 }
 
@@ -320,10 +327,10 @@ OPCIÓN 2 - Exportar ZPL:
     if (!file) return
 
     const extension = file.name.split('.').pop()?.toLowerCase()
-    const extensionesValidas = ['zpl', 'prn', 'dpl', 'nlbl', 'lbl', 'txt']
+    const extensionesValidas = ['zpl', 'prn', 'dpl', 'nlbl', 'lbl', 'nrx', 'txt']
     
     if (!extensionesValidas.includes(extension || '')) {
-      toast.error('El archivo debe ser .zpl, .prn, .nlbl, .lbl, .dpl o .txt')
+      toast.error('El archivo debe ser .zpl, .prn, .nlbl, .lbl, .nrx, .dpl o .txt')
       return
     }
 
@@ -331,6 +338,10 @@ OPCIÓN 2 - Exportar ZPL:
     if (extension === 'dpl') {
       setTipoImpresora('DATAMAX')
       setModeloImpresora('MARK_II')
+      setDpi(203)
+    } else if (extension === 'nrx') {
+      setTipoImpresora('NETTIRA')
+      setModeloImpresora('NTE-200')
       setDpi(203)
     } else {
       setTipoImpresora('ZEBRA')
@@ -340,8 +351,8 @@ OPCIÓN 2 - Exportar ZPL:
 
     setArchivo(file)
     
-    // Para archivos .nlbl y .lbl, son binarios propietarios de Zebra Designer
-    if (extension === 'nlbl' || extension === 'lbl') {
+    // Para archivos .nlbl, .lbl y .nrx, son binarios propietarios
+    if (extension === 'nlbl' || extension === 'lbl' || extension === 'nrx') {
       // Leer como buffer binario para enviar directo a impresora
       const buffer = await file.arrayBuffer()
       setArchivoBinario(buffer)
@@ -369,19 +380,34 @@ OPCIÓN 2 - Exportar ZPL:
         // Ignorar errores de decode
       }
       
+      const esNettira = extension === 'nrx'
+      const formatoNombre = esNettira ? 'NETTIRA LABEL DESIGNER' : 'ZEBRA DESIGNER'
+      const impresoraNombre = esNettira ? 'Datamax/Nettira' : 'Zebra'
+
       setContenidoArchivo(`╔══════════════════════════════════════════════════════════════╗
-║     ARCHIVO ZEBRA DESIGNER - ${extension.toUpperCase().padEnd(12)}          ║
-╚══════════════════════════════════════════════════════════════╝
+║     ARCHIVO ${formatoNombre} - ${extension.toUpperCase().padEnd(12)}          ║
+╚══════════════════════════════════════════════════════════════════════════╝
 
 📁 Archivo: ${file.name}
 📦 Tamaño: ${sizeKB} KB${infoExtra}
 
 ⚠️ FORMATO PROPIETARIO (BINARIO/ENCRIPTADO)
 Este archivo no se puede previsualizar como texto.
-Se enviará DIRECTAMENTE a la impresora Zebra.
+Se enviará DIRECTAMENTE a la impresora ${impresoraNombre}.
 
 ═══════════════════════════════════════════════════════════════
-📋 PARA OBTENER EL CÓDIGO ZPL LEGIBLE:
+${esNettira ? `📋 PARA OBTENER CÓDIGO LEGIBLE DESDE NETTIRA:
+
+OPCIÓN 1 - Exportar como PRN:
+   1. Abra el diseño en Nettira Label Designer
+   2. File → Print (o Ctrl+P)
+   3. Marque "Print to file"
+   4. Guarde como .prn
+
+OPCIÓN 2 - Exportar desde Nettira:
+   1. File → Export
+   2. Seleccione formato de impresora
+   3. Guarde como archivo de texto` : `📋 PARA OBTENER EL CÓDIGO ZPL LEGIBLE:
 
 OPCIÓN 1 - Print to File:
    1. Abra el diseño en Zebra Designer
@@ -396,13 +422,13 @@ OPCIÓN 2 - Impresora Virtual:
 
 OPCIÓN 3 - Exportar desde Zebra Designer:
    1. Tools → Export
-   2. Seleccione formato ZPL
+   2. Seleccione formato ZPL`}
 
 ═══════════════════════════════════════════════════════════════
 ✅ IMPRESIÓN DIRECTA: Configure la IP de la impresora y 
    use "Imprimir Prueba" para enviar el archivo directamente.`)
       setVariablesDetectadas([])
-      toast.info('Archivo Zebra Designer detectado. Se enviará directo a impresora.')
+      toast.info(esNettira ? 'Archivo Nettira Label Designer detectado. Se enviará directo a impresora.' : 'Archivo Zebra Designer detectado. Se enviará directo a impresora.')
     } else {
       // Archivos de texto plano (zpl, prn, dpl, txt)
       const contenido = await file.text()

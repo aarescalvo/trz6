@@ -86,7 +86,7 @@ interface VisualEditorProps {
   onChange: (elementos: RotuloElement[]) => void
   ancho: number
   alto: number
-  tipoImpresora: 'ZEBRA' | 'DATAMAX'
+  tipoImpresora: 'ZEBRA' | 'DATAMAX' | 'NETTIRA'
   dpi: number
 }
 

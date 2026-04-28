@@ -50,7 +50,7 @@ interface Props {
   ancho?: number
   alto?: number
   dpi?: number
-  tipoImpresora?: 'ZEBRA' | 'DATAMAX'
+  tipoImpresora?: 'ZEBRA' | 'DATAMAX' | 'NETTIRA'
   onGenerate: (zpl: string) => void
   initialElements?: LabelElement[]
 }
