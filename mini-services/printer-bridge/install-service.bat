@@ -44,7 +44,7 @@ echo const Service = require('node-windows').Service; > "%INSTALL_DIR%\create-se
 echo const svc = new Service({ >> "%INSTALL_DIR%\create-service.js"
 echo   name: 'PrinterBridge', >> "%INSTALL_DIR%\create-service.js"
 echo   description: 'Bridge TCP 9100 to USB Printer - Solemar Alimentaria', >> "%INSTALL_DIR%\create-service.js"
-echo   script: '%INSTALL_DIR:\=/%/index.ts', >> "%INSTALL_DIR%\create-service.js"
+echo   script: '%INSTALL_DIR:\=/%/index.js', >> "%INSTALL_DIR%\create-service.js"
 echo   nodeOptions: ['--harmony', '--max-old-space-size=4096'], >> "%INSTALL_DIR%\create-service.js"
 echo   workingDirectory: '%INSTALL_DIR:\=/%', >> "%INSTALL_DIR%\create-service.js"
 echo   wait: 2, >> "%INSTALL_DIR%\create-service.js"

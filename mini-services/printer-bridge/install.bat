@@ -44,9 +44,9 @@ if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 :: Copiar archivos
 echo Copiando archivos...
-copy /Y "%~dp0index.ts" "%INSTALL_DIR%\index.ts" >nul
+copy /Y "%~dp0index.js" "%INSTALL_DIR%\index.js" >nul
 copy /Y "%~dp0package.json" "%INSTALL_DIR%\package.json" >nul
-copy /Y "%~dp0tsconfig.json" "%INSTALL_DIR%\tsconfig.json" >nul
+:: tsconfig.json ya no se necesita (usamos JS puro)
 copy /Y "%~dp0start.bat" "%INSTALL_DIR%\start.bat" >nul
 copy /Y "%~dp0install-service.bat" "%INSTALL_DIR%\install-service.bat" >nul
 copy /Y "%~dp0uninstall-service.bat" "%INSTALL_DIR%\uninstall-service.bat" >nul
@@ -57,7 +57,7 @@ echo.
 :: Instalar dependencias
 echo Instalando dependencias...
 cd /d "%INSTALL_DIR%"
-call npm install --production
+call npm install
 
 echo.
 echo [OK] Dependencias instaladas.
@@ -88,6 +88,20 @@ echo {"printerName":"%PRINTER_NAME%","tcpPort":9100,"httpPort":9101,"logLevel":"
 
 echo.
 echo [OK] Configuracion guardada.
+echo.
+
+:: Abrir puertos en el Firewall de Windows
+echo ============================================================
+echo   CONFIGURACION DEL FIREWALL
+echo ============================================================
+echo.
+echo Abriendo puerto TCP 9100 (datos de impresion)...
+netsh advfirewall firewall add rule name="Printer Bridge TCP 9100" dir=in action=allow protocol=TCP localport=9100
+echo.
+echo Abriendo puerto TCP 9101 (panel web)...
+netsh advfirewall firewall add rule name="Printer Bridge TCP 9101" dir=in action=allow protocol=TCP localport=9101
+echo.
+echo [OK] Puertos abiertos en el firewall.
 echo.
 
 :: Obtener IP local

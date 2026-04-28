@@ -1,14 +1,13 @@
 {
   "name": "printer-bridge",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bridge TCP 9100 → Impresora USB Windows para sistema frigorífico",
-  "main": "index.ts",
+  "main": "index.js",
   "scripts": {
-    "start": "bun run index.ts",
-    "dev": "bun --watch run index.ts"
+    "start": "node index.js",
+    "dev": "node --watch index.js"
   },
-  "devDependencies": {
-    "@types/node": "^20.11.0",
-    "typescript": "^5.3.0"
+  "dependencies": {
+    "printer": "^0.4.6"
   }
 }

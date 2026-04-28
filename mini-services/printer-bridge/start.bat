@@ -27,7 +27,7 @@ if %ERRORLEVEL% neq 0 (
 :: Verificar paquete printer
 if not exist "node_modules\printer" (
     echo [ADVERTENCIA] Paquete "printer" no encontrado. Intentando reinstalar...
-    call npm install --production
+    call npm install
     echo.
 )
 
@@ -35,6 +35,6 @@ echo Iniciando Printer Bridge...
 echo Presiona Ctrl+C para detener.
 echo.
 
-node index.ts
+node index.js
 
 pause
