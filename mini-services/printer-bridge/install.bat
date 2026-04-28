@@ -2,12 +2,12 @@
 chcp 65001 >nul
 title Printer Bridge - Instalador - Solemar Alimentaria
 echo ============================================================
-echo   PRINTER BRIDGE - Solemar Alimentaria
+echo   PRINTER BRIDGE v2.0 - Solemar Alimentaria
 echo   Instalador para Windows
 echo ============================================================
 echo.
 
-:: Verificar que Node.js esta instalado
+:: Verificar Node.js
 where node >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Node.js no esta instalado.
@@ -23,59 +23,40 @@ echo [OK] Node.js encontrado:
 node --version
 echo.
 
-:: Verificar que npm esta instalado
-where npm >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [ERROR] npm no encontrado.
-    pause
-    exit /b 1
-)
-
-echo [OK] npm encontrado:
-npm --version
-echo.
-
-:: Crear carpeta de instalacion
+:: Crear carpeta
 set INSTALL_DIR=C:\SolemarAlimentaria\printer-bridge
 echo Instalando en: %INSTALL_DIR%
 echo.
 
 if not exist "C:\SolemarAlimentaria" mkdir "C:\SolemarAlimentaria"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+if not exist "%INSTALL_DIR%\temp" mkdir "%INSTALL_DIR%\temp"
 
 :: Copiar archivos
 echo Copiando archivos...
-copy /Y "%~dp0index.js" "%INSTALL_DIR%\index.js" >nul
-copy /Y "%~dp0package.json" "%INSTALL_DIR%\package.json" >nul
-copy /Y "%~dp0start.bat" "%INSTALL_DIR%\start.bat" >nul
-copy /Y "%~dp0install-service.bat" "%INSTALL_DIR%\install-service.bat" >nul
-copy /Y "%~dp0uninstall-service.bat" "%INSTALL_DIR%\uninstall-service.bat" >nul
+copy /Y "%~dp0index.js" "%INSTALL_DIR%\index.js" >nul 2>&1
+copy /Y "%~dp0print-helper.ps1" "%INSTALL_DIR%\print-helper.ps1" >nul 2>&1
+copy /Y "%~dp0package.json" "%INSTALL_DIR%\package.json" >nul 2>&1
+copy /Y "%~dp0start.bat" "%INSTALL_DIR%\start.bat" >nul 2>&1
 
 echo [OK] Archivos copiados.
 echo.
 
-:: Instalar dependencias
-echo Instalando dependencias...
-cd /d "%INSTALL_DIR%"
-call npm install
+:: NO necesita npm install! v2.0 usa PowerShell nativo.
 
-echo.
-echo [OK] Dependencias instaladas.
-echo.
-
-:: Mostrar impresoras detectadas
+:: Mostrar impresoras
 echo Detectando impresoras...
-powershell -Command "Get-Printer | Select-Object Name, PortName, DriverName | Format-Table -AutoSize"
+powershell -NoProfile -Command "Get-Printer | Select-Object Name, PortName, DriverName | Format-Table -AutoSize"
 echo.
 
-:: Preguntar nombre de impresora
+:: Preguntar impresora
 echo ============================================================
 echo   CONFIGURACION
 echo ============================================================
 echo.
 echo Escribi el nombre EXACTO de la impresora tal como aparece arriba.
 echo.
-set /p PRINTER_NAME="Nombre de la impresora (ej: Zebra ZT230): "
+set /p PRINTER_NAME="Nombre de la impresora: "
 
 if "%PRINTER_NAME%"=="" (
     echo [ERROR] No ingresaste un nombre.
@@ -83,28 +64,25 @@ if "%PRINTER_NAME%"=="" (
     exit /b 1
 )
 
-:: Guardar configuracion
+:: Guardar config
 echo {"printerName":"%PRINTER_NAME%","tcpPort":9100,"httpPort":9101,"logLevel":"info","autoStart":true} > "%INSTALL_DIR%\printer-config.json"
 
 echo.
 echo [OK] Configuracion guardada.
 echo.
 
-:: Abrir puertos en el Firewall de Windows
+:: Firewall
 echo ============================================================
 echo   CONFIGURACION DEL FIREWALL
 echo ============================================================
 echo.
-echo Abriendo puerto TCP 9100 (datos de impresion)...
 netsh advfirewall firewall add rule name="Printer Bridge TCP 9100" dir=in action=allow protocol=TCP localport=9100
-echo.
-echo Abriendo puerto TCP 9101 (panel web)...
 netsh advfirewall firewall add rule name="Printer Bridge TCP 9101" dir=in action=allow protocol=TCP localport=9101
 echo.
-echo [OK] Puertos abiertos en el firewall.
+echo [OK] Puertos abiertos.
 echo.
 
-:: Obtener IP local
+:: IP local
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
     set LOCAL_IP=%%a
     goto :found_ip
@@ -117,22 +95,16 @@ echo   INSTALACION COMPLETADA
 echo ============================================================
 echo.
 echo   Impresora: %PRINTER_NAME%
-echo   Puerto TCP: 9100 (para recibir datos del sistema)
+echo   Puerto TCP: 9100
 echo   Panel Web:  http://%LOCAL_IP%:9101
 echo.
-echo   ARCHIVOS EN: %INSTALL_DIR%
+echo   Archivos en: %INSTALL_DIR%
 echo.
-echo ============================================================
 echo   PROXIMOS PASOS:
-echo ============================================================
-echo.
-echo   1. Ejecuta START.BAT para iniciar el bridge
+echo   1. Ejecuta start.bat para iniciar el bridge
 echo   2. Abri http://localhost:9101 en el navegador
-echo   3. Hace clic en "Imprimir prueba" para verificar
-echo   4. En el sistema (Configuracion - Impresoras) configura:
-echo      - Puerto: RED
-echo      - IP: %LOCAL_IP%
-echo      - Puerto TCP: 9100
+echo   3. Hace clic en "Imprimir prueba"
+echo   4. En el sistema configurar impresora con IP: %LOCAL_IP%
 echo.
 echo ============================================================
 

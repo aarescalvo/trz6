@@ -1,17 +1,18 @@
 /**
- * Printer Bridge Service - Solemar Alimentaria
+ * Printer Bridge Service v2.0 - Solemar Alimentaria
  *
  * Escucha en TCP puerto 9100 y redirige los datos (ZPL/DPL)
  * a una impresora conectada por USB en Windows.
  *
+ * NO necesita dependencias npm. Usa PowerShell + Win32 API.
+ *
  * Arquitectura:
- *   Sistema (Next.js) → TCP/IP :9100 → Este bridge → Impresora USB Windows
+ *   Sistema (Next.js) -> TCP/IP :9100 -> Este bridge -> PowerShell -> Impresora USB
  *
  * Uso:
- *   node index.js              (inicio normal)
- *   node --watch index.js      (con auto-reload)
+ *   node index.js
  *
- * Config: editar printer-config.json
+ * Config: editar printer-config.json o usar el panel web en :9101
  */
 
 const net = require('net')
@@ -19,11 +20,14 @@ const fs = require('fs')
 const path = require('path')
 const http = require('http')
 const os = require('os')
+const { execSync, exec } = require('child_process')
 
 // ============================================================
 // Configuración
 // ============================================================
 const CONFIG_PATH = path.join(__dirname, 'printer-config.json')
+const PRINT_HELPER = path.join(__dirname, 'print-helper.ps1')
+const TEMP_DIR = path.join(__dirname, 'temp')
 
 const DEFAULT_CONFIG = {
   printerName: '',
@@ -51,6 +55,11 @@ function saveConfig(config) {
 
 let config = loadConfig()
 
+// Asegurar que existe la carpeta temp
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR, { recursive: true })
+}
+
 // ============================================================
 // Logger
 // ============================================================
@@ -58,39 +67,20 @@ function log(level, msg, data) {
   const levels = { error: 0, info: 1, debug: 2 }
   if (levels[level] <= levels[config.logLevel]) {
     const ts = new Date().toLocaleTimeString('es-AR')
-    const prefix = level === 'error' ? '❌' : level === 'info' ? '✅' : '🔍'
+    const prefix = level === 'error' ? 'X' : level === 'info' ? '>' : '?'
     console.log(`[${ts}] ${prefix} ${msg}`, data !== undefined ? JSON.stringify(data) : '')
   }
 }
 
 // ============================================================
-// Detección de impresoras Windows
+// Impresión via PowerShell + Win32 API
 // ============================================================
-function getPrinterModule() {
-  try {
-    return require('printer')
-  } catch {
-    return null
-  }
-}
-
 function listPrinters() {
-  const printer = getPrinterModule()
-  if (printer) {
-    try {
-      const printers = printer.getPrinters()
-      return printers.map(p => p.name)
-    } catch {
-      return []
-    }
-  }
-  // Fallback: usar lista del sistema
   try {
-    const { execSync } = require('child_process')
-    const result = execSync('powershell -Command "Get-Printer | Select-Object -ExpandProperty Name"', {
-      encoding: 'utf-8',
-      timeout: 5000
-    })
+    const result = execSync(
+      'powershell -NoProfile -Command "Get-Printer | Select-Object -ExpandProperty Name"',
+      { encoding: 'utf-8', timeout: 10000 }
+    )
     return result.trim().split('\n').map(s => s.trim()).filter(Boolean)
   } catch {
     return []
@@ -99,42 +89,63 @@ function listPrinters() {
 
 function printRaw(printerName, data) {
   return new Promise((resolve) => {
-    const printer = getPrinterModule()
-    if (printer) {
-      try {
-        printer.printDirect({
-          printer: printerName,
-          type: 'RAW',
-          data: typeof data === 'string' ? Buffer.from(data, 'utf8') : data,
-          success: (jobId) => {
-            log('info', `Impresión enviada - Job #${jobId}`)
-            resolve(true)
-          },
-          error: (err) => {
-            log('error', `Error al imprimir: ${err}`)
-            resolve(false)
-          }
-        })
-      } catch (err) {
-        log('error', `Error printDirect: ${err}`)
-        resolve(false)
-      }
-    } else {
-      log('error', 'Módulo "printer" no disponible. ¿Está en Windows?')
+    if (!printerName) {
+      log('error', 'No hay impresora configurada')
+      resolve(false)
+      return
+    }
+
+    // Generar archivo temporal unico
+    const jobId = Date.now() + '-' + Math.random().toString(36).substr(2, 6)
+    const tempFile = path.join(TEMP_DIR, `job-${jobId}.zpl`)
+
+    try {
+      // Escribir datos al archivo temp
+      fs.writeFileSync(tempFile, data)
+
+      log('info', `Enviando ${data.length} bytes a "${printerName}" via PowerShell`)
+
+      // Ejecutar PowerShell helper
+      const psCmd = `powershell -NoProfile -ExecutionPolicy Bypass -File "${PRINT_HELPER}" -PrinterName "${printerName}" -FilePath "${tempFile}"`
+
+      exec(psCmd, { timeout: 30000, encoding: 'utf-8' }, (error, stdout, stderr) => {
+        // Limpiar archivo temp
+        try { fs.unlinkSync(tempFile) } catch {}
+
+        if (error) {
+          log('error', `Error al imprimir: ${error.message}`)
+          if (stderr) log('error', `stderr: ${stderr}`)
+          resolve(false)
+          return
+        }
+
+        const output = (stdout || '').trim()
+        if (output.startsWith('OK:')) {
+          log('info', `Impresion enviada correctamente (${output})`)
+          resolve(true)
+        } else {
+          log('error', `Respuesta inesperada: ${output}`)
+          resolve(false)
+        }
+      })
+    } catch (err) {
+      // Limpiar archivo temp si existe
+      try { fs.unlinkSync(tempFile) } catch {}
+      log('error', `Error: ${err.message}`)
       resolve(false)
     }
   })
 }
 
 // ============================================================
-// Servidor TCP (puerto 9100) - Recibe ZPL/DPL del sistema
+// Servidor TCP (puerto 9100)
 // ============================================================
 let printCount = 0
 let lastPrintTime = ''
 
 const tcpServer = net.createServer((socket) => {
   const remoteAddress = `${socket.remoteAddress}:${socket.remotePort}`
-  log('info', `Conexión entrante desde ${remoteAddress}`)
+  log('info', `Conexion entrante desde ${remoteAddress}`)
 
   const chunks = []
   let totalBytes = 0
@@ -149,26 +160,24 @@ const tcpServer = net.createServer((socket) => {
     const data = Buffer.concat(chunks)
 
     if (totalBytes === 0) {
-      log('info', 'Conexión cerrada sin datos')
+      log('info', 'Conexion cerrada sin datos')
       return
     }
 
     if (!config.printerName) {
-      log('error', 'No hay impresora configurada. Usá el panel web en http://localhost:' + config.httpPort)
+      log('error', 'No hay impresora configurada. Usa el panel web en http://localhost:' + config.httpPort)
       socket.end()
       return
     }
-
-    log('info', `Enviando ${totalBytes} bytes a "${config.printerName}"`)
 
     const success = await printRaw(config.printerName, data)
     printCount++
     lastPrintTime = new Date().toLocaleString('es-AR')
 
     if (success) {
-      log('info', `✅ Impresión #${printCount} exitosa`)
+      log('info', `Impresion #${printCount} exitosa`)
     } else {
-      log('error', `❌ Impresión #${printCount} falló`)
+      log('error', `Impresion #${printCount} fallida`)
     }
 
     socket.end()
@@ -179,21 +188,21 @@ const tcpServer = net.createServer((socket) => {
   })
 
   socket.on('timeout', () => {
-    log('error', 'Timeout en conexión TCP')
+    log('error', 'Timeout en conexion TCP')
     socket.destroy()
   })
 
-  socket.setTimeout(30000) // 30 segundos
+  socket.setTimeout(30000)
 })
 
 // ============================================================
-// Servidor HTTP (puerto 9101) - Panel de control web
+// Servidor HTTP (puerto 9101) - Panel de control
 // ============================================================
 const httpServer = http.createServer((req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Access-Control-Allow-Origin', '*')
 
-  // API endpoints
+  // API: listar impresoras
   if (req.method === 'GET' && req.url === '/api/printers') {
     const printers = listPrinters()
     res.setHeader('Content-Type', 'application/json')
@@ -201,6 +210,7 @@ const httpServer = http.createServer((req, res) => {
     return
   }
 
+  // API: obtener config
   if (req.method === 'GET' && req.url === '/api/config') {
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({
@@ -208,11 +218,12 @@ const httpServer = http.createServer((req, res) => {
       printCount,
       lastPrintTime,
       status: 'running',
-      uptime: process.uptime()
+      uptime: Math.floor(process.uptime())
     }))
     return
   }
 
+  // API: guardar config
   if (req.method === 'POST' && req.url === '/api/config') {
     let body = ''
     req.on('data', (chunk) => { body += chunk })
@@ -227,12 +238,13 @@ const httpServer = http.createServer((req, res) => {
         res.end(JSON.stringify({ success: true, config }))
       } catch {
         res.statusCode = 400
-        res.end(JSON.stringify({ error: 'JSON inválido' }))
+        res.end(JSON.stringify({ error: 'JSON invalido' }))
       }
     })
     return
   }
 
+  // API: prueba de impresion
   if (req.method === 'POST' && req.url === '/api/test') {
     if (!config.printerName) {
       res.statusCode = 400
@@ -240,7 +252,6 @@ const httpServer = http.createServer((req, res) => {
       return
     }
 
-    // Enviar ZPL de prueba: etiqueta simple con texto
     const testZPL = `^XA
 ^FO50,50^A0N,40,40^FD** PRUEBA **^FS
 ^FO50,100^A0N,25,25^FDZebra ZT230 - Bridge OK^FS
@@ -275,7 +286,6 @@ function generateDashboard() {
     .card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
     .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
     .status.online { background: #dcfce7; color: #166534; }
-    .status.offline { background: #fef2f2; color: #991b1b; }
     .status .dot { width: 8px; height: 8px; border-radius: 50%; }
     .status.online .dot { background: #22c55e; }
     select { width: 100%; padding: 10px 12px; border: 1px solid #d6d3d1; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; margin-bottom: 12px; }
@@ -285,15 +295,11 @@ function generateDashboard() {
     .btn-primary:hover { background: #d97706; }
     .btn-secondary { background: #e7e5e4; color: #292524; }
     .btn-secondary:hover { background: #d6d3d1; }
-    .btn-danger { background: #ef4444; color: white; }
-    .btn-danger:hover { background: #dc2626; }
     .btn-group { display: flex; gap: 8px; margin-top: 12px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .info-item { padding: 12px; background: #fafaf9; border-radius: 8px; }
     .info-item .label { font-size: 12px; color: #78716c; margin-bottom: 4px; }
     .info-item .value { font-size: 18px; font-weight: 700; color: #1c1917; }
-    .log { background: #1c1917; color: #a8a29e; padding: 12px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
-    .log div { padding: 2px 0; }
     .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-weight: 600; opacity: 0; transition: opacity 0.3s; }
     .toast.success { background: #22c55e; }
     .toast.error { background: #ef4444; }
@@ -304,10 +310,9 @@ function generateDashboard() {
 </head>
 <body>
   <div class="container">
-    <h1>🖨️ Printer Bridge</h1>
-    <p class="subtitle">Solemar Alimentaria — Puente TCP → Impresora USB</p>
+    <h1>Printer Bridge</h1>
+    <p class="subtitle">Solemar Alimentaria - Puente TCP -> Impresora USB</p>
 
-    <!-- Estado -->
     <div class="card">
       <h2>
         <span class="status online"><span class="dot"></span> Conectado</span>
@@ -322,8 +327,8 @@ function generateDashboard() {
           <div class="value" id="printCount">0</div>
         </div>
         <div class="info-item">
-          <div class="label">Última impresión</div>
-          <div class="value" id="lastPrint" style="font-size:14px">—</div>
+          <div class="label">Ultima impresion</div>
+          <div class="value" id="lastPrint" style="font-size:14px">-</div>
         </div>
         <div class="info-item">
           <div class="label">Impresora</div>
@@ -332,42 +337,36 @@ function generateDashboard() {
       </div>
     </div>
 
-    <!-- Configurar impresora -->
     <div class="card">
-      <h2>⚙️ Configurar Impresora</h2>
+      <h2>Configurar Impresora</h2>
       <select id="printerSelect">
-        <option value="">— Seleccionar impresora —</option>
+        <option value="">-- Seleccionar impresora --</option>
       </select>
       <div class="btn-group">
-        <button class="btn btn-primary" onclick="savePrinter()">💾 Guardar</button>
-        <button class="btn btn-secondary" onclick="loadPrinters()">🔄 Actualizar lista</button>
+        <button class="btn btn-primary" onclick="savePrinter()">Guardar</button>
+        <button class="btn btn-secondary" onclick="loadPrinters()">Actualizar lista</button>
       </div>
     </div>
 
-    <!-- Probar impresión -->
     <div class="card">
-      <h2>🧪 Probar Impresión</h2>
+      <h2>Probar Impresion</h2>
       <p style="font-size:13px; color:#78716c; margin-bottom:12px">
-        Imprime una etiqueta de prueba con texto para verificar que el bridge funciona correctamente.
+        Imprime una etiqueta de prueba para verificar que funciona.
       </p>
-      <button class="btn btn-primary" onclick="testPrint()">🖨️ Imprimir prueba</button>
+      <button class="btn btn-primary" onclick="testPrint()">Imprimir prueba</button>
     </div>
 
-    <!-- Instrucciones para el sistema -->
     <div class="card">
-      <h2>📋 Configurar en el Sistema</h2>
+      <h2>Configurar en el Sistema</h2>
       <div class="instructions">
         <h3>Para que el sistema imprima a esta PC:</h3>
-        <p><strong>1.</strong> Anotá la IP de esta PC. Podés verla ejecutando <code>ipconfig</code> en CMD.</p>
-        <p><strong>2.</strong> En el sistema ir a <strong>Configuración → Impresoras</strong>.</p>
-        <p><strong>3.</strong> Crear/editar impresora con estos datos:</p>
-        <p>&nbsp;&nbsp;• Puerto: <strong>RED</strong></p>
-        <p>&nbsp;&nbsp;• Dirección IP: <strong>la IP de esta PC</strong> (ej: 192.168.1.50)</p>
-        <p>&nbsp;&nbsp;• Marca: ZEBRA</p>
-        <p>&nbsp;&nbsp;• Modelo: ZT230</p>
-        <p>&nbsp;&nbsp;• DPI: 203</p>
-        <p><strong>4.</strong> Asignar la plantilla (ej: Media Res) a esta impresora.</p>
-        <p><strong>5.</strong> El puerto TCP es <strong>${config.tcpPort}</strong> (el estándar para impresoras de etiquetas).</p>
+        <p><strong>1.</strong> Verifica la IP de esta PC con <code>ipconfig</code> en CMD.</p>
+        <p><strong>2.</strong> En el sistema ir a <strong>Configuracion - Impresoras</strong>.</p>
+        <p><strong>3.</strong> Crear/editar impresora:</p>
+        <p>&nbsp;&nbsp; Puerto: <strong>RED</strong></p>
+        <p>&nbsp;&nbsp; IP: <strong>la IP de esta PC</strong> (ej: 192.168.1.50)</p>
+        <p>&nbsp;&nbsp; Marca: ZEBRA | Modelo: ZT230 | DPI: 203</p>
+        <p><strong>4.</strong> El puerto TCP es <strong>${config.tcpPort}</strong></p>
       </div>
     </div>
   </div>
@@ -390,7 +389,7 @@ function generateDashboard() {
         const res = await fetch('/api/printers');
         const data = await res.json();
         const sel = document.getElementById('printerSelect');
-        sel.innerHTML = '<option value="">— Seleccionar impresora —</option>';
+        sel.innerHTML = '<option value="">-- Seleccionar impresora --</option>';
         data.printers.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p;
@@ -406,7 +405,7 @@ function generateDashboard() {
     async function savePrinter() {
       const printerName = document.getElementById('printerSelect').value;
       if (!printerName) {
-        showToast('Seleccioná una impresora', 'error');
+        showToast('Selecciona una impresora', 'error');
         return;
       }
       try {
@@ -428,19 +427,15 @@ function generateDashboard() {
 
     async function testPrint() {
       if (!config.printerName) {
-        showToast('Configurá una impresora primero', 'error');
+        showToast('Configura una impresora primero', 'error');
         return;
       }
       try {
         const res = await fetch('/api/test', { method: 'POST' });
         const data = await res.json();
-        if (data.success) {
-          showToast('Prueba enviada ✓', 'success');
-        } else {
-          showToast('Error: ' + data.message, 'error');
-        }
+        showToast(data.success ? 'Prueba enviada' : 'Error: ' + data.message, data.success ? 'success' : 'error');
       } catch (e) {
-        showToast('Error de conexión', 'error');
+        showToast('Error de conexion', 'error');
       }
     }
 
@@ -449,7 +444,7 @@ function generateDashboard() {
         const res = await fetch('/api/config');
         const data = await res.json();
         document.getElementById('printCount').textContent = data.printCount;
-        document.getElementById('lastPrint').textContent = data.lastPrintTime || '—';
+        document.getElementById('lastPrint').textContent = data.lastPrintTime || '-';
       } catch {}
     }
 
@@ -464,7 +459,6 @@ function generateDashboard() {
 // Inicio
 // ============================================================
 function start() {
-  // Detectar IP de la máquina
   const nets = os.networkInterfaces()
   let localIP = 'localhost'
   for (const name of Object.keys(nets)) {
@@ -477,45 +471,46 @@ function start() {
     if (localIP !== 'localhost') break
   }
 
-  // Iniciar servidor TCP (puerto 9100)
+  // Verificar que print-helper.ps1 existe
+  if (!fs.existsSync(PRINT_HELPER)) {
+    console.error('ERROR: No encuentro print-helper.ps1 en ' + __dirname)
+    console.error('Asegurate de tener todos los archivos descargados.')
+    process.exit(1)
+  }
+
+  // Servidor TCP (puerto 9100)
   tcpServer.listen(config.tcpPort, '0.0.0.0', () => {
-    console.log('╔══════════════════════════════════════════════════════╗')
-    console.log('║         PRINTER BRIDGE - Solemar Alimentaria         ║')
-    console.log('╠══════════════════════════════════════════════════════╣')
-    console.log(`║  TCP:  ${localIP}:${config.tcpPort} (recibe datos ZPL/DPL)`)
-    console.log(`║  HTTP: http://${localIP}:${config.httpPort} (panel de control)`)
-    console.log(`║  Impresora: ${config.printerName || '(sin configurar)'}`)
-    console.log('╚══════════════════════════════════════════════════════╝')
+    console.log('========================================================')
+    console.log('  PRINTER BRIDGE v2.0 - Solemar Alimentaria')
+    console.log('========================================================')
+    console.log('  TCP:  ' + localIP + ':' + config.tcpPort + ' (recibe datos ZPL/DPL)')
+    console.log('  HTTP: http://' + localIP + ':' + config.httpPort + ' (panel de control)')
+    console.log('  Impresora: ' + (config.printerName || '(sin configurar)'))
+    console.log('========================================================')
     console.log('')
-    console.log('Abrí http://localhost:' + config.httpPort + ' en tu navegador para configurar')
+    console.log('Abri http://localhost:' + config.httpPort + ' en tu navegador para configurar')
     console.log('')
   })
 
   tcpServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`❌ Puerto ${config.tcpPort} ya está en uso. ¿Está corriendo otra instancia?`)
+      console.error('ERROR: Puerto ' + config.tcpPort + ' ya esta en uso.')
     } else {
-      console.error('❌ Error TCP:', err.message)
+      console.error('ERROR TCP:', err.message)
     }
     process.exit(1)
   })
 
-  // Iniciar servidor HTTP (panel de control)
+  // Servidor HTTP (panel de control)
   httpServer.listen(config.httpPort, '0.0.0.0', () => {
-    log('debug', `Panel web disponible en http://localhost:${config.httpPort}`)
+    log('debug', 'Panel web en http://localhost:' + config.httpPort)
   })
 
   httpServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      log('error', `Puerto HTTP ${config.httpPort} ya en uso`)
+      log('error', 'Puerto HTTP ' + config.httpPort + ' ya en uso')
     }
   })
 }
-
-// Recargar config con señal
-process.on('SIGUSR1', () => {
-  config = loadConfig()
-  log('info', 'Configuración recargada')
-})
 
 start()
