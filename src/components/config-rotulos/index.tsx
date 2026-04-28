@@ -43,7 +43,7 @@ const CATEGORIAS_USO = [
 const TIPOS_IMPRESORA = [
   { value: 'ZEBRA', label: 'Zebra (ZPL)', extensiones: ['.zpl', '.prn', '.nlbl'] },
   { value: 'DATAMAX', label: 'Datamax (DPL)', extensiones: ['.dpl'] },
-  { value: 'NETTIRA', label: 'Nettira Label Designer', extensiones: ['.nrx', '.prn'] },
+  { value: 'NETTIRA', label: 'Nettira Label Designer', extensiones: ['.itf', '.nrx', '.prn'] },
 ]
 
 const MODELOS_IMPRESORA = {
@@ -327,10 +327,10 @@ OPCIÓN 2 - Exportar ZPL:
     if (!file) return
 
     const extension = file.name.split('.').pop()?.toLowerCase()
-    const extensionesValidas = ['zpl', 'prn', 'dpl', 'nlbl', 'lbl', 'nrx', 'txt']
+    const extensionesValidas = ['zpl', 'prn', 'dpl', 'nlbl', 'lbl', 'nrx', 'itf', 'txt']
     
     if (!extensionesValidas.includes(extension || '')) {
-      toast.error('El archivo debe ser .zpl, .prn, .nlbl, .lbl, .nrx, .dpl o .txt')
+      toast.error('El archivo debe ser .zpl, .prn, .nlbl, .lbl, .nrx, .itf, .dpl o .txt')
       return
     }
 
@@ -339,7 +339,7 @@ OPCIÓN 2 - Exportar ZPL:
       setTipoImpresora('DATAMAX')
       setModeloImpresora('MARK_II')
       setDpi(203)
-    } else if (extension === 'nrx') {
+    } else if (extension === 'nrx' || extension === 'itf') {
       setTipoImpresora('NETTIRA')
       setModeloImpresora('NTE-200')
       setDpi(203)
@@ -352,7 +352,7 @@ OPCIÓN 2 - Exportar ZPL:
     setArchivo(file)
     
     // Para archivos .nlbl, .lbl y .nrx, son binarios propietarios
-    if (extension === 'nlbl' || extension === 'lbl' || extension === 'nrx') {
+    if (extension === 'nlbl' || extension === 'lbl' || extension === 'nrx' || extension === 'itf') {
       // Leer como buffer binario para enviar directo a impresora
       const buffer = await file.arrayBuffer()
       setArchivoBinario(buffer)
@@ -380,7 +380,7 @@ OPCIÓN 2 - Exportar ZPL:
         // Ignorar errores de decode
       }
       
-      const esNettira = extension === 'nrx'
+      const esNettira = extension === 'nrx' || extension === 'itf'
       const formatoNombre = esNettira ? 'NETTIRA LABEL DESIGNER' : 'ZEBRA DESIGNER'
       const impresoraNombre = esNettira ? 'Datamax/Nettira' : 'Zebra'
 
