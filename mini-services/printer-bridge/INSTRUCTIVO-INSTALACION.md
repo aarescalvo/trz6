@@ -482,10 +482,10 @@ Si pregunta algo, escribí **`S`** (Sí) y presioná Enter.
 Escribí este comando en PowerShell y presioná Enter:
 
 ```powershell
-irm https://raw.githubusercontent.com/.../install.ps1 | iex
+irm https://raw.githubusercontent.com/aarescalvo/trz5/master/mini-services/printer-bridge/install.ps1 | iex
 ```
 
-*(La URL real va a dártela soporte — es un enlace directo al archivo `install.ps1` en GitHub)*
+> **Tip:** Este comando descarga e instala todo automáticamente desde internet. Solo necesitás conexión a internet.
 
 El instalador hace todo solo:
 
@@ -622,7 +622,7 @@ Mismo que PC 1 (ver sección 7, Paso 2). Si ya lo hiciste antes en esta PC, salt
 Mismo comando que PC 1:
 
 ```powershell
-irm https://raw.githubusercontent.com/.../install.ps1 | iex
+irm https://raw.githubusercontent.com/aarescalvo/trz5/master/mini-services/printer-bridge/install.ps1 | iex
 ```
 
 Cuando aparezca la lista de impresoras, **elegí el número de la Datamax**:
