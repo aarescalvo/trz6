@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Instructivo de Instalación — Printer Bridge</title>
+  <title>Instructivo Printer Bridge v2.0 - Solemar Alimentaria</title>
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -21,202 +21,80 @@
       vertical-align: middle;
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
-
-<style>
-@page {
-    size: A4;
-    margin: 20mm 18mm 20mm 18mm;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 10pt;
-    line-height: 1.6;
-    color: #1a1a1a;
-    max-width: 100%;
-}
-
-h1 {
-    font-size: 18pt;
-    color: #0f4c3a;
-    border-bottom: 2px solid #0f4c3a;
-    padding-bottom: 6pt;
-    margin-top: 24pt;
-    margin-bottom: 12pt;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-h2 {
-    font-size: 14pt;
-    color: #1a6b50;
-    margin-top: 18pt;
-    margin-bottom: 8pt;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-h3 {
-    font-size: 11pt;
-    color: #2d8f6f;
-    margin-top: 14pt;
-    margin-bottom: 6pt;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-h4 {
-    font-size: 10pt;
-    color: #333;
-    margin-top: 10pt;
-    margin-bottom: 4pt;
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-pre {
-    background: #f5f5f0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10pt;
-    font-size: 8pt;
-    line-height: 1.4;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    margin: 8pt 0;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-code {
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 9pt;
-    background: #f0f0ec;
-    padding: 1pt 4pt;
-    border-radius: 3px;
-}
-
-pre code {
-    background: none;
-    padding: 0;
-}
-
-blockquote {
-    border-left: 3px solid #0f4c3a;
-    padding: 8pt 12pt;
-    margin: 8pt 0;
-    background: #f9faf9;
-    font-style: normal;
-}
-
-blockquote p {
-    margin: 4pt 0;
-}
-
-table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 10pt 0;
-    font-size: 9pt;
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-th {
-    background: #0f4c3a;
-    color: white;
-    padding: 6pt 8pt;
-    text-align: left;
-    font-weight: 600;
-}
-
-td {
-    padding: 5pt 8pt;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-tr:nth-child(even) {
-    background: #f9faf9;
-}
-
-ul, ol {
-    padding-left: 20pt;
-    margin: 6pt 0;
-}
-
-li {
-    margin-bottom: 3pt;
-}
-
-hr {
-    border: none;
-    border-top: 1px solid #ccc;
-    margin: 16pt 0;
-}
-
-a {
-    color: #0f4c3a;
-    text-decoration: none;
-}
-
-strong {
-    font-weight: 600;
-}
-
-/* Title page styling */
-h2:first-of-type {
-    font-size: 20pt;
-    text-align: center;
-    color: #0f4c3a;
-    border-bottom: none;
-    margin-top: 0;
-    margin-bottom: 4pt;
-}
-
-/* Cover area */
-body > hr:first-of-type {
-    margin-top: 40pt;
-    margin-bottom: 10pt;
-    border-top: 2px solid #0f4c3a;
-}
-
-body > blockquote:first-of-type {
-    text-align: center;
-    border-left: none;
-    background: none;
-    font-size: 10pt;
-    color: #666;
-}
-
-/* Checklist styling */
-ul.task-list {
-    list-style: none;
-    padding-left: 8pt;
-}
-
-ul.task-list li {
-    margin-bottom: 6pt;
-}
-
-ul.task-list li input[type=checkbox] {
-    margin-right: 8pt;
-    width: 12pt;
-    height: 12pt;
-}
-</style>
-
-  <link rel="stylesheet" href="" />
   <link rel="stylesheet" href="" />
 </head>
 <body>
-
-
+<header id="title-block-header">
+<h1 class="title">Instructivo Printer Bridge v2.0 - Solemar
+Alimentaria</h1>
+</header>
+<h1 id="instructivo-de-instalación-printer-bridge-v2.0">Instructivo de
+Instalación — Printer Bridge v2.0</h1>
 <h2 id="solemar-alimentaria-sistema-frigorífico">Solemar Alimentaria —
 Sistema Frigorífico</h2>
 <hr />
@@ -244,18 +122,19 @@ puertos y por qué el 9100?</a></li>
 (Zebra ZT230)</a></li>
 <li><a href="#8-instalación-en-pc-2-datamax-mark-ii-4206">Instalación en
 PC 2 (Datamax Mark II 4206)</a></li>
-<li><a
-href="#9-configurar-el-firewall-de-windows-paso-a-paso-detallado">Configurar
-el Firewall de Windows (PASO A PASO DETALLADO)</a></li>
-<li><a href="#10-verificar-que-funciona-paso-a-paso">Verificar que
+<li><a href="#9-configurar-el-firewall-de-windows">Configurar el
+Firewall de Windows</a></li>
+<li><a href="#10-qué-pasa-si-están-en-switchesrouters-distintos">¿Qué
+pasa si están en switches/routers distintos?</a></li>
+<li><a href="#11-verificar-que-funciona-paso-a-paso">Verificar que
 funciona (PASO A PASO)</a></li>
-<li><a href="#11-configurar-las-impresoras-en-el-sistema">Configurar las
+<li><a href="#12-configurar-las-impresoras-en-el-sistema">Configurar las
 impresoras en el sistema</a></li>
-<li><a href="#12-servicio-windows-arranque-automático">Servicio Windows
+<li><a href="#13-servicio-windows-arranque-automático">Servicio Windows
 (arranque automático)</a></li>
-<li><a href="#13-solución-de-problemas">Solución de problemas</a></li>
-<li><a href="#14-preguntas-frecuentes">Preguntas frecuentes</a></li>
-<li><a href="#15-checklist-final">Checklist final</a></li>
+<li><a href="#14-solución-de-problemas">Solución de problemas</a></li>
+<li><a href="#15-preguntas-frecuentes">Preguntas frecuentes</a></li>
+<li><a href="#16-checklist-final">Checklist final</a></li>
 </ol>
 <hr />
 <h2 id="qué-es-el-printer-bridge-y-cómo-funciona">1. ¿Qué es el Printer
@@ -335,7 +214,7 @@ programa, no imprime nada.</p>
 IMPORTANTE!)</h2>
 <p>Antes de tocar cualquier cosa en la computadora, asegurate de que
 todo esté bien conectado.</p>
-<h3 id="lo-que-necesitás">Lo que necesitás</h3>
+<h3 id="lo-que-necesitamos">Lo que necesitamos</h3>
 <pre><code>  Cable USB          Cable de red         Cable USB
     ═══════             ═══════             ═══════
       │                   │                   │
@@ -735,75 +614,99 @@ comunicar.</p>
   │  PC 2    │──────│ Router 2 │    ← Red 2 (¡no se comunican!)
   │ (Datamax)│      └──────────┘
   └──────────┘</code></pre>
+<h3 id="archivos-que-se-van-a-instalar">Archivos que se van a
+instalar</h3>
+<p>El instalador automático (v2.0) se encarga de bajar todo desde
+internet. No necesitás copiar nada a mano. Estos son los archivos que
+quedan en tu PC después de la instalación:</p>
+<pre><code>printer-bridge/
+├── index.js              ← El programa principal
+├── print-helper.ps1      ← Script auxiliar de impresión
+├── start.bat             ← Para iniciar rápidamente
+└── printer-config.json   ← Configuración (impresora, puertos, etc.)</code></pre>
+<blockquote>
+<p><strong>Nota v2.0:</strong> Ya no necesitás <code>npm install</code>
+ni dependencias externas. El programa es 100% standalone — se baja y
+funciona.</p>
+</blockquote>
 <hr />
 <h2 id="instalación-en-pc-1-zebra-zt230">7. Instalación en PC 1 (Zebra
 ZT230)</h2>
-<h3 id="paso-1-copiar-los-archivos">Paso 1: Copiar los archivos</h3>
-<p>Los archivos del Printer Bridge están en la carpeta
-<code>printer-bridge/</code>. Copiá <strong>TODA esa carpeta</strong> a
-la PC con la Zebra.</p>
-<ul>
-<li>Podés copiarla a un pendrive y pasarla</li>
-<li>O copiarla por la red (compartir carpeta)</li>
-<li>Destino recomendado:
-<code>C:\SolemarAlimentaria\printer-bridge\</code></li>
-</ul>
-<p>Los archivos que tienen que estar:</p>
-<pre><code>printer-bridge/
-├── index.ts              ← El programa principal
-├── package.json          ← Configuración del programa
-├── tsconfig.json         ← Configuración TypeScript
-├── install.bat           ← Ejecutá ESTO primero
-├── start.bat             ← Ejecutá ESTO después
-├── install-service.bat   ← Para arranque automático
-├── uninstall-service.bat ← Para desinstalar servicio
-└── bun.lock              ← No lo tocás</code></pre>
-<h3 id="paso-2-ejecutar-install.bat">Paso 2: Ejecutar
-<code>install.bat</code></h3>
+<p>En la versión 2.0, la instalación es <strong>automática</strong> con
+un solo comando. No tenés que copiar archivos a mano ni instalar
+dependencias.</p>
+<h3 id="paso-1-abrir-powershell-como-administrador">Paso 1: Abrir
+PowerShell como Administrador</h3>
 <ol type="1">
-<li>Abrí la carpeta <code>printer-bridge</code> en la PC</li>
-<li>Hacé <strong>doble clic</strong> en <code>install.bat</code></li>
-<li>Se abre una ventana negra. Aparece algo así:</li>
+<li>Hacé clic en el botón <strong>Inicio</strong> de Windows</li>
+<li>Escribí la palabra <strong><code>PowerShell</code></strong></li>
+<li>Te va a aparecer “Windows PowerShell”</li>
+<li>Hacé <strong>clic derecho</strong> sobre “Windows PowerShell”</li>
+<li>Elegí <strong>“Ejecutar como administrador”</strong></li>
+<li>Si pregunta “¿Querés permitir que esta app haga cambios?”, hacé clic
+en <strong>“Sí”</strong></li>
 </ol>
+<blockquote>
+<p>⚠️ <strong>¡Importante!</strong> Tiene que ser “como administrador”,
+si no el instalador no puede abrir los puertos del firewall. Vas a saber
+que es correcto si arriba de la ventana dice “Administrador”.</p>
+</blockquote>
+<h3
+id="paso-2-permitir-la-ejecución-de-scripts-solo-la-primera-vez">Paso 2:
+Permitir la ejecución de scripts (solo la primera vez)</h3>
+<p>La primera vez que usás PowerShell, tenés que permitirle que corra
+scripts. Escribí esto y presioná Enter:</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Set-ExecutionPolicy</span> <span class="op">-</span>Scope CurrentUser RemoteSigned</span></code></pre></div>
+<p>Si pregunta algo, escribí <strong><code>S</code></strong> (Sí) y
+presioná Enter.</p>
+<blockquote>
+<p>Esto lo hacés <strong>una sola vez</strong> en cada PC. No hace falta
+repetirlo.</p>
+</blockquote>
+<h3 id="paso-3-ejecutar-el-instalador-automático">Paso 3: Ejecutar el
+instalador automático</h3>
+<p>Escribí este comando en PowerShell y presioná Enter:</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">irm</span> https<span class="op">://</span>raw<span class="op">.</span><span class="fu">githubusercontent</span><span class="op">.</span><span class="fu">com</span><span class="op">/.../</span>install<span class="op">.</span><span class="fu">ps1</span> <span class="op">|</span> <span class="fu">iex</span></span></code></pre></div>
+<p><em>(La URL real va a dártela soporte — es un enlace directo al
+archivo <code>install.ps1</code> en GitHub)</em></p>
+<p>El instalador hace todo solo:</p>
 <pre><code>============================================================
-  PRINTER BRIDGE - Solemar Alimentaria
-  Instalador para Windows
+  PRINTER BRIDGE v2.0 — Solemar Alimentaria
+  Instalador automático
 ============================================================
 
 [OK] Node.js encontrado: v20.11.0
-[OK] npm encontrado: 10.2.4
+[OK] Descargando archivos desde GitHub...
 
 Instalando en: C:\SolemarAlimentaria\printer-bridge
-[OK] Archivos copiados.
-Instalando dependencias...
-[OK] Dependencias instaladas.
+[OK] Archivos descargados.
 
-Detectando impresoras...
+Detectando impresoras conectadas...
 
-Name                  PortName          DriverName
-----                  --------          ----------
-Zebra ZT230           USB001            ZDesigner ZT230-203dpi ZPL
-Microsoft Print to    PORTPROMPT:       Microsoft Print to Image
-Microsoft XPS Doc...  PORTPROMPT:       Microsoft XPS Document Writer
+  N°  Impresora
+  ──  ──────────────────────────────────────
+  1)  Zebra ZT230
+  2)  Microsoft Print to Image
+  3)  Microsoft XPS Document Writer
 
-Escribi el nombre EXACTO de la impresora tal como aparece arriba.
-
-Nombre de la impresora (ej: Zebra ZT230): _</code></pre>
-<ol start="4" type="1">
-<li><strong>Escribí el nombre exacto</strong> de la Zebra tal como
-aparece en la lista
-<ul>
-<li>Por ejemplo: <code>Zebra ZT230</code></li>
-<li><strong>Tip:</strong> Para evitar errores de tipeo, seleccioná el
-nombre en la ventana, copialo (Ctrl+C) y pegalo (Ctrl+V)</li>
-</ul></li>
-<li>Presioná <strong>Enter</strong></li>
-<li>Aparece:</li>
+Escribí el NÚMERO de la impresora que querés usar: _</code></pre>
+<p><strong>Escribí el número</strong> de la impresora (en este caso,
+<code>1</code>) y presioná Enter. El instalador automáticamente:</p>
+<ol type="1">
+<li>✅ Descarga los archivos de GitHub</li>
+<li>✅ Detecta las impresoras conectadas</li>
+<li>✅ Crea el archivo de configuración</li>
+<li>✅ Abre los puertos 9100 y 9101 en el firewall</li>
+<li>✅ Muestra la IP de la PC</li>
 </ol>
-<pre><code>[OK] Configuracion guardada.
+<pre><code>[OK] Impresora seleccionada: Zebra ZT230
+[OK] Configuración creada.
+[OK] Firewall: puertos 9100 y 9101 abiertos.
 
 ============================================================
-  INSTALACION COMPLETADA
+  INSTALACIÓN COMPLETADA
 ============================================================
 
   Impresora: Zebra ZT230
@@ -813,31 +716,31 @@ nombre en la ventana, copialo (Ctrl+C) y pegalo (Ctrl+V)</li>
   ARCHIVOS EN: C:\SolemarAlimentaria\printer-bridge
 
 ============================================================
-  PROXIMOS PASOS:
+  PRÓXIMOS PASOS:
 ============================================================
 
-  1. Ejecuta START.BAT para iniciar el bridge
-  2. Abri http://localhost:9101 en el navegador
-  3. Hace clic en &quot;Imprimir prueba&quot; para verificar
-  4. En el sistema (Configuracion -&gt; Impresoras) configura:
-       - Puerto: RED
-       - IP: 192.168.1.153
-       - Puerto TCP: 9100
+  1. Para iniciar el bridge, ejecutá:
+     cd C:\SolemarAlimentaria\printer-bridge
+     node index.js
 
-Presione una tecla para continuar . . .</code></pre>
-<ol start="7" type="1">
-<li><strong>ANOTÁ LA IP</strong> que muestra (en este ejemplo,
-<code>192.168.1.153</code>)</li>
-<li>Presioná una tecla para cerrar</li>
-</ol>
-<h3 id="paso-3-ejecutar-start.bat">Paso 3: Ejecutar
-<code>start.bat</code></h3>
-<ol type="1">
-<li>Hacé <strong>doble clic</strong> en <code>start.bat</code></li>
-<li>Se abre una ventana negra que queda corriendo:</li>
-</ol>
+  2. O hacé doble clic en start.bat
+
+  3. Abrí http://localhost:9101 en el navegador
+
+  4. Hacé clic en &quot;Imprimir prueba&quot; para verificar
+
+============================================================</code></pre>
+<p><strong>ANOTÁ LA IP</strong> que muestra (en este ejemplo,
+<code>192.168.1.153</code>).</p>
+<h3 id="paso-4-iniciar-el-printer-bridge">Paso 4: Iniciar el Printer
+Bridge</h3>
+<p>Para empezar a usar el bridge, tenés dos opciones:</p>
+<p><strong>Opción A — Con el atajo <code>start.bat</code>:</strong> 1.
+Andá a la carpeta <code>C:\SolemarAlimentaria\printer-bridge\</code> 2.
+Hacé <strong>doble clic</strong> en <code>start.bat</code> 3. Se abre
+una ventana negra que queda corriendo:</p>
 <pre><code>============================================================
-         PRINTER BRIDGE - Solemar Alimentaria
+         PRINTER BRIDGE v2.0 — Solemar Alimentaria
 ============================================================
 ║  TCP:  192.168.1.153:9100 (recibe datos ZPL/DPL)
 ║  HTTP: http://192.168.1.153:9101 (panel de control)
@@ -845,6 +748,10 @@ Presione una tecla para continuar . . .</code></pre>
 ============================================================
 
 Abrí http://localhost:9101 en tu navegador para configurar</code></pre>
+<p><strong>Opción B — Desde la consola:</strong> 1. Abrí CMD o
+PowerShell 2. Ejecutá:
+<code>cd C:\SolemarAlimentaria\printer-bridge</code> 3. Ejecutá:
+<code>node index.js</code></p>
 <blockquote>
 <p>⚠️ <strong>¡MUY IMPORTANTE! Esta ventana negra tiene que quedar
 abierta.</strong> No la cierres. Mientras esté abierta, el bridge
@@ -852,10 +759,10 @@ funciona. Si la cerrás, no imprime nada.</p>
 </blockquote>
 <blockquote>
 <p><strong>Tip:</strong> Si te molesta tener la ventana abierta, después
-podés instalarlo como servicio (ver sección 12) para que corra en
+podés instalarlo como servicio (ver sección 13) para que corra en
 segundo plano.</p>
 </blockquote>
-<h3 id="paso-4-probar-desde-el-panel-web">Paso 4: Probar desde el panel
+<h3 id="paso-5-probar-desde-el-panel-web">Paso 5: Probar desde el panel
 web</h3>
 <ol type="1">
 <li>Abrí el navegador en esa PC (Chrome, Edge, el que uses)</li>
@@ -874,48 +781,53 @@ web</h3>
 <li>✅ <strong>Si imprimió</strong> → La PC 1 está lista. Pasá a la PC
 2.</li>
 <li>❌ <strong>Si no imprimió</strong> → Andá a la sección <a
-href="#13-solución-de-problemas">Solución de problemas</a></li>
+href="#14-solución-de-problemas">Solución de problemas</a></li>
 </ul>
 <hr />
 <h2 id="instalación-en-pc-2-datamax-mark-ii-4206">8. Instalación en PC 2
 (Datamax Mark II 4206)</h2>
 <p>Los pasos son <strong>exactamente los mismos</strong> que en la PC 1.
-Solo cambia la impresora.</p>
-<h3 id="paso-1-copiar-los-archivos-1">Paso 1: Copiar los archivos</h3>
-<p>Mismo que PC 1. Copiá la carpeta <code>printer-bridge/</code>
-completa a esta PC.</p>
-<h3 id="paso-2-ejecutar-install.bat-1">Paso 2: Ejecutar
-<code>install.bat</code></h3>
-<ol type="1">
-<li>Doble clic en <code>install.bat</code></li>
-<li>Cuando detecte las impresoras, escribí el nombre exacto de la
-Datamax:</li>
-</ol>
-<pre><code>Detectando impresoras...
+Solo cambia la impresora que seleccionás en el instalador.</p>
+<h3 id="paso-1-abrir-powershell-como-administrador-1">Paso 1: Abrir
+PowerShell como Administrador</h3>
+<p>Mismo que PC 1 (ver sección 7, Paso 1).</p>
+<h3
+id="paso-2-permitir-la-ejecución-de-scripts-solo-la-primera-vez-1">Paso
+2: Permitir la ejecución de scripts (solo la primera vez)</h3>
+<p>Mismo que PC 1 (ver sección 7, Paso 2). Si ya lo hiciste antes en
+esta PC, salteamé este paso.</p>
+<h3 id="paso-3-ejecutar-el-instalador-automático-1">Paso 3: Ejecutar el
+instalador automático</h3>
+<p>Mismo comando que PC 1:</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">irm</span> https<span class="op">://</span>raw<span class="op">.</span><span class="fu">githubusercontent</span><span class="op">.</span><span class="fu">com</span><span class="op">/.../</span>install<span class="op">.</span><span class="fu">ps1</span> <span class="op">|</span> <span class="fu">iex</span></span></code></pre></div>
+<p>Cuando aparezca la lista de impresoras, <strong>elegí el número de la
+Datamax</strong>:</p>
+<pre><code>Detectando impresoras conectadas...
 
-Name                    PortName          DriverName
-----                    --------          ----------
-Datamax Mark II 4206    USB002            Datamax DMX-I-4206
+  N°  Impresora
+  ──  ──────────────────────────────────────
+  1)  Datamax Mark II 4206
+  2)  Microsoft Print to Image
+  3)  Microsoft XPS Document Writer
 
-Nombre de la impresora (ej: Datamax Mark II 4206): Datamax Mark II 4206</code></pre>
-<ol start="3" type="1">
-<li><strong>Anotá la IP</strong> que muestra (puede ser distinta a la PC
-1)</li>
-</ol>
+Escribí el NÚMERO de la impresora que querés usar: 1</code></pre>
+<p><strong>ANOTÁ LA IP</strong> que muestra al final (puede ser distinta
+a la PC 1).</p>
 <blockquote>
 <p><strong>Nota:</strong> Cada PC tiene su propia IP. Que ambas usen el
 puerto 9100 no es un problema porque están en PCs distintas. Es como dos
 edificios que ambos tienen un “departamento 9100” — son edificios
 diferentes.</p>
 </blockquote>
-<h3 id="paso-3-ejecutar-start.bat-1">Paso 3: Ejecutar
-<code>start.bat</code></h3>
-<ol type="1">
-<li>Doble clic en <code>start.bat</code></li>
-<li>Verificá que muestre la IP correcta y “Datamax Mark II 4206”</li>
-<li>Dejá la ventana abierta</li>
-</ol>
-<h3 id="paso-4-probar">Paso 4: Probar</h3>
+<h3 id="paso-4-iniciar-el-printer-bridge-1">Paso 4: Iniciar el Printer
+Bridge</h3>
+<p>Hacé doble clic en <code>start.bat</code> o ejecutá
+<code>node index.js</code> desde la carpeta
+<code>C:\SolemarAlimentaria\printer-bridge\</code>.</p>
+<p>Verificá que muestre la IP correcta y “Datamax Mark II 4206”. Dejá la
+ventana abierta.</p>
+<h3 id="paso-5-probar">Paso 5: Probar</h3>
 <ol type="1">
 <li>Abrí <strong><code>http://localhost:9101</code></strong> en esta
 PC</li>
@@ -925,18 +837,45 @@ PC</li>
 <ul>
 <li>✅ <strong>Si imprimió</strong> → La PC 2 está lista.</li>
 <li>❌ <strong>Si no imprimió</strong> → Andá a <a
-href="#13-solución-de-problemas">Solución de problemas</a></li>
+href="#14-solución-de-problemas">Solución de problemas</a></li>
 </ul>
 <hr />
-<h2 id="configurar-el-firewall-de-windows-paso-a-paso-detallado">9.
-Configurar el Firewall de Windows (PASO A PASO DETALLADO)</h2>
+<h2 id="configurar-el-firewall-de-windows">9. Configurar el Firewall de
+Windows</h2>
+<h3 id="buenas-noticias-en-v2.0-es-automático">¡Buenas noticias! En v2.0
+es automático 🎉</h3>
+<p>El instalador <code>install.ps1</code> abre automáticamente los
+puertos <strong>9100</strong> y <strong>9101</strong> en el firewall de
+Windows. <strong>No tenés que hacer nada manualmente</strong> … siempre
+y cuando hayas ejecutado el PowerShell <strong>como
+Administrador</strong>.</p>
 <blockquote>
-<p>⚠️ <strong>ESTA ES LA PARTE MÁS IMPORTANTE Y LA QUE MÁS PROBLEMAS
-CAUSA.</strong> Si no hacés esto, el sistema no puede comunicarse con el
-Printer Bridge aunque todo lo demás esté bien.</p>
+<p>⚠️ <strong>Si ejecutaste el PowerShell sin “Ejecutar como
+administrador”</strong>, el instalador no pudo abrir los puertos del
+firewall. En ese caso, cerrá todo, volvé a abrir PowerShell como
+administrador y ejecutá el instalador de nuevo.</p>
 </blockquote>
-<h3 id="qué-es-el-firewall-y-por-qué-lo-tenemos-que-configurar">¿Qué es
-el Firewall y por qué lo tenemos que configurar?</h3>
+<h3 id="cómo-verificar-que-el-firewall-está-bien-configurado">¿Cómo
+verificar que el firewall está bien configurado?</h3>
+<ol type="1">
+<li>Abrí el panel web: <code>http://localhost:9101</code> en la PC del
+bridge</li>
+<li>Hacé clic en el botón <strong>“Diagnóstico”</strong></li>
+<li>Si dice “Firewall: OK”, todo bien</li>
+<li>Si dice “Firewall: PROBLEMA”, leé la sección de abajo</li>
+</ol>
+<h3
+id="instrucciones-manuales-solo-si-el-instalador-no-pudo-abrir-los-puertos-automáticamente">Instrucciones
+manuales (SOLO si el instalador no pudo abrir los puertos
+automáticamente)</h3>
+<blockquote>
+<p>⚠️ <strong>Solo necesitás hacer esto si el instalador falló o si por
+alguna razón los puertos no se abrieron.</strong> Probá primero acceder
+a <code>http://localhost:9101</code> desde otra PC. Si se abre, el
+firewall está bien.</p>
+</blockquote>
+<h4 id="qué-es-el-firewall-y-por-qué-lo-tenemos-que-configurar">¿Qué es
+el Firewall y por qué lo tenemos que configurar?</h4>
 <p>El Firewall de Windows es como un <strong>guardia de
 seguridad</strong> en la puerta de tu PC. Su trabajo es
 <strong>bloquear</strong> las conexiones que vienen de afuera para
@@ -956,12 +895,11 @@ confianza”</em>.</p>
 
   Sistema ──&quot;¡Quiero imprimir!&quot;──▶ GUARDIA ──&quot;OK, pasá&quot; ──▶ Printer Bridge ──▶ Impresora
                                                 (puertos 9100 y 9101 habilitados)</code></pre>
-<h3
-id="instrucciones-paso-a-paso-seguilo-al-pie-de-la-letra">Instrucciones
-paso a paso (¡seguilo al pie de la letra!)</h3>
+<h4 id="paso-a-paso-manual-seguilo-al-pie-de-la-letra">Paso a paso
+manual (¡seguilo al pie de la letra!)</h4>
 <p><strong>Esto tenés que hacerlo en LAS DOS PCs</strong> (la de la
 Zebra y la de la Datamax).</p>
-<h4 id="paso-1-abrir-el-firewall">Paso 1: Abrir el Firewall</h4>
+<p><strong>Paso 1: Abrir el Firewall</strong></p>
 <ol type="1">
 <li>Hacé clic en el botón <strong>Inicio</strong> de Windows (el logo de
 Windows abajo a la izquierda)</li>
@@ -973,18 +911,7 @@ dice <strong>“Firewall de Windows Defender”</strong>
 seguridad avanzada”</strong> — si es esa, directamente abrí esa</li>
 </ul></li>
 </ol>
-<pre><code>  ┌─────────────────────────────────────┐
-  │  Inicio            🔍  [Firewall]  │  ← Escribí &quot;Firewall&quot; acá
-  ├─────────────────────────────────────┤
-  │                                     │
-  │  Resultados:                        │
-  │  ┌─────────────────────────────┐    │
-  │  │ Firewall de Windows Defender│    │  ← Hacé clic acá
-  │  └─────────────────────────────┘    │
-  │                                     │
-  └─────────────────────────────────────┘</code></pre>
-<h4 id="paso-2-entrar-a-la-configuración-avanzada">Paso 2: Entrar a la
-configuración avanzada</h4>
+<p><strong>Paso 2: Entrar a la configuración avanzada</strong></p>
 <ol type="1">
 <li>En la ventana del Firewall, mirá a la
 <strong>izquierda</strong></li>
@@ -994,158 +921,37 @@ configuración avanzada</h4>
 <strong>“Sí”</strong></li>
 </ul></li>
 </ol>
-<pre><code>  ┌──────────────────────────────────────────────────────┐
-  │  Firewall de Windows Defender                        │
-  │                                                      │
-  │  ← Panel de control                                  │
-  │     Configuración avanzada  ← HACÉ CLIC ACÁ         │
-  │     ...                                              │
-  └──────────────────────────────────────────────────────┘</code></pre>
 <p>Se abre una ventana más grande con un árbol de opciones a la
 izquierda.</p>
-<h4 id="paso-3-ir-a-reglas-de-entrada">Paso 3: Ir a “Reglas de
-entrada”</h4>
+<p><strong>Paso 3: Ir a “Reglas de entrada”</strong></p>
 <ol type="1">
-<li>En el panel izquierdo, expandí (hacé clic en la flechita)
-<strong>“Reglas de seguridad de conexión local”</strong> si no está
-expandido</li>
+<li>En el panel izquierdo, expandí <strong>“Reglas de seguridad de
+conexión local”</strong> si no está expandido</li>
 <li>Hacé clic en <strong>“Reglas de entrada”</strong> (el segundo
 item)</li>
 </ol>
-<pre><code>  Panel izquierdo:
-
-  ▼ Firewall de Windows Defender con seguridad avanzada
-    ▼ Reglas de seguridad de conexión local
-      ▶ Reglas de entrada       ← HACÉ CLIC ACÁ
-        Reglas de salida
-        ...</code></pre>
 <p>A la derecha vas a ver una lista larga de reglas (muchas, no te
 asustes).</p>
-<h4 id="paso-4-crear-una-nueva-regla">Paso 4: Crear una nueva regla</h4>
+<p><strong>Paso 4: Crear una nueva regla</strong></p>
 <ol type="1">
 <li>Mirá a la <strong>derecha</strong> de la ventana</li>
 <li>Hacé clic en <strong>“Nueva regla…”</strong></li>
-</ol>
-<pre><code>  Panel derecho (acciones):
-
-  ┌──────────────────────┐
-  │ Nueva regla...       │  ← HACÉ CLIC ACÁ
-  │ Importar regla...    │
-  │ ...                  │
-  └──────────────────────┘</code></pre>
-<p>Se abre un asistente (una ventanita que te va guiando).</p>
-<h4 id="paso-5-elegir-puerto">Paso 5: Elegir “Puerto”</h4>
-<ol type="1">
-<li>En el asistente, seleccioná <strong>“Puerto”</strong> (el segundo
-círculo)</li>
-<li>Hacé clic en <strong>“Siguiente”</strong></li>
-</ol>
-<pre><code>  ┌──────────────────────────────────────────────┐
-  │  Tipo de regla                               │
-  │                                              │
-  │  ○ Programa                                  │
-  │  ● Puerto                          ← ESTE   │
-  │  ○ Predefinida                               │
-  │  ○ Personalizada                              │
-  │                                              │
-  │                              [Siguiente &gt;]   │
-  └──────────────────────────────────────────────┘</code></pre>
-<h4 id="paso-6-configurar-los-puertos">Paso 6: Configurar los
-puertos</h4>
-<ol type="1">
-<li>Dejá marcado <strong>“TCP”</strong> (tiene que estar con el
-puntito)</li>
-<li>En el cuadro de texto que dice <strong>“Puertos locales
-específicos”</strong>, escribí: <strong><code>9100, 9101</code></strong>
-<ul>
-<li>Fijate que sea con coma, no con punto: <code>9100, 9101</code></li>
-</ul></li>
-<li>Hacé clic en <strong>“Siguiente”</strong></li>
-</ol>
-<pre><code>  ┌──────────────────────────────────────────────┐
-  │  Protocolo y puertos                          │
-  │                                              │
-  │  ¿Se aplica a TCP o UDP?                     │
-  │  ● TCP                                       │
-  │  ○ UDP                                       │
-  │                                              │
-  │  Puertos locales específicos:                │
-  │  ┌──────────────────┐                        │
-  │  │ 9100, 9101       │  ← Escribí esto       │
-  │  └──────────────────┘                        │
-  │                                              │
-  │                              [Siguiente &gt;]   │
-  └──────────────────────────────────────────────┘</code></pre>
-<h4 id="paso-7-permitir-la-conexión">Paso 7: Permitir la conexión</h4>
-<ol type="1">
-<li>Seleccioná <strong>“Permitir la conexión”</strong> (el primer
-círculo)</li>
-<li>Hacé clic en <strong>“Siguiente”</strong></li>
-</ol>
-<pre><code>  ┌──────────────────────────────────────────────┐
-  │  Acción                                      │
-  │                                              │
-  │  ● Permitir la conexión          ← ESTE     │
-  │  ○ Permitir la conexión si es segura         │
-  │  ○ Bloquear la conexión                      │
-  │                                              │
-  │                              [Siguiente &gt;]   │
-  └──────────────────────────────────────────────┘</code></pre>
-<h4 id="paso-8-elegir-los-perfiles-de-red">Paso 8: Elegir los perfiles
-de red</h4>
-<ol type="1">
+<li>Seleccioná <strong>“Puerto”</strong> →
+<strong>Siguiente</strong></li>
+<li>Dejá marcado <strong>“TCP”</strong>, escribí
+<strong><code>9100, 9101</code></strong> en puertos locales →
+<strong>Siguiente</strong></li>
+<li>Seleccioná <strong>“Permitir la conexión”</strong> →
+<strong>Siguiente</strong></li>
 <li><strong>Marcá las tres casillas:</strong> Dominio, Privada y Pública
-<ul>
-<li>“Dominio” = red de la empresa</li>
-<li>“Privada” = tu red casera/oficina</li>
-<li>“Pública” = red pública (Wi-Fi de un café, etc.)</li>
-<li>Al marcar las tres, te asegurás de que funcione en cualquier
-situación</li>
-</ul></li>
-<li>Hacé clic en <strong>“Siguiente”</strong></li>
-</ol>
-<pre><code>  ┌──────────────────────────────────────────────┐
-  │  Perfil                                      │
-  │                                              │
-  │  ☑ Dominio                                   │
-  │  ☑ Privada                                   │
-  │  ☑ Pública                                   │
-  │                                              │
-  │  (marcá las tres)                            │
-  │                                              │
-  │                              [Siguiente &gt;]   │
-  └──────────────────────────────────────────────┘</code></pre>
-<h4 id="paso-9-ponerle-nombre">Paso 9: Ponerle nombre</h4>
-<ol type="1">
-<li>En <strong>“Nombre”</strong>, escribí:
-<strong><code>Printer Bridge</code></strong></li>
-<li>En <strong>“Descripción”</strong> (opcional), escribí:
+→ <strong>Siguiente</strong></li>
+<li>Nombre: <strong><code>Printer Bridge</code></strong>, Descripción:
 <strong><code>Puertos para el sistema de impresión del frigorífico</code></strong></li>
 <li>Hacé clic en <strong>“Finalizar”</strong></li>
 </ol>
-<pre><code>  ┌──────────────────────────────────────────────┐
-  │  Nombre                                      │
-  │                                              │
-  │  Nombre:     ┌──────────────────────┐        │
-  │              │ Printer Bridge       │        │
-  │              └──────────────────────┘        │
-  │                                              │
-  │  Descripción: ┌──────────────────────┐      │
-  │              │ Puertos para el       │      │
-  │              │ sistema de impresión  │      │
-  │              │ del frigorífico       │      │
-  │              └──────────────────────┘        │
-  │                                              │
-  │                              [Finalizar]     │
-  └──────────────────────────────────────────────┘</code></pre>
-<p>¡Listo! La regla está creada. Ahora el Firewall va a permitir que
-lleguen las órdenes de impresión.</p>
-<h4 id="repetí-todo-esto-en-la-otra-pc">Repetí todo esto en la otra
-PC</h4>
-<p><strong>Tenés que hacer los mismos 9 pasos en la PC 2</strong> (la de
-la Datamax).</p>
-<h3 id="cómo-verificar-que-el-firewall-está-bien-configurado">¿Cómo
-verificar que el firewall está bien configurado?</h3>
+<p>¡Listo! La regla está creada.</p>
+<h4 id="cómo-verificar-que-la-regla-se-creó-bien">¿Cómo verificar que la
+regla se creó bien?</h4>
 <ol type="1">
 <li>En la ventana de “Reglas de entrada”, buscá la regla
 <strong>“Printer Bridge”</strong> en la lista</li>
@@ -1169,7 +975,70 @@ desactivar el Firewall”</strong> a la izquierda</li>
 <li><strong>Volvé a activarlo</strong> cuando termines de probar</li>
 </ol>
 <hr />
-<h2 id="verificar-que-funciona-paso-a-paso">10. Verificar que funciona
+<h2 id="qué-pasa-si-están-en-switchesrouters-distintos">10. ¿Qué pasa si
+están en switches/routers distintos?</h2>
+<p>Puede que la PC del sistema y las PCs con las impresoras estén
+conectadas a switches o routers distintos dentro de la planta. Acá te
+explicamos los dos casos posibles.</p>
+<h3
+id="caso-1-misma-subred-los-primeros-3-números-de-la-ip-son-iguales-funciona-solo">Caso
+1: Misma subred (los primeros 3 números de la IP son iguales) → Funciona
+solo ✅</h3>
+<p>Si las IPs comparten los primeros tres números, están en la misma red
+lógica aunque estén en switches distintos. Esto funciona sin
+configuración extra.</p>
+<pre><code>  Ejemplo:
+
+  PC del sistema:    192.168.1.50
+  PC 1 (Zebra):      192.168.1.10    ← mismos &quot;192.168.1&quot; ✅
+  PC 2 (Datamax):    192.168.1.20    ← mismos &quot;192.168.1&quot; ✅
+
+
+  ┌──────────┐      ┌────────┐      ┌──────────┐
+  │ Sistema  │──────│Switch 1│──────│  Router  │
+  └──────────┘      └────────┘      │          │
+                                   │          │
+  ┌──────────┐      ┌────────┐      │          │
+  │  PC 1    │──────│Switch 2│──────│          │
+  │  (Zebra) │      └────────┘      └──────────┘
+  └──────────┘
+
+  Funciona sin tocar nada. ✅</code></pre>
+<p><strong>¿Cómo verificarlo?</strong> Ejecutá <code>ipconfig</code> en
+las tres PCs. Si las tres empiezan con los mismos tres números (ej:
+<code>192.168.1.xxx</code>), todo bien.</p>
+<h3
+id="caso-2-distinta-subred-los-primeros-3-números-son-distintos-necesita-configuración-extra">Caso
+2: Distinta subred (los primeros 3 números son distintos) → Necesita
+configuración extra ⚠️</h3>
+<p>Si las IPs tienen distintos primeros tres números, necesitan un
+router que conecte ambas redes. Esto es más complejo.</p>
+<pre><code>  Ejemplo:
+
+  PC del sistema:    192.168.1.50
+  PC 1 (Zebra):      10.0.0.10       ← ¡distinto! ⚠️
+  PC 2 (Datamax):    10.0.0.20       ← ¡distinto! ⚠️
+
+
+  ┌──────────┐      ┌────────┐      ┌────────┐      ┌────────┐
+  │ Sistema  │──────│Router A│──────│Router B│──────│Switch  │
+  └──────────┘      └────────┘      └────────┘      └────────┘
+   192.168.1.x                       10.0.0.x         │
+                                                   ┌────┴────┐
+                                                   │  PC 1   │
+                                                   │  PC 2   │
+                                                   └─────────┘</code></pre>
+<p><strong>En este caso, consultá con soporte.</strong> Se necesita
+configurar rutas estáticas o un router que haga de puente entre ambas
+redes. No es complicado pero requiere acceso a la configuración del
+router.</p>
+<blockquote>
+<p><strong>Regla práctica:</strong> Fijate los primeros 3 números de las
+IPs. Si coinciden en todas las PCs, no te preocupés — funciona. Si no
+coinciden, llamá a soporte.</p>
+</blockquote>
+<hr />
+<h2 id="verificar-que-funciona-paso-a-paso">11. Verificar que funciona
 (PASO A PASO)</h2>
 <p>Ahora vamos a verificar que el sistema puede comunicarse con los
 Printer Bridges.</p>
@@ -1196,9 +1065,10 @@ un problema. Verificá:
 <ol type="1">
 <li>¿La IP es correcta? (ejecutá <code>ipconfig</code> en la PC del
 bridge)</li>
-<li>¿El firewall está configurado? (ver sección 9)</li>
+<li>¿El firewall está configurado? (ver sección 9, o ejecutá el
+instalador como administrador)</li>
 <li>¿El bridge está corriendo? (¿la ventana negra de
-<code>start.bat</code> está abierta?)</li>
+<code>node index.js</code> está abierta?)</li>
 <li>¿Ambas PCs están en la misma red?</li>
 </ol></li>
 </ul>
@@ -1239,9 +1109,9 @@ es la del <strong>navegador</strong>. Si el navegador puede abrir
 desde el sistema</h3>
 <p>Una vez que verificaste que el navegador puede abrir el panel de
 control, ya podés configurar las impresoras en el sistema (ver sección
-11).</p>
+12).</p>
 <hr />
-<h2 id="configurar-las-impresoras-en-el-sistema">11. Configurar las
+<h2 id="configurar-las-impresoras-en-el-sistema">12. Configurar las
 impresoras en el sistema</h2>
 <p>Ahora vamos a decirle al sistema del frigorífico dónde están las
 impresoras.</p>
@@ -1403,28 +1273,27 @@ Impresoras</strong></li>
 impresora no tiene IP porque está conectada por USB.</p>
 </blockquote>
 <hr />
-<h2 id="servicio-windows-arranque-automático">12. Servicio Windows
+<h2 id="servicio-windows-arranque-automático">13. Servicio Windows
 (arranque automático)</h2>
-<p>Si no querés tener que abrir <code>start.bat</code> cada vez que
-encendés la PC, podés instalar el Printer Bridge como <strong>servicio
-de Windows</strong>. Así se inicia solo cuando prendés la PC, sin que
-tengas que hacer nada.</p>
+<p>Si no querés tener que ejecutar <code>node index.js</code> cada vez
+que encendés la PC, podés instalar el Printer Bridge como
+<strong>servicio de Windows</strong>. Así se inicia solo cuando prendés
+la PC, sin que tengas que hacer nada.</p>
 <h3 id="instalar-como-servicio">Instalar como servicio</h3>
 <ol type="1">
-<li>Buscá el archivo <code>install-service.bat</code> en la carpeta
-<code>C:\SolemarAlimentaria\printer-bridge\</code></li>
-<li>Hacé <strong>clic derecho</strong> sobre
-<code>install-service.bat</code></li>
-<li>Elegí <strong>“Ejecutar como administrador”</strong></li>
-<li>Si pregunta “¿Querés permitir que esta app haga cambios?”, hacé clic
-en <strong>“Sí”</strong></li>
-<li>Esperá a que termine el proceso (tarda un ratito, puede que baje
-cosas de internet)</li>
+<li>Abrí PowerShell <strong>como Administrador</strong></li>
+<li>Ejecutá:</li>
+</ol>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cd</span> C<span class="op">:</span>\SolemarAlimentaria\printer-bridge</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="op">.</span>\install-service<span class="op">.</span><span class="fu">ps1</span></span></code></pre></div>
+<ol start="3" type="1">
+<li>Esperá a que termine el proceso</li>
 <li>Cuando diga “SERVICIO INSTALADO”, listo</li>
 </ol>
 <blockquote>
-<p><strong>Nota:</strong> Si ya tenías <code>start.bat</code> corriendo,
-podés cerrar esa ventana. El servicio lo reemplaza.</p>
+<p><strong>Nota:</strong> Si ya tenías <code>node index.js</code>
+corriendo, podés cerrar esa ventana. El servicio lo reemplaza.</p>
 </blockquote>
 <h3 id="verificar-que-está-corriendo">Verificar que está corriendo</h3>
 <ol type="1">
@@ -1467,23 +1336,45 @@ inicio <strong>“Automático”</strong></li>
 <h3 id="desinstalar-el-servicio">Desinstalar el servicio</h3>
 <p>Si alguna vez necesitás sacarlo:</p>
 <ol type="1">
-<li>Clic derecho en <code>uninstall-service.bat</code></li>
-<li><strong>“Ejecutar como administrador”</strong></li>
-<li>Esperá a que termine</li>
+<li>Abrí PowerShell como Administrador</li>
+<li>Ejecutá:</li>
 </ol>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cd</span> C<span class="op">:</span>\SolemarAlimentaria\printer-bridge</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="op">.</span>\uninstall-service<span class="op">.</span><span class="fu">ps1</span></span></code></pre></div>
 <hr />
-<h2 id="solución-de-problemas">13. Solución de problemas</h2>
+<h2 id="solución-de-problemas">14. Solución de problemas</h2>
+<h3 id="herramienta-de-diagnóstico-nuevo-en-v2.0">Herramienta de
+diagnóstico (¡NUEVO en v2.0!)</h3>
+<p>El panel web tiene un botón de <strong>“Diagnóstico”</strong> que te
+dice automáticamente qué está mal. También podés acceder directo desde
+el navegador:</p>
+<pre><code>http://localhost:9101/api/diagnose</code></pre>
+<p>Te va a mostrar algo así:</p>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;node&quot;</span><span class="fu">:</span> <span class="st">&quot;v20.11.0 ✅&quot;</span><span class="fu">,</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;printer&quot;</span><span class="fu">:</span> <span class="st">&quot;Zebra ZT230 ✅&quot;</span><span class="fu">,</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;printerFound&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;port9100&quot;</span><span class="fu">:</span> <span class="st">&quot;escuchando ✅&quot;</span><span class="fu">,</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;port9101&quot;</span><span class="fu">:</span> <span class="st">&quot;escuchando ✅&quot;</span><span class="fu">,</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;firewall&quot;</span><span class="fu">:</span> <span class="st">&quot;OK ✅&quot;</span><span class="fu">,</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ip&quot;</span><span class="fu">:</span> <span class="st">&quot;192.168.1.153&quot;</span><span class="fu">,</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;configFile&quot;</span><span class="fu">:</span> <span class="st">&quot;OK ✅&quot;</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Si algo dice ❌, ese es el problema. Andá a la sección
+correspondiente más abajo.</p>
 <h3 id="no-imprime-nada">“No imprime nada”</h3>
 <p>Seguí este checklist en orden:</p>
 <ol type="1">
 <li><strong>¿El bridge está corriendo?</strong>
 <ul>
-<li>Si usás <code>start.bat</code>: la ventana negra tiene que estar
+<li>Si usás <code>node index.js</code>: la ventana negra tiene que estar
 abierta</li>
 <li>Si usás servicio: verificá en “Servicios” que PrinterBridge esté “En
 ejecución”</li>
-<li>Si no está corriendo, ejecutá <code>start.bat</code> o iniciá el
-servicio</li>
+<li>Si no está corriendo, ejecutá <code>node index.js</code> o hacé
+doble clic en <code>start.bat</code></li>
 </ul></li>
 <li><strong>¿La impresora está prendida?</strong>
 <ul>
@@ -1515,8 +1406,10 @@ PC</li>
 </ul></li>
 <li><strong>¿El firewall está configurado?</strong>
 <ul>
-<li>Verificá que creaste la regla “Printer Bridge” (ver sección 9)</li>
-<li>Verificá que la regla esté habilitada (ícono verde)</li>
+<li>Ejecutá el diagnóstico:
+<code>http://localhost:9101/api/diagnose</code></li>
+<li>Si dice firewall ❌: ejecutá el instalador de nuevo como
+administrador, o hacé la configuración manual (sección 9)</li>
 </ul></li>
 </ol>
 <h3 id="error-al-conectar-desde-el-sistema">“Error al conectar” (desde
@@ -1526,11 +1419,13 @@ el sistema)</h3>
 <li><p><strong>IP correcta:</strong> Ejecutá <code>ipconfig</code> en la
 PC del bridge y verificá que coincida con lo que pusiste en el
 sistema</p></li>
-<li><p><strong>Firewall:</strong> ¿Creaste la regla? (ver sección 9).
-Hacé la prueba del navegador: abrí
-<code>http://IP-DEL-BRIDGE:9101</code> desde otra PC</p></li>
-<li><p><strong>Red:</strong> ¿Ambas PCs están en el mismo
-router/switch?</p></li>
+<li><p><strong>Firewall:</strong> ¿El instalador se ejecutó como
+administrador? Probá el diagnóstico:
+<code>http://IP-DEL-BRIDGE:9101/api/diagnose</code>. Hacé la prueba del
+navegador: abrí <code>http://IP-DEL-BRIDGE:9101</code> desde otra
+PC</p></li>
+<li><p><strong>Red:</strong> ¿Ambas PCs están en el mismo router/switch?
+(ver sección 10)</p></li>
 <li><p><strong>Bridge corriendo:</strong> ¿El bridge está funcionando?
 (¿ventana negra abierta o servicio corriendo?)</p></li>
 </ol>
@@ -1546,14 +1441,12 @@ timed out” y aún así todo funcionar perfectamente.</p>
 <p><strong>La prueba real es el navegador, no el ping.</strong></p>
 <p>Si abrís <code>http://IP:9101</code> en el navegador y se abre el
 panel, todo funciona. El ping es irrelevante.</p>
-<p>Si querés que el ping funcione (no es necesario), tendrías que crear
-otra regla en el firewall para permitir ICMP. Pero no hace falta.</p>
 <h3 id="puerto-9100-ya-está-en-uso-eaddrinuse">“Puerto 9100 ya está en
 uso” / “EADDRINUSE”</h3>
 <p>Significa que ya hay otro programa usando ese puerto en la PC.
 Probablemente el bridge ya está corriendo.</p>
 <ol type="1">
-<li>Cerrá la ventana de <code>start.bat</code> si está abierta</li>
+<li>Cerrá la ventana de <code>node index.js</code> si está abierta</li>
 <li>O detené el servicio: <code>net stop PrinterBridge</code></li>
 <li>Esperá unos segundos</li>
 <li>Volvé a iniciar</li>
@@ -1582,6 +1475,35 @@ dispositivos → Impresoras y escáneres)</li>
 </ul></li>
 <li>Si aparece con un triángulo amarillo: hay un problema con el driver.
 Desinstalá la impresora y volvé a instalar el driver</li>
+</ol>
+<h3 id="access-denied-error-de-permisos">“Access denied” / Error de
+permisos</h3>
+<p>Si ves un error de permisos al intentar imprimir:</p>
+<ol type="1">
+<li><strong>Si usás el bridge manualmente:</strong> Probá ejecutar
+<code>start.bat</code> (que levanta <code>node index.js</code>) en vez
+de correrlo directo desde la consola</li>
+<li><strong>Si es problema de la impresora en Windows:</strong> Andá a
+Panel de Control → Dispositivos e Impresoras → clic derecho en la
+impresora → “Propiedades” → pestaña “Seguridad” → verificá que tu
+usuario tenga permisos</li>
+<li><strong>Si es problema del PowerShell:</strong> Asegurate de
+ejecutarlo como Administrador (ver sección 7, Paso 1)</li>
+</ol>
+<h3 id="printer-not-found-impresora-no-encontrada">“Printer not found” /
+“Impresora no encontrada”</h3>
+<p>El archivo <code>printer-config.json</code> tiene un nombre de
+impresora que no existe en Windows.</p>
+<ol type="1">
+<li>Abrí <code>http://localhost:9101/api/diagnose</code> y fijate qué
+dice “printer”</li>
+<li>Si dice ❌, editá el archivo
+<code>C:\SolemarAlimentaria\printer-bridge\printer-config.json</code></li>
+<li>Verificá que el campo <code>"printerName"</code> coincida
+exactamente con el nombre en Windows</li>
+<li>Para ver los nombres correctos, abrí PowerShell y ejecutá:
+<code>Get-Printer | Select Name</code></li>
+<li>Reiniciá el bridge después de editar el config</li>
 </ol>
 <h3 id="la-impresora-hace-ruido-pero-sale-etiqueta-en-blanco">“La
 impresora hace ruido pero sale etiqueta en blanco”</h3>
@@ -1631,9 +1553,9 @@ de “Feed” por unos segundos)</li>
 <h3 id="no-imprime-después-de-reiniciar-la-pc">“No imprime después de
 reiniciar la PC”</h3>
 <ol type="1">
-<li>Si usás <code>start.bat</code>: tenés que ejecutarlo de nuevo
-después de reiniciar. Instalá el servicio (sección 12) para que sea
-automático</li>
+<li>Si usás <code>node index.js</code> manualmente: tenés que ejecutarlo
+de nuevo después de reiniciar. Instalá el servicio (sección 13) para que
+sea automático</li>
 <li>Si usás servicio: verificá que el servicio esté “En ejecución” en la
 ventana de Servicios</li>
 <li>Si la PC obtiene IP por DHCP, la IP puede haber cambiado. Ejecutá
@@ -1641,7 +1563,7 @@ ventana de Servicios</li>
 sistema</li>
 </ol>
 <hr />
-<h2 id="preguntas-frecuentes">14. Preguntas frecuentes</h2>
+<h2 id="preguntas-frecuentes">15. Preguntas frecuentes</h2>
 <h3 id="la-impresora-necesita-cable-de-red">¿La impresora necesita cable
 de red?</h3>
 <p><strong>NO.</strong> La impresora se conecta a la PC con
@@ -1708,19 +1630,32 @@ nunca (consultá con soporte si querés hacer esto)</li>
 impresoras en la misma PC?</h3>
 <p><strong>Sí, pero no es lo ideal.</strong> Podés instalar el Printer
 Bridge una vez por PC, y cada bridge maneja una sola impresora. Si tenés
-dos impresoras en la misma PC, necesitarías configurar algo distinto.
+dos impresoras en la misma PC, necesitás configurar algo distinto.
 Consultá con soporte.</p>
-<h3 id="qué-pasa-si-cierro-la-ventana-negra-de-start.bat">¿Qué pasa si
-cierro la ventana negra de start.bat?</h3>
-<p>El bridge se deja de running y no se imprime nada más. Tenés que
-volver a ejecutar <code>start.bat</code> o mejor, instalá el servicio
-para que no tengas que preocuparte (ver sección 12).</p>
+<h3 id="qué-pasa-si-cierro-la-ventana-negra">¿Qué pasa si cierro la
+ventana negra?</h3>
+<p>El bridge se deja de correr y no se imprime nada más. Tenés que
+volver a ejecutar <code>node index.js</code>, o hacé doble clic en
+<code>start.bat</code>, o mejor, instalá el servicio para que no tengas
+que preocuparte (ver sección 13).</p>
 <h3 id="puedo-apagar-la-impresora">¿Puedo apagar la impresora?</h3>
 <p><strong>Sí, podés.</strong> Pero obviamente mientras esté apagada no
 va a imprimir. Cuando la prendas de nuevo, el bridge va a seguir
 funcionando e intentará imprimir lo que llegue.</p>
+<h3 id="necesito-instalar-npm-o-algo-más">¿Necesito instalar npm o algo
+más?</h3>
+<p><strong>NO.</strong> La versión 2.0 del Printer Bridge no tiene
+dependencias. Solo necesitás Node.js instalado. El programa es un solo
+archivo (<code>index.js</code>) que funciona solo, sin necesidad de
+<code>npm install</code> ni paquetes extra.</p>
+<h3 id="puedo-reinstalar-si-algo-sale-mal">¿Puedo reinstalar si algo
+sale mal?</h3>
+<p><strong>Sí, sin drama.</strong> Borrá la carpeta
+<code>C:\SolemarAlimentaria\printer-bridge\</code> y ejecutá el
+instalador (<code>install.ps1</code>) de nuevo. No pierdes nada porque
+el instalador baja todo de internet.</p>
 <hr />
-<h2 id="checklist-final">15. Checklist final</h2>
+<h2 id="checklist-final">16. Checklist final</h2>
 <p>Usá esta lista para verificar que todo está bien hecho. Marcá cada
 item con un ✅ cuando lo termines.</p>
 <h3 id="pc-1-zebra-zt230">PC 1 — Zebra ZT230</h3>
@@ -1737,19 +1672,19 @@ Impresoras” de Windows</label></li>
 instalado</label></li>
 <li><label><input type="checkbox" />PC conectada a la red (mismo router
 que las otras PCs)</label></li>
-<li><label><input type="checkbox" />Archivos del printer-bridge copiados
-a la PC</label></li>
-<li><label><input type="checkbox" /><code>install.bat</code> ejecutado
-(nombre de impresora correcto)</label></li>
+<li><label><input type="checkbox" /><code>install.ps1</code> ejecutado
+como Administrador (impresora correcta seleccionada)</label></li>
 <li><label><input type="checkbox" />IP de la PC anotada:
 <code>_____._____._____._____</code></label></li>
-<li><label><input type="checkbox" /><code>start.bat</code> corriendo
+<li><label><input type="checkbox" /><code>node index.js</code> corriendo
 (ventana negra abierta) <strong>O</strong> servicio
 instalado</label></li>
 <li><label><input type="checkbox" />Prueba de impresión exitosa desde
 <code>http://localhost:9101</code></label></li>
-<li><label><input type="checkbox" />Firewall configurado (regla “Printer
-Bridge” creada y habilitada)</label></li>
+<li><label><input type="checkbox" />Firewall configurado (el instalador
+lo hizo automáticamente, o verificación manual OK)</label></li>
+<li><label><input type="checkbox" />Diagnóstico OK:
+<code>http://localhost:9101/api/diagnose</code> todo en ✅</label></li>
 <li><label><input type="checkbox" />Prueba desde otra PC:
 <code>http://IP-PC1:9101</code> se abre en el navegador</label></li>
 </ul>
@@ -1767,19 +1702,19 @@ Impresoras” de Windows</label></li>
 instalado</label></li>
 <li><label><input type="checkbox" />PC conectada a la red (mismo router
 que las otras PCs)</label></li>
-<li><label><input type="checkbox" />Archivos del printer-bridge copiados
-a la PC</label></li>
-<li><label><input type="checkbox" /><code>install.bat</code> ejecutado
-(nombre de impresora correcto)</label></li>
+<li><label><input type="checkbox" /><code>install.ps1</code> ejecutado
+como Administrador (impresora correcta seleccionada)</label></li>
 <li><label><input type="checkbox" />IP de la PC anotada:
 <code>_____._____._____._____</code></label></li>
-<li><label><input type="checkbox" /><code>start.bat</code> corriendo
+<li><label><input type="checkbox" /><code>node index.js</code> corriendo
 (ventana negra abierta) <strong>O</strong> servicio
 instalado</label></li>
 <li><label><input type="checkbox" />Prueba de impresión exitosa desde
 <code>http://localhost:9101</code></label></li>
-<li><label><input type="checkbox" />Firewall configurado (regla “Printer
-Bridge” creada y habilitada)</label></li>
+<li><label><input type="checkbox" />Firewall configurado (el instalador
+lo hizo automáticamente, o verificación manual OK)</label></li>
+<li><label><input type="checkbox" />Diagnóstico OK:
+<code>http://localhost:9101/api/diagnose</code> todo en ✅</label></li>
 <li><label><input type="checkbox" />Prueba desde otra PC:
 <code>http://IP-PC2:9101</code> se abre en el navegador</label></li>
 </ul>
@@ -1843,6 +1778,7 @@ contactá a soporte:</p>
 </ul>
 <hr />
 <p><em>Instructivo preparado para Solemar Alimentaria — Sistema
-Frigorífico</em> <em>Última actualización: Enero 2025</em></p>
+Frigorífico</em> <em>Printer Bridge v2.0 — Última actualización:
+2025</em></p>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# Instructivo de Instalación — Printer Bridge
+# Instructivo de Instalación — Printer Bridge v2.0
 
 ## Solemar Alimentaria — Sistema Frigorífico
 
@@ -19,13 +19,14 @@
 6. [Requisitos previos](#6-requisitos-previos)
 7. [Instalación en PC 1 (Zebra ZT230)](#7-instalación-en-pc-1-zebra-zt230)
 8. [Instalación en PC 2 (Datamax Mark II 4206)](#8-instalación-en-pc-2-datamax-mark-ii-4206)
-9. [Configurar el Firewall de Windows (PASO A PASO DETALLADO)](#9-configurar-el-firewall-de-windows-paso-a-paso-detallado)
-10. [Verificar que funciona (PASO A PASO)](#10-verificar-que-funciona-paso-a-paso)
-11. [Configurar las impresoras en el sistema](#11-configurar-las-impresoras-en-el-sistema)
-12. [Servicio Windows (arranque automático)](#12-servicio-windows-arranque-automático)
-13. [Solución de problemas](#13-solución-de-problemas)
-14. [Preguntas frecuentes](#14-preguntas-frecuentes)
-15. [Checklist final](#15-checklist-final)
+9. [Configurar el Firewall de Windows](#9-configurar-el-firewall-de-windows)
+10. [¿Qué pasa si están en switches/routers distintos?](#10-qué-pasa-si-están-en-switchesrouters-distintos)
+11. [Verificar que funciona (PASO A PASO)](#11-verificar-que-funciona-paso-a-paso)
+12. [Configurar las impresoras en el sistema](#12-configurar-las-impresoras-en-el-sistema)
+13. [Servicio Windows (arranque automático)](#13-servicio-windows-arranque-automático)
+14. [Solución de problemas](#14-solución-de-problemas)
+15. [Preguntas frecuentes](#15-preguntas-frecuentes)
+16. [Checklist final](#16-checklist-final)
 
 ---
 
@@ -101,7 +102,7 @@ Es como un "puente" (bridge) entre la red y la impresora USB. Por eso se llama a
 
 Antes de tocar cualquier cosa en la computadora, asegurate de que todo esté bien conectado.
 
-### Lo que necesitás
+### Lo que necesitamos
 
 ```
   Cable USB          Cable de red         Cable USB
@@ -433,76 +434,99 @@ Las dos PCs (la de la Zebra y la de la Datamax) tienen que estar conectadas al *
   └──────────┘
 ```
 
+### Archivos que se van a instalar
+
+El instalador automático (v2.0) se encarga de bajar todo desde internet. No necesitás copiar nada a mano. Estos son los archivos que quedan en tu PC después de la instalación:
+
+```
+printer-bridge/
+├── index.js              ← El programa principal
+├── print-helper.ps1      ← Script auxiliar de impresión
+├── start.bat             ← Para iniciar rápidamente
+└── printer-config.json   ← Configuración (impresora, puertos, etc.)
+```
+
+> **Nota v2.0:** Ya no necesitás `npm install` ni dependencias externas. El programa es 100% standalone — se baja y funciona.
+
 ---
 
 ## 7. Instalación en PC 1 (Zebra ZT230)
 
-### Paso 1: Copiar los archivos
+En la versión 2.0, la instalación es **automática** con un solo comando. No tenés que copiar archivos a mano ni instalar dependencias.
 
-Los archivos del Printer Bridge están en la carpeta `printer-bridge/`. Copiá **TODA esa carpeta** a la PC con la Zebra.
+### Paso 1: Abrir PowerShell como Administrador
 
-- Podés copiarla a un pendrive y pasarla
-- O copiarla por la red (compartir carpeta)
-- Destino recomendado: `C:\SolemarAlimentaria\printer-bridge\`
+1. Hacé clic en el botón **Inicio** de Windows
+2. Escribí la palabra **`PowerShell`**
+3. Te va a aparecer "Windows PowerShell"
+4. Hacé **clic derecho** sobre "Windows PowerShell"
+5. Elegí **"Ejecutar como administrador"**
+6. Si pregunta "¿Querés permitir que esta app haga cambios?", hacé clic en **"Sí"**
 
-Los archivos que tienen que estar:
+> ⚠️ **¡Importante!** Tiene que ser "como administrador", si no el instalador no puede abrir los puertos del firewall. Vas a saber que es correcto si arriba de la ventana dice "Administrador".
 
+### Paso 2: Permitir la ejecución de scripts (solo la primera vez)
+
+La primera vez que usás PowerShell, tenés que permitirle que corra scripts. Escribí esto y presioná Enter:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
-printer-bridge/
-├── index.ts              ← El programa principal
-├── package.json          ← Configuración del programa
-├── tsconfig.json         ← Configuración TypeScript
-├── install.bat           ← Ejecutá ESTO primero
-├── start.bat             ← Ejecutá ESTO después
-├── install-service.bat   ← Para arranque automático
-├── uninstall-service.bat ← Para desinstalar servicio
-└── bun.lock              ← No lo tocás
+
+Si pregunta algo, escribí **`S`** (Sí) y presioná Enter.
+
+> Esto lo hacés **una sola vez** en cada PC. No hace falta repetirlo.
+
+### Paso 3: Ejecutar el instalador automático
+
+Escribí este comando en PowerShell y presioná Enter:
+
+```powershell
+irm https://raw.githubusercontent.com/.../install.ps1 | iex
 ```
 
-### Paso 2: Ejecutar `install.bat`
+*(La URL real va a dártela soporte — es un enlace directo al archivo `install.ps1` en GitHub)*
 
-1. Abrí la carpeta `printer-bridge` en la PC
-2. Hacé **doble clic** en `install.bat`
-3. Se abre una ventana negra. Aparece algo así:
+El instalador hace todo solo:
 
 ```
 ============================================================
-  PRINTER BRIDGE - Solemar Alimentaria
-  Instalador para Windows
+  PRINTER BRIDGE v2.0 — Solemar Alimentaria
+  Instalador automático
 ============================================================
 
 [OK] Node.js encontrado: v20.11.0
-[OK] npm encontrado: 10.2.4
+[OK] Descargando archivos desde GitHub...
 
 Instalando en: C:\SolemarAlimentaria\printer-bridge
-[OK] Archivos copiados.
-Instalando dependencias...
-[OK] Dependencias instaladas.
+[OK] Archivos descargados.
 
-Detectando impresoras...
+Detectando impresoras conectadas...
 
-Name                  PortName          DriverName
-----                  --------          ----------
-Zebra ZT230           USB001            ZDesigner ZT230-203dpi ZPL
-Microsoft Print to    PORTPROMPT:       Microsoft Print to Image
-Microsoft XPS Doc...  PORTPROMPT:       Microsoft XPS Document Writer
+  N°  Impresora
+  ──  ──────────────────────────────────────
+  1)  Zebra ZT230
+  2)  Microsoft Print to Image
+  3)  Microsoft XPS Document Writer
 
-Escribi el nombre EXACTO de la impresora tal como aparece arriba.
-
-Nombre de la impresora (ej: Zebra ZT230): _
+Escribí el NÚMERO de la impresora que querés usar: _
 ```
 
-4. **Escribí el nombre exacto** de la Zebra tal como aparece en la lista
-   - Por ejemplo: `Zebra ZT230`
-   - **Tip:** Para evitar errores de tipeo, seleccioná el nombre en la ventana, copialo (Ctrl+C) y pegalo (Ctrl+V)
-5. Presioná **Enter**
-6. Aparece:
+**Escribí el número** de la impresora (en este caso, `1`) y presioná Enter. El instalador automáticamente:
+
+1. ✅ Descarga los archivos de GitHub
+2. ✅ Detecta las impresoras conectadas
+3. ✅ Crea el archivo de configuración
+4. ✅ Abre los puertos 9100 y 9101 en el firewall
+5. ✅ Muestra la IP de la PC
 
 ```
-[OK] Configuracion guardada.
+[OK] Impresora seleccionada: Zebra ZT230
+[OK] Configuración creada.
+[OK] Firewall: puertos 9100 y 9101 abiertos.
 
 ============================================================
-  INSTALACION COMPLETADA
+  INSTALACIÓN COMPLETADA
 ============================================================
 
   Impresora: Zebra ZT230
@@ -512,31 +536,36 @@ Nombre de la impresora (ej: Zebra ZT230): _
   ARCHIVOS EN: C:\SolemarAlimentaria\printer-bridge
 
 ============================================================
-  PROXIMOS PASOS:
+  PRÓXIMOS PASOS:
 ============================================================
 
-  1. Ejecuta START.BAT para iniciar el bridge
-  2. Abri http://localhost:9101 en el navegador
-  3. Hace clic en "Imprimir prueba" para verificar
-  4. En el sistema (Configuracion -> Impresoras) configura:
-       - Puerto: RED
-       - IP: 192.168.1.153
-       - Puerto TCP: 9100
+  1. Para iniciar el bridge, ejecutá:
+     cd C:\SolemarAlimentaria\printer-bridge
+     node index.js
 
-Presione una tecla para continuar . . .
+  2. O hacé doble clic en start.bat
+
+  3. Abrí http://localhost:9101 en el navegador
+
+  4. Hacé clic en "Imprimir prueba" para verificar
+
+============================================================
 ```
 
-7. **ANOTÁ LA IP** que muestra (en este ejemplo, `192.168.1.153`)
-8. Presioná una tecla para cerrar
+**ANOTÁ LA IP** que muestra (en este ejemplo, `192.168.1.153`).
 
-### Paso 3: Ejecutar `start.bat`
+### Paso 4: Iniciar el Printer Bridge
 
-1. Hacé **doble clic** en `start.bat`
-2. Se abre una ventana negra que queda corriendo:
+Para empezar a usar el bridge, tenés dos opciones:
+
+**Opción A — Con el atajo `start.bat`:**
+1. Andá a la carpeta `C:\SolemarAlimentaria\printer-bridge\`
+2. Hacé **doble clic** en `start.bat`
+3. Se abre una ventana negra que queda corriendo:
 
 ```
 ============================================================
-         PRINTER BRIDGE - Solemar Alimentaria
+         PRINTER BRIDGE v2.0 — Solemar Alimentaria
 ============================================================
 ║  TCP:  192.168.1.153:9100 (recibe datos ZPL/DPL)
 ║  HTTP: http://192.168.1.153:9101 (panel de control)
@@ -546,11 +575,16 @@ Presione una tecla para continuar . . .
 Abrí http://localhost:9101 en tu navegador para configurar
 ```
 
+**Opción B — Desde la consola:**
+1. Abrí CMD o PowerShell
+2. Ejecutá: `cd C:\SolemarAlimentaria\printer-bridge`
+3. Ejecutá: `node index.js`
+
 > ⚠️ **¡MUY IMPORTANTE! Esta ventana negra tiene que quedar abierta.** No la cierres. Mientras esté abierta, el bridge funciona. Si la cerrás, no imprime nada.
 
-> **Tip:** Si te molesta tener la ventana abierta, después podés instalarlo como servicio (ver sección 12) para que corra en segundo plano.
+> **Tip:** Si te molesta tener la ventana abierta, después podés instalarlo como servicio (ver sección 13) para que corra en segundo plano.
 
-### Paso 4: Probar desde el panel web
+### Paso 5: Probar desde el panel web
 
 1. Abrí el navegador en esa PC (Chrome, Edge, el que uses)
 2. En la barra de direcciones, escribí: **`http://localhost:9101`**
@@ -567,60 +601,85 @@ Abrí http://localhost:9101 en tu navegador para configurar
 ```
 
 - ✅ **Si imprimió** → La PC 1 está lista. Pasá a la PC 2.
-- ❌ **Si no imprimió** → Andá a la sección [Solución de problemas](#13-solución-de-problemas)
+- ❌ **Si no imprimió** → Andá a la sección [Solución de problemas](#14-solución-de-problemas)
 
 ---
 
 ## 8. Instalación en PC 2 (Datamax Mark II 4206)
 
-Los pasos son **exactamente los mismos** que en la PC 1. Solo cambia la impresora.
+Los pasos son **exactamente los mismos** que en la PC 1. Solo cambia la impresora que seleccionás en el instalador.
 
-### Paso 1: Copiar los archivos
+### Paso 1: Abrir PowerShell como Administrador
 
-Mismo que PC 1. Copiá la carpeta `printer-bridge/` completa a esta PC.
+Mismo que PC 1 (ver sección 7, Paso 1).
 
-### Paso 2: Ejecutar `install.bat`
+### Paso 2: Permitir la ejecución de scripts (solo la primera vez)
 
-1. Doble clic en `install.bat`
-2. Cuando detecte las impresoras, escribí el nombre exacto de la Datamax:
+Mismo que PC 1 (ver sección 7, Paso 2). Si ya lo hiciste antes en esta PC, salteamé este paso.
 
-```
-Detectando impresoras...
+### Paso 3: Ejecutar el instalador automático
 
-Name                    PortName          DriverName
-----                    --------          ----------
-Datamax Mark II 4206    USB002            Datamax DMX-I-4206
+Mismo comando que PC 1:
 
-Nombre de la impresora (ej: Datamax Mark II 4206): Datamax Mark II 4206
+```powershell
+irm https://raw.githubusercontent.com/.../install.ps1 | iex
 ```
 
-3. **Anotá la IP** que muestra (puede ser distinta a la PC 1)
+Cuando aparezca la lista de impresoras, **elegí el número de la Datamax**:
+
+```
+Detectando impresoras conectadas...
+
+  N°  Impresora
+  ──  ──────────────────────────────────────
+  1)  Datamax Mark II 4206
+  2)  Microsoft Print to Image
+  3)  Microsoft XPS Document Writer
+
+Escribí el NÚMERO de la impresora que querés usar: 1
+```
+
+**ANOTÁ LA IP** que muestra al final (puede ser distinta a la PC 1).
 
 > **Nota:** Cada PC tiene su propia IP. Que ambas usen el puerto 9100 no es un problema porque están en PCs distintas. Es como dos edificios que ambos tienen un "departamento 9100" — son edificios diferentes.
 
-### Paso 3: Ejecutar `start.bat`
+### Paso 4: Iniciar el Printer Bridge
 
-1. Doble clic en `start.bat`
-2. Verificá que muestre la IP correcta y "Datamax Mark II 4206"
-3. Dejá la ventana abierta
+Hacé doble clic en `start.bat` o ejecutá `node index.js` desde la carpeta `C:\SolemarAlimentaria\printer-bridge\`.
 
-### Paso 4: Probar
+Verificá que muestre la IP correcta y "Datamax Mark II 4206". Dejá la ventana abierta.
+
+### Paso 5: Probar
 
 1. Abrí **`http://localhost:9101`** en esta PC
 2. Hacé clic en **"🖨️ Imprimir prueba"**
 3. La Datamax debería imprimir una etiqueta de prueba
 
 - ✅ **Si imprimió** → La PC 2 está lista.
-- ❌ **Si no imprimió** → Andá a [Solución de problemas](#13-solución-de-problemas)
+- ❌ **Si no imprimió** → Andá a [Solución de problemas](#14-solución-de-problemas)
 
 ---
 
-## 9. Configurar el Firewall de Windows (PASO A PASO DETALLADO)
+## 9. Configurar el Firewall de Windows
 
-> ⚠️ **ESTA ES LA PARTE MÁS IMPORTANTE Y LA QUE MÁS PROBLEMAS CAUSA.**
-> Si no hacés esto, el sistema no puede comunicarse con el Printer Bridge aunque todo lo demás esté bien.
+### ¡Buenas noticias! En v2.0 es automático 🎉
 
-### ¿Qué es el Firewall y por qué lo tenemos que configurar?
+El instalador `install.ps1` abre automáticamente los puertos **9100** y **9101** en el firewall de Windows. **No tenés que hacer nada manualmente** ... siempre y cuando hayas ejecutado el PowerShell **como Administrador**.
+
+> ⚠️ **Si ejecutaste el PowerShell sin "Ejecutar como administrador"**, el instalador no pudo abrir los puertos del firewall. En ese caso, cerrá todo, volvé a abrir PowerShell como administrador y ejecutá el instalador de nuevo.
+
+### ¿Cómo verificar que el firewall está bien configurado?
+
+1. Abrí el panel web: `http://localhost:9101` en la PC del bridge
+2. Hacé clic en el botón **"Diagnóstico"**
+3. Si dice "Firewall: OK", todo bien
+4. Si dice "Firewall: PROBLEMA", leé la sección de abajo
+
+### Instrucciones manuales (SOLO si el instalador no pudo abrir los puertos automáticamente)
+
+> ⚠️ **Solo necesitás hacer esto si el instalador falló o si por alguna razón los puertos no se abrieron.** Probá primero acceder a `http://localhost:9101` desde otra PC. Si se abre, el firewall está bien.
+
+#### ¿Qué es el Firewall y por qué lo tenemos que configurar?
 
 El Firewall de Windows es como un **guardia de seguridad** en la puerta de tu PC. Su trabajo es **bloquear** las conexiones que vienen de afuera para protegerte.
 
@@ -639,195 +698,46 @@ Lo que tenemos que hacer es decirle al guardia: *"Mirá, las conexiones a los pu
                                                 (puertos 9100 y 9101 habilitados)
 ```
 
-### Instrucciones paso a paso (¡seguilo al pie de la letra!)
+#### Paso a paso manual (¡seguilo al pie de la letra!)
 
 **Esto tenés que hacerlo en LAS DOS PCs** (la de la Zebra y la de la Datamax).
 
-#### Paso 1: Abrir el Firewall
+**Paso 1: Abrir el Firewall**
 
 1. Hacé clic en el botón **Inicio** de Windows (el logo de Windows abajo a la izquierda)
 2. Escribí la palabra **`Firewall`**
 3. En los resultados, aparecen varias opciones. Hacé clic en la que dice **"Firewall de Windows Defender"**
    - También puede aparecer como **"Windows Defender Firewall con seguridad avanzada"** — si es esa, directamente abrí esa
 
-```
-  ┌─────────────────────────────────────┐
-  │  Inicio            🔍  [Firewall]  │  ← Escribí "Firewall" acá
-  ├─────────────────────────────────────┤
-  │                                     │
-  │  Resultados:                        │
-  │  ┌─────────────────────────────┐    │
-  │  │ Firewall de Windows Defender│    │  ← Hacé clic acá
-  │  └─────────────────────────────┘    │
-  │                                     │
-  └─────────────────────────────────────┘
-```
-
-#### Paso 2: Entrar a la configuración avanzada
+**Paso 2: Entrar a la configuración avanzada**
 
 1. En la ventana del Firewall, mirá a la **izquierda**
 2. Hacé clic en **"Configuración avanzada"**
    - Puede pedirte permiso de administrador. Hacé clic en **"Sí"**
 
-```
-  ┌──────────────────────────────────────────────────────┐
-  │  Firewall de Windows Defender                        │
-  │                                                      │
-  │  ← Panel de control                                  │
-  │     Configuración avanzada  ← HACÉ CLIC ACÁ         │
-  │     ...                                              │
-  └──────────────────────────────────────────────────────┘
-```
-
 Se abre una ventana más grande con un árbol de opciones a la izquierda.
 
-#### Paso 3: Ir a "Reglas de entrada"
+**Paso 3: Ir a "Reglas de entrada"**
 
-1. En el panel izquierdo, expandí (hacé clic en la flechita) **"Reglas de seguridad de conexión local"** si no está expandido
+1. En el panel izquierdo, expandí **"Reglas de seguridad de conexión local"** si no está expandido
 2. Hacé clic en **"Reglas de entrada"** (el segundo item)
-
-```
-  Panel izquierdo:
-
-  ▼ Firewall de Windows Defender con seguridad avanzada
-    ▼ Reglas de seguridad de conexión local
-      ▶ Reglas de entrada       ← HACÉ CLIC ACÁ
-        Reglas de salida
-        ...
-```
 
 A la derecha vas a ver una lista larga de reglas (muchas, no te asustes).
 
-#### Paso 4: Crear una nueva regla
+**Paso 4: Crear una nueva regla**
 
 1. Mirá a la **derecha** de la ventana
 2. Hacé clic en **"Nueva regla..."**
+3. Seleccioná **"Puerto"** → **Siguiente**
+4. Dejá marcado **"TCP"**, escribí **`9100, 9101`** en puertos locales → **Siguiente**
+5. Seleccioná **"Permitir la conexión"** → **Siguiente**
+6. **Marcá las tres casillas:** Dominio, Privada y Pública → **Siguiente**
+7. Nombre: **`Printer Bridge`**, Descripción: **`Puertos para el sistema de impresión del frigorífico`**
+8. Hacé clic en **"Finalizar"**
 
-```
-  Panel derecho (acciones):
+¡Listo! La regla está creada.
 
-  ┌──────────────────────┐
-  │ Nueva regla...       │  ← HACÉ CLIC ACÁ
-  │ Importar regla...    │
-  │ ...                  │
-  └──────────────────────┘
-```
-
-Se abre un asistente (una ventanita que te va guiando).
-
-#### Paso 5: Elegir "Puerto"
-
-1. En el asistente, seleccioná **"Puerto"** (el segundo círculo)
-2. Hacé clic en **"Siguiente"**
-
-```
-  ┌──────────────────────────────────────────────┐
-  │  Tipo de regla                               │
-  │                                              │
-  │  ○ Programa                                  │
-  │  ● Puerto                          ← ESTE   │
-  │  ○ Predefinida                               │
-  │  ○ Personalizada                              │
-  │                                              │
-  │                              [Siguiente >]   │
-  └──────────────────────────────────────────────┘
-```
-
-#### Paso 6: Configurar los puertos
-
-1. Dejá marcado **"TCP"** (tiene que estar con el puntito)
-2. En el cuadro de texto que dice **"Puertos locales específicos"**, escribí: **`9100, 9101`**
-   - Fijate que sea con coma, no con punto: `9100, 9101`
-3. Hacé clic en **"Siguiente"**
-
-```
-  ┌──────────────────────────────────────────────┐
-  │  Protocolo y puertos                          │
-  │                                              │
-  │  ¿Se aplica a TCP o UDP?                     │
-  │  ● TCP                                       │
-  │  ○ UDP                                       │
-  │                                              │
-  │  Puertos locales específicos:                │
-  │  ┌──────────────────┐                        │
-  │  │ 9100, 9101       │  ← Escribí esto       │
-  │  └──────────────────┘                        │
-  │                                              │
-  │                              [Siguiente >]   │
-  └──────────────────────────────────────────────┘
-```
-
-#### Paso 7: Permitir la conexión
-
-1. Seleccioná **"Permitir la conexión"** (el primer círculo)
-2. Hacé clic en **"Siguiente"**
-
-```
-  ┌──────────────────────────────────────────────┐
-  │  Acción                                      │
-  │                                              │
-  │  ● Permitir la conexión          ← ESTE     │
-  │  ○ Permitir la conexión si es segura         │
-  │  ○ Bloquear la conexión                      │
-  │                                              │
-  │                              [Siguiente >]   │
-  └──────────────────────────────────────────────┘
-```
-
-#### Paso 8: Elegir los perfiles de red
-
-1. **Marcá las tres casillas:** Dominio, Privada y Pública
-   - "Dominio" = red de la empresa
-   - "Privada" = tu red casera/oficina
-   - "Pública" = red pública (Wi-Fi de un café, etc.)
-   - Al marcar las tres, te asegurás de que funcione en cualquier situación
-2. Hacé clic en **"Siguiente"**
-
-```
-  ┌──────────────────────────────────────────────┐
-  │  Perfil                                      │
-  │                                              │
-  │  ☑ Dominio                                   │
-  │  ☑ Privada                                   │
-  │  ☑ Pública                                   │
-  │                                              │
-  │  (marcá las tres)                            │
-  │                                              │
-  │                              [Siguiente >]   │
-  └──────────────────────────────────────────────┘
-```
-
-#### Paso 9: Ponerle nombre
-
-1. En **"Nombre"**, escribí: **`Printer Bridge`**
-2. En **"Descripción"** (opcional), escribí: **`Puertos para el sistema de impresión del frigorífico`**
-3. Hacé clic en **"Finalizar"**
-
-```
-  ┌──────────────────────────────────────────────┐
-  │  Nombre                                      │
-  │                                              │
-  │  Nombre:     ┌──────────────────────┐        │
-  │              │ Printer Bridge       │        │
-  │              └──────────────────────┘        │
-  │                                              │
-  │  Descripción: ┌──────────────────────┐      │
-  │              │ Puertos para el       │      │
-  │              │ sistema de impresión  │      │
-  │              │ del frigorífico       │      │
-  │              └──────────────────────┘        │
-  │                                              │
-  │                              [Finalizar]     │
-  └──────────────────────────────────────────────┘
-```
-
-¡Listo! La regla está creada. Ahora el Firewall va a permitir que lleguen las órdenes de impresión.
-
-#### Repetí todo esto en la otra PC
-
-**Tenés que hacer los mismos 9 pasos en la PC 2** (la de la Datamax).
-
-### ¿Cómo verificar que el firewall está bien configurado?
+#### ¿Cómo verificar que la regla se creó bien?
 
 1. En la ventana de "Reglas de entrada", buscá la regla **"Printer Bridge"** en la lista
 2. Tiene que estar con un **ícono verde** (con un cachito verde)
@@ -844,7 +754,65 @@ Se abre un asistente (una ventanita que te va guiando).
 
 ---
 
-## 10. Verificar que funciona (PASO A PASO)
+## 10. ¿Qué pasa si están en switches/routers distintos?
+
+Puede que la PC del sistema y las PCs con las impresoras estén conectadas a switches o routers distintos dentro de la planta. Acá te explicamos los dos casos posibles.
+
+### Caso 1: Misma subred (los primeros 3 números de la IP son iguales) → Funciona solo ✅
+
+Si las IPs comparten los primeros tres números, están en la misma red lógica aunque estén en switches distintos. Esto funciona sin configuración extra.
+
+```
+  Ejemplo:
+
+  PC del sistema:    192.168.1.50
+  PC 1 (Zebra):      192.168.1.10    ← mismos "192.168.1" ✅
+  PC 2 (Datamax):    192.168.1.20    ← mismos "192.168.1" ✅
+
+
+  ┌──────────┐      ┌────────┐      ┌──────────┐
+  │ Sistema  │──────│Switch 1│──────│  Router  │
+  └──────────┘      └────────┘      │          │
+                                   │          │
+  ┌──────────┐      ┌────────┐      │          │
+  │  PC 1    │──────│Switch 2│──────│          │
+  │  (Zebra) │      └────────┘      └──────────┘
+  └──────────┘
+
+  Funciona sin tocar nada. ✅
+```
+
+**¿Cómo verificarlo?** Ejecutá `ipconfig` en las tres PCs. Si las tres empiezan con los mismos tres números (ej: `192.168.1.xxx`), todo bien.
+
+### Caso 2: Distinta subred (los primeros 3 números son distintos) → Necesita configuración extra ⚠️
+
+Si las IPs tienen distintos primeros tres números, necesitan un router que conecte ambas redes. Esto es más complejo.
+
+```
+  Ejemplo:
+
+  PC del sistema:    192.168.1.50
+  PC 1 (Zebra):      10.0.0.10       ← ¡distinto! ⚠️
+  PC 2 (Datamax):    10.0.0.20       ← ¡distinto! ⚠️
+
+
+  ┌──────────┐      ┌────────┐      ┌────────┐      ┌────────┐
+  │ Sistema  │──────│Router A│──────│Router B│──────│Switch  │
+  └──────────┘      └────────┘      └────────┘      └────────┘
+   192.168.1.x                       10.0.0.x         │
+                                                   ┌────┴────┐
+                                                   │  PC 1   │
+                                                   │  PC 2   │
+                                                   └─────────┘
+```
+
+**En este caso, consultá con soporte.** Se necesita configurar rutas estáticas o un router que haga de puente entre ambas redes. No es complicado pero requiere acceso a la configuración del router.
+
+> **Regla práctica:** Fijate los primeros 3 números de las IPs. Si coinciden en todas las PCs, no te preocupés — funciona. Si no coinciden, llamá a soporte.
+
+---
+
+## 11. Verificar que funciona (PASO A PASO)
 
 Ahora vamos a verificar que el sistema puede comunicarse con los Printer Bridges.
 
@@ -871,8 +839,8 @@ http://192.168.1.153:9101
 - ✅ **Se abre el panel de control del Printer Bridge** → ¡Todo bien! El sistema puede comunicarse con esa PC.
 - ❌ **No se abre, se queda cargando o da error** → Hay un problema. Verificá:
   1. ¿La IP es correcta? (ejecutá `ipconfig` en la PC del bridge)
-  2. ¿El firewall está configurado? (ver sección 9)
-  3. ¿El bridge está corriendo? (¿la ventana negra de `start.bat` está abierta?)
+  2. ¿El firewall está configurado? (ver sección 9, o ejecutá el instalador como administrador)
+  3. ¿El bridge está corriendo? (¿la ventana negra de `node index.js` está abierta?)
   4. ¿Ambas PCs están en la misma red?
 
 Hacé lo mismo para la otra PC:
@@ -913,11 +881,11 @@ El `ping` es otra forma de verificar si una PC es alcanzable, pero **Windows Fir
 
 ### Prueba final: imprimir desde el sistema
 
-Una vez que verificaste que el navegador puede abrir el panel de control, ya podés configurar las impresoras en el sistema (ver sección 11).
+Una vez que verificaste que el navegador puede abrir el panel de control, ya podés configurar las impresoras en el sistema (ver sección 12).
 
 ---
 
-## 11. Configurar las impresoras en el sistema
+## 12. Configurar las impresoras en el sistema
 
 Ahora vamos a decirle al sistema del frigorífico dónde están las impresoras.
 
@@ -976,20 +944,24 @@ Ahora vamos a decirle al sistema del frigorífico dónde están las impresoras.
 
 ---
 
-## 12. Servicio Windows (arranque automático)
+## 13. Servicio Windows (arranque automático)
 
-Si no querés tener que abrir `start.bat` cada vez que encendés la PC, podés instalar el Printer Bridge como **servicio de Windows**. Así se inicia solo cuando prendés la PC, sin que tengas que hacer nada.
+Si no querés tener que ejecutar `node index.js` cada vez que encendés la PC, podés instalar el Printer Bridge como **servicio de Windows**. Así se inicia solo cuando prendés la PC, sin que tengas que hacer nada.
 
 ### Instalar como servicio
 
-1. Buscá el archivo `install-service.bat` en la carpeta `C:\SolemarAlimentaria\printer-bridge\`
-2. Hacé **clic derecho** sobre `install-service.bat`
-3. Elegí **"Ejecutar como administrador"**
-4. Si pregunta "¿Querés permitir que esta app haga cambios?", hacé clic en **"Sí"**
-5. Esperá a que termine el proceso (tarda un ratito, puede que baje cosas de internet)
-6. Cuando diga "SERVICIO INSTALADO", listo
+1. Abrí PowerShell **como Administrador**
+2. Ejecutá:
 
-> **Nota:** Si ya tenías `start.bat` corriendo, podés cerrar esa ventana. El servicio lo reemplaza.
+```powershell
+cd C:\SolemarAlimentaria\printer-bridge
+.\install-service.ps1
+```
+
+3. Esperá a que termine el proceso
+4. Cuando diga "SERVICIO INSTALADO", listo
+
+> **Nota:** Si ya tenías `node index.js` corriendo, podés cerrar esa ventana. El servicio lo reemplaza.
 
 ### Verificar que está corriendo
 
@@ -1019,22 +991,51 @@ Si no querés tener que abrir `start.bat` cada vez que encendés la PC, podés i
 
 Si alguna vez necesitás sacarlo:
 
-1. Clic derecho en `uninstall-service.bat`
-2. **"Ejecutar como administrador"**
-3. Esperá a que termine
+1. Abrí PowerShell como Administrador
+2. Ejecutá:
+
+```powershell
+cd C:\SolemarAlimentaria\printer-bridge
+.\uninstall-service.ps1
+```
 
 ---
 
-## 13. Solución de problemas
+## 14. Solución de problemas
+
+### Herramienta de diagnóstico (¡NUEVO en v2.0!)
+
+El panel web tiene un botón de **"Diagnóstico"** que te dice automáticamente qué está mal. También podés acceder directo desde el navegador:
+
+```
+http://localhost:9101/api/diagnose
+```
+
+Te va a mostrar algo así:
+
+```json
+{
+  "node": "v20.11.0 ✅",
+  "printer": "Zebra ZT230 ✅",
+  "printerFound": true,
+  "port9100": "escuchando ✅",
+  "port9101": "escuchando ✅",
+  "firewall": "OK ✅",
+  "ip": "192.168.1.153",
+  "configFile": "OK ✅"
+}
+```
+
+Si algo dice ❌, ese es el problema. Andá a la sección correspondiente más abajo.
 
 ### "No imprime nada"
 
 Seguí este checklist en orden:
 
 1. **¿El bridge está corriendo?**
-   - Si usás `start.bat`: la ventana negra tiene que estar abierta
+   - Si usás `node index.js`: la ventana negra tiene que estar abierta
    - Si usás servicio: verificá en "Servicios" que PrinterBridge esté "En ejecución"
-   - Si no está corriendo, ejecutá `start.bat` o iniciá el servicio
+   - Si no está corriendo, ejecutá `node index.js` o hacé doble clic en `start.bat`
 
 2. **¿La impresora está prendida?**
    - Fijate que la luz de la impresora esté prendida
@@ -1057,8 +1058,8 @@ Seguí este checklist en orden:
    - Verificá que la IP en el sistema coincida con la IP real de la PC
 
 6. **¿El firewall está configurado?**
-   - Verificá que creaste la regla "Printer Bridge" (ver sección 9)
-   - Verificá que la regla esté habilitada (ícono verde)
+   - Ejecutá el diagnóstico: `http://localhost:9101/api/diagnose`
+   - Si dice firewall ❌: ejecutá el instalador de nuevo como administrador, o hacé la configuración manual (sección 9)
 
 ### "Error al conectar" (desde el sistema)
 
@@ -1066,9 +1067,9 @@ El sistema no puede llegar al Printer Bridge. Verificá:
 
 1. **IP correcta:** Ejecutá `ipconfig` en la PC del bridge y verificá que coincida con lo que pusiste en el sistema
 
-2. **Firewall:** ¿Creaste la regla? (ver sección 9). Hacé la prueba del navegador: abrí `http://IP-DEL-BRIDGE:9101` desde otra PC
+2. **Firewall:** ¿El instalador se ejecutó como administrador? Probá el diagnóstico: `http://IP-DEL-BRIDGE:9101/api/diagnose`. Hacé la prueba del navegador: abrí `http://IP-DEL-BRIDGE:9101` desde otra PC
 
-3. **Red:** ¿Ambas PCs están en el mismo router/switch?
+3. **Red:** ¿Ambas PCs están en el mismo router/switch? (ver sección 10)
 
 4. **Bridge corriendo:** ¿El bridge está funcionando? (¿ventana negra abierta o servicio corriendo?)
 
@@ -1082,13 +1083,11 @@ Windows Firewall **bloquea el ping por defecto**. El ping puede dar "host unreac
 
 Si abrís `http://IP:9101` en el navegador y se abre el panel, todo funciona. El ping es irrelevante.
 
-Si querés que el ping funcione (no es necesario), tendrías que crear otra regla en el firewall para permitir ICMP. Pero no hace falta.
-
 ### "Puerto 9100 ya está en uso" / "EADDRINUSE"
 
 Significa que ya hay otro programa usando ese puerto en la PC. Probablemente el bridge ya está corriendo.
 
-1. Cerrá la ventana de `start.bat` si está abierta
+1. Cerrá la ventana de `node index.js` si está abierta
 2. O detené el servicio: `net stop PrinterBridge`
 3. Esperá unos segundos
 4. Volvé a iniciar
@@ -1108,6 +1107,24 @@ Si persiste, verificá qué está usando el puerto:
    - Reiniciá la PC
    - Instalá el driver de la impresora (ver sección 6)
 3. Si aparece con un triángulo amarillo: hay un problema con el driver. Desinstalá la impresora y volvé a instalar el driver
+
+### "Access denied" / Error de permisos
+
+Si ves un error de permisos al intentar imprimir:
+
+1. **Si usás el bridge manualmente:** Probá ejecutar `start.bat` (que levanta `node index.js`) en vez de correrlo directo desde la consola
+2. **Si es problema de la impresora en Windows:** Andá a Panel de Control → Dispositivos e Impresoras → clic derecho en la impresora → "Propiedades" → pestaña "Seguridad" → verificá que tu usuario tenga permisos
+3. **Si es problema del PowerShell:** Asegurate de ejecutarlo como Administrador (ver sección 7, Paso 1)
+
+### "Printer not found" / "Impresora no encontrada"
+
+El archivo `printer-config.json` tiene un nombre de impresora que no existe en Windows.
+
+1. Abrí `http://localhost:9101/api/diagnose` y fijate qué dice "printer"
+2. Si dice ❌, editá el archivo `C:\SolemarAlimentaria\printer-bridge\printer-config.json`
+3. Verificá que el campo `"printerName"` coincida exactamente con el nombre en Windows
+4. Para ver los nombres correctos, abrí PowerShell y ejecutá: `Get-Printer | Select Name`
+5. Reiniciá el bridge después de editar el config
 
 ### "La impresora hace ruido pero sale etiqueta en blanco"
 
@@ -1132,13 +1149,13 @@ La impresora recibe la orden pero no imprime nada. Probablemente es un problema 
 
 ### "No imprime después de reiniciar la PC"
 
-1. Si usás `start.bat`: tenés que ejecutarlo de nuevo después de reiniciar. Instalá el servicio (sección 12) para que sea automático
+1. Si usás `node index.js` manualmente: tenés que ejecutarlo de nuevo después de reiniciar. Instalá el servicio (sección 13) para que sea automático
 2. Si usás servicio: verificá que el servicio esté "En ejecución" en la ventana de Servicios
 3. Si la PC obtiene IP por DHCP, la IP puede haber cambiado. Ejecutá `ipconfig` y verificá que coincida con lo que hay en el sistema
 
 ---
 
-## 14. Preguntas frecuentes
+## 15. Preguntas frecuentes
 
 ### ¿La impresora necesita cable de red?
 
@@ -1179,19 +1196,27 @@ La impresora recibe la orden pero no imprime nada. Probablemente es un problema 
 
 ### ¿Puedo tener ambas impresoras en la misma PC?
 
-**Sí, pero no es lo ideal.** Podés instalar el Printer Bridge una vez por PC, y cada bridge maneja una sola impresora. Si tenés dos impresoras en la misma PC, necesitarías configurar algo distinto. Consultá con soporte.
+**Sí, pero no es lo ideal.** Podés instalar el Printer Bridge una vez por PC, y cada bridge maneja una sola impresora. Si tenés dos impresoras en la misma PC, necesitás configurar algo distinto. Consultá con soporte.
 
-### ¿Qué pasa si cierro la ventana negra de start.bat?
+### ¿Qué pasa si cierro la ventana negra?
 
-El bridge se deja de running y no se imprime nada más. Tenés que volver a ejecutar `start.bat` o mejor, instalá el servicio para que no tengas que preocuparte (ver sección 12).
+El bridge se deja de correr y no se imprime nada más. Tenés que volver a ejecutar `node index.js`, o hacé doble clic en `start.bat`, o mejor, instalá el servicio para que no tengas que preocuparte (ver sección 13).
 
 ### ¿Puedo apagar la impresora?
 
 **Sí, podés.** Pero obviamente mientras esté apagada no va a imprimir. Cuando la prendas de nuevo, el bridge va a seguir funcionando e intentará imprimir lo que llegue.
 
+### ¿Necesito instalar npm o algo más?
+
+**NO.** La versión 2.0 del Printer Bridge no tiene dependencias. Solo necesitás Node.js instalado. El programa es un solo archivo (`index.js`) que funciona solo, sin necesidad de `npm install` ni paquetes extra.
+
+### ¿Puedo reinstalar si algo sale mal?
+
+**Sí, sin drama.** Borrá la carpeta `C:\SolemarAlimentaria\printer-bridge\` y ejecutá el instalador (`install.ps1`) de nuevo. No pierdes nada porque el instalador baja todo de internet.
+
 ---
 
-## 15. Checklist final
+## 16. Checklist final
 
 Usá esta lista para verificar que todo está bien hecho. Marcá cada item con un ✅ cuando lo termines.
 
@@ -1203,12 +1228,12 @@ Usá esta lista para verificar que todo está bien hecho. Marcá cada item con u
 - [ ] Node.js instalado (`node --version` muestra un número)
 - [ ] Driver de la Zebra instalado
 - [ ] PC conectada a la red (mismo router que las otras PCs)
-- [ ] Archivos del printer-bridge copiados a la PC
-- [ ] `install.bat` ejecutado (nombre de impresora correcto)
+- [ ] `install.ps1` ejecutado como Administrador (impresora correcta seleccionada)
 - [ ] IP de la PC anotada: `_____._____._____._____`
-- [ ] `start.bat` corriendo (ventana negra abierta) **O** servicio instalado
+- [ ] `node index.js` corriendo (ventana negra abierta) **O** servicio instalado
 - [ ] Prueba de impresión exitosa desde `http://localhost:9101`
-- [ ] Firewall configurado (regla "Printer Bridge" creada y habilitada)
+- [ ] Firewall configurado (el instalador lo hizo automáticamente, o verificación manual OK)
+- [ ] Diagnóstico OK: `http://localhost:9101/api/diagnose` todo en ✅
 - [ ] Prueba desde otra PC: `http://IP-PC1:9101` se abre en el navegador
 
 ### PC 2 — Datamax Mark II 4206
@@ -1219,12 +1244,12 @@ Usá esta lista para verificar que todo está bien hecho. Marcá cada item con u
 - [ ] Node.js instalado (`node --version` muestra un número)
 - [ ] Driver de la Datamax instalado
 - [ ] PC conectada a la red (mismo router que las otras PCs)
-- [ ] Archivos del printer-bridge copiados a la PC
-- [ ] `install.bat` ejecutado (nombre de impresora correcto)
+- [ ] `install.ps1` ejecutado como Administrador (impresora correcta seleccionada)
 - [ ] IP de la PC anotada: `_____._____._____._____`
-- [ ] `start.bat` corriendo (ventana negra abierta) **O** servicio instalado
+- [ ] `node index.js` corriendo (ventana negra abierta) **O** servicio instalado
 - [ ] Prueba de impresión exitosa desde `http://localhost:9101`
-- [ ] Firewall configurado (regla "Printer Bridge" creada y habilitada)
+- [ ] Firewall configurado (el instalador lo hizo automáticamente, o verificación manual OK)
+- [ ] Diagnóstico OK: `http://localhost:9101/api/diagnose` todo en ✅
 - [ ] Prueba desde otra PC: `http://IP-PC2:9101` se abre en el navegador
 
 ### Sistema del Frigorífico
@@ -1253,4 +1278,4 @@ Si tenés algún problema que no lográs resolver con esta guía, contactá a so
 ---
 
 *Instructivo preparado para Solemar Alimentaria — Sistema Frigorífico*
-*Última actualización: Enero 2025*
+*Printer Bridge v2.0 — Última actualización: 2025*
