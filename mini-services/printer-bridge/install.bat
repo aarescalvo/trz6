@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title Printer Bridge - Instalador - Solemar Alimentaria
 echo ============================================================
 echo   PRINTER BRIDGE - Solemar Alimentaria
@@ -6,13 +7,13 @@ echo   Instalador para Windows
 echo ============================================================
 echo.
 
-:: Verificar que Node.js está instalado
+:: Verificar que Node.js esta instalado
 where node >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Node.js no está instalado.
+    echo [ERROR] Node.js no esta instalado.
     echo.
     echo Descargalo de: https://nodejs.org/
-    echo Elegí la version LTS (Recommended for Most Users)
+    echo Elegi la version LTS ^(Recommended for Most Users^)
     echo.
     pause
     exit /b 1
@@ -22,7 +23,7 @@ echo [OK] Node.js encontrado:
 node --version
 echo.
 
-:: Verificar que npm está instalado
+:: Verificar que npm esta instalado
 where npm >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] npm no encontrado.
@@ -34,7 +35,7 @@ echo [OK] npm encontrado:
 npm --version
 echo.
 
-:: Crear carpeta de instalación
+:: Crear carpeta de instalacion
 set INSTALL_DIR=C:\SolemarAlimentaria\printer-bridge
 echo Instalando en: %INSTALL_DIR%
 echo.
@@ -46,7 +47,6 @@ if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 echo Copiando archivos...
 copy /Y "%~dp0index.js" "%INSTALL_DIR%\index.js" >nul
 copy /Y "%~dp0package.json" "%INSTALL_DIR%\package.json" >nul
-:: tsconfig.json ya no se necesita (usamos JS puro)
 copy /Y "%~dp0start.bat" "%INSTALL_DIR%\start.bat" >nul
 copy /Y "%~dp0install-service.bat" "%INSTALL_DIR%\install-service.bat" >nul
 copy /Y "%~dp0uninstall-service.bat" "%INSTALL_DIR%\uninstall-service.bat" >nul
@@ -83,7 +83,7 @@ if "%PRINTER_NAME%"=="" (
     exit /b 1
 )
 
-:: Guardar configuración
+:: Guardar configuracion
 echo {"printerName":"%PRINTER_NAME%","tcpPort":9100,"httpPort":9101,"logLevel":"info","autoStart":true} > "%INSTALL_DIR%\printer-config.json"
 
 echo.
@@ -129,7 +129,7 @@ echo.
 echo   1. Ejecuta START.BAT para iniciar el bridge
 echo   2. Abri http://localhost:9101 en el navegador
 echo   3. Hace clic en "Imprimir prueba" para verificar
-echo   4. En el sistema (Configuracion -^> Impresoras) configura:
+echo   4. En el sistema (Configuracion - Impresoras) configura:
 echo      - Puerto: RED
 echo      - IP: %LOCAL_IP%
 echo      - Puerto TCP: 9100
