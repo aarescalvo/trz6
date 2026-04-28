@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia de Instalacion - Impresoras por Red</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1c1917;
+    background: #ffffff;
+  }
+
+  /* Cover */
+  .cover {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px;
+  }
+  .cover-icon { font-size: 64pt; margin-bottom: 24px; }
+  .cover h1 {
+    font-size: 28pt;
+    font-weight: 800;
+    color: #1c1917;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  .cover h2 {
+    font-size: 14pt;
+    font-weight: 400;
+    color: #78716c;
+    margin-bottom: 32px;
+  }
+  .cover-line {
+    width: 80px;
+    height: 3px;
+    background: #f59e0b;
+    border-radius: 2px;
+    margin-bottom: 32px;
+  }
+  .cover-sub {
+    font-size: 11pt;
+    color: #57534e;
+    line-height: 1.8;
+  }
+
+  /* Index */
+  .index {
+    page-break-after: always;
+    padding-top: 20px;
+  }
+  .index h2 {
+    font-size: 16pt;
+    color: #1c1917;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f59e0b;
+  }
+  .index ol {
+    padding-left: 24px;
+  }
+  .index li {
+    font-size: 11pt;
+    color: #44403c;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  /* Sections */
+  .section {
+    page-break-before: always;
+    padding-top: 10px;
+  }
+  .section:first-of-type { page-break-before: auto; }
+
+  h2 {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #1c1917;
+    margin: 32px 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e7e5e4;
+  }
+  h3 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #292524;
+    margin: 20px 0 8px 0;
+  }
+  h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #44403c;
+    margin: 16px 0 6px 0;
+  }
+
+  p { margin-bottom: 10px; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+
+  /* Code blocks */
+  pre {
+    background: #1c1917;
+    color: #e7e5e4;
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 8.5pt;
+    line-height: 1.5;
+    overflow-x: auto;
+    margin: 12px 0 16px 0;
+    white-space: pre;
+  }
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #f5f5f4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    color: #b45309;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: #e7e5e4;
+    font-size: 8.5pt;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 16px 0;
+    font-size: 10pt;
+  }
+  thead th {
+    background: #292524;
+    color: #ffffff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9.5pt;
+  }
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e7e5e4;
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: #fafaf9; }
+
+  /* Warnings */
+  .warning {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+  .error-box {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+  .success-box {
+    background: #f0fdf4;
+    border-left: 4px solid #22c55e;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+
+  /* Checklists */
+  .checklist {
+    list-style: none;
+    padding-left: 0;
+    margin: 8px 0 12px 0;
+  }
+  .checklist li {
+    padding: 4px 0 4px 28px;
+    position: relative;
+  }
+  .checklist li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #a8a29e;
+    border-radius: 3px;
+  }
+
+  /* Diagram box */
+  .diagram-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0 16px 0;
+  }
+
+  /* Step numbers */
+  .steps { counter-reset: step; }
+  .step {
+    counter-increment: step;
+    padding-left: 32px;
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .step::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    background: #f59e0b;
+    color: white;
+    border-radius: 50%;
+    font-size: 10pt;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 22px;
+    text-align: center;
+  }
+
+  /* Footer */
+  .page-footer {
+    font-size: 8pt;
+    color: #a8a29e;
+    text-align: center;
+    margin-top: 32px;
+    padding-top: 12px;
+    border-top: 1px solid #e7e5e4;
+  }
+
+  /* Inline strong */
+  strong { color: #1c1917; }
+
+  /* Print optimizations */
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section { page-break-inside: avoid; }
+    pre { break-inside: avoid; }
+    table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-icon">&#128424;</div>
+  <h1>Printer Bridge</h1>
+  <h2>Guia de Instalacion - Impresoras por Red</h2>
+  <div class="cover-line"></div>
+  <div class="cover-sub">
+    <strong>Solemar Alimentaria</strong><br>
+    Sistema Frigorifico<br><br>
+    Configuracion de impresoras Zebra ZT230 y Datamax Mark II 4206<br>
+    para impresion por red (TCP/IP) desde el sistema
+  </div>
+</div>
+
+<!-- INDEX -->
+<div class="index">
+  <h2>Indice</h2>
+  <ol>
+    <li><strong>Resumen de la instalacion</strong> - Que vamos a hacer</li>
+    <li><strong>Requisitos previos</strong> - Que necesitamos antes de empezar</li>
+    <li><strong>PC 1: Zebra ZT230</strong> - Instalacion paso a paso (Rotulos Media Res)</li>
+    <li><strong>PC 2: Datamax Mark II 4206</strong> - Instalacion paso a paso (Rotulos Cuarto/Caja)</li>
+    <li><strong>Configurar impresoras en el sistema</strong> - Datos de conexion en el frigorifico</li>
+    <li><strong>Imprimir plantillas</strong> - Como usar las plantillas cargadas (ej: Media Res)</li>
+    <li><strong>Solucion de problemas</strong> - Errores comunes y como resolverlos</li>
+    <li><strong>Servicio Windows</strong> - Arranque automatico con Windows</li>
+  </ol>
+</div>
+
+<!-- 1. RESUMEN -->
+<div class="section">
+  <h2>1. Resumen de la instalacion</h2>
+  <h3>Que vamos a hacer?</h3>
+
+  <div class="diagram-box">
+    <pre style="background:transparent; color:#1c1917; padding:0; margin:0; font-size:8pt;">
+Sistema Frigorifico  --TCP/IP:9100-->  PC 1 (Bridge)  --USB-->  Zebra ZT230
+     (Next.js)                           192.168.x.10              Media Res
+
+Sistema Frigorifico  --TCP/IP:9100-->  PC 2 (Bridge)  --USB-->  Datamax 4206
+     (Next.js)                           192.168.x.20              Cuarto/Caja
+    </pre>
+  </div>
+
+  <ul>
+    <li><strong>Cada PC con impresora</strong> corre un programa chico ("Printer Bridge")</li>
+    <li>El sistema envia las etiquetas por red (TCP puerto 9100) a cada PC</li>
+    <li>Cada bridge recibe los datos y los manda a la impresora USB conectada</li>
+    <li>Funciona con las plantillas de rotulos ya cargadas en el sistema (Media Res, Cuarto, etc.)</li>
+  </ul>
+</div>
+
+<!-- 2. REQUISITOS -->
+<div class="section">
+  <h2>2. Requisitos previos</h2>
+  <h3>En CADA PC con impresora:</h3>
+
+  <ul class="checklist">
+    <li><strong>Windows 10 o 11</strong> (las PCs donde estan enchufadas las impresoras por USB)</li>
+    <li><strong>Node.js</strong> instalado - descargar desde https://nodejs.org/ (elegir <strong>LTS</strong>)
+      <br><span style="font-size:9pt; color:#78716c;">Al instalar, dejar todo por defecto (Next, Next, Install, Finish)</span></li>
+    <li><strong>Impresora instalada en Windows</strong> con su driver
+      <br><span style="font-size:9pt; color:#78716c;">Zebra: zebra.com/drivers | Datamax: honeywellaidc.com/drivers</span></li>
+    <li><strong>Impresora encendida</strong> y con cable USB conectado</li>
+    <li><strong>Ambas PCs en la misma red</strong> (conectadas al mismo router/switch)</li>
+  </ul>
+
+  <h3>Para verificar que Node.js esta instalado:</h3>
+  <p>Abrir <strong>CMD</strong> (Inicio - escribir "cmd" - Enter) y ejecutar:</p>
+  <pre>node --version</pre>
+  <p>Si muestra un numero (ej: <code>v20.11.0</code>), esta bien. Si dice "no se reconoce", Node.js no esta instalado.</p>
+
+  <h3>Para verificar que la impresora esta en Windows:</h3>
+  <p>Abrir <strong>Panel de Control</strong> - <strong>Dispositivos e Impresoras</strong> (o <strong>Configuracion</strong> - <strong>Bluetooth y dispositivos</strong> - <strong>Impresoras y escaneres</strong>). La impresora debe aparecer ahi y estar "Lista".</p>
+</div>
+
+<!-- 3. PC 1 ZEBRA -->
+<div class="section">
+  <h2>3. PC 1: Zebra ZT230</h2>
+
+  <h3>Paso 1: Copiar los archivos a esta PC</h3>
+  <p>Los archivos del Printer Bridge estan en el repositorio, en la carpeta <code>mini-services/printer-bridge/</code>.</p>
+  <p>Copia <strong>TODA esa carpeta</strong> a la PC con la Zebra. Los archivos que deben estar son:</p>
+  <pre>printer-bridge/
+  index.ts              El programa principal
+  package.json          Dependencias
+  tsconfig.json         Configuracion TypeScript
+  install.bat           Instalador
+  start.bat             Para iniciar
+  install-service.bat   Para arranque automatico
+  uninstall-service.bat Para desinstalar servicio
+  README.md             Documentacion</pre>
+
+  <h3>Paso 2: Ejecutar el instalador</h3>
+  <ol>
+    <li>Abrir la carpeta <code>printer-bridge</code> en la PC</li>
+    <li>Hacer <strong>doble clic</strong> en <code>install.bat</code></li>
+    <li>Se abre una ventana negra. Seguir las instrucciones. El sistema detecta las impresoras y pide que escribas el nombre exacto de la Zebra</li>
+    <li><strong>Escribi el nombre exacto</strong> de la Zebra tal como aparece en la lista (ej: <code>Zebra ZT230</code>). Copia y pega para evitar errores</li>
+    <li>Presiona <strong>Enter</strong></li>
+    <li><strong>Anota la IP</strong> que muestra (ej: <code>192.168.1.10</code>) - la vas a necesitar despues</li>
+  </ol>
+
+  <h3>Paso 3: Iniciar el bridge</h3>
+  <ol>
+    <li>Hacer <strong>doble clic</strong> en <code>start.bat</code></li>
+    <li>Se abre una ventana negra que queda corriendo mostrando la IP y puerto</li>
+  </ol>
+
+  <div class="warning">
+    <strong>IMPORTANTE:</strong> Esta ventana debe quedar abierta mientras quieras imprimir. No la cierres.
+  </div>
+
+  <h3>Paso 4: Probar que funciona</h3>
+  <ol>
+    <li>Abrir el navegador en esa PC</li>
+    <li>Entrar a <code>http://localhost:9101</code></li>
+    <li>Se abre el panel de control del bridge</li>
+    <li>Verificar que diga "Zebra ZT230" en "Impresora"</li>
+    <li>Hacer clic en <strong>"Imprimir prueba"</strong></li>
+    <li>La Zebra deberia imprimir una etiqueta que dice: <strong>PRUEBA - Zebra ZT230 - Bridge OK - Solemar Alimentaria</strong></li>
+  </ol>
+
+  <div class="success-box">
+    <strong>Si imprimio</strong> - La PC 1 esta lista. Pasa a la PC 2.
+  </div>
+  <div class="error-box">
+    <strong>Si no imprimio</strong> - Mira la seccion "Solucion de problemas" (seccion 7).
+  </div>
+</div>
+
+<!-- 4. PC 2 DATAMAX -->
+<div class="section">
+  <h2>4. PC 2: Datamax Mark II 4206</h2>
+
+  <h3>Paso 1: Copiar los archivos</h3>
+  <p>Mismo que la PC 1. Copia la carpeta <code>printer-bridge/</code> completa a esta PC.</p>
+
+  <h3>Paso 2: Ejecutar el instalador</h3>
+  <ol>
+    <li>Doble clic en <code>install.bat</code></li>
+    <li>Esperar a que detecte las impresoras</li>
+    <li>Escribir el nombre exacto: <code>Datamax Mark II 4206</code></li>
+    <li>Presionar Enter</li>
+    <li><strong>Anota la IP</strong> que muestra (ej: <code>192.168.1.20</code>)</li>
+  </ol>
+
+  <h3>Paso 3: Iniciar el bridge</h3>
+  <div class="warning">
+    <strong>IMPORTANTE:</strong> Como ambas PCs escuchan en el puerto 9100, y estan en maquinas distintas, no hay conflicto. El puerto 9100 es LOCAL a cada PC.
+  </div>
+  <ol>
+    <li>Doble clic en <code>start.bat</code></li>
+    <li>Verificar que muestre la IP y "Datamax Mark II 4206"</li>
+  </ol>
+
+  <h3>Paso 4: Probar que funciona</h3>
+  <ol>
+    <li>Abrir <code>http://localhost:9101</code> en esta PC</li>
+    <li>Clic en <strong>"Imprimir prueba"</strong></li>
+    <li>La Datamax deberia imprimir una etiqueta de prueba</li>
+  </ol>
+
+  <div class="success-box">
+    <strong>Si imprimio</strong> - La PC 2 esta lista.
+  </div>
+</div>
+
+<!-- 5. CONFIGURAR EN EL SISTEMA -->
+<div class="section">
+  <h2>5. Configurar impresoras en el sistema</h2>
+  <p>Ahora vamos a decirle al sistema frigorifico donde estan las impresoras.</p>
+
+  <h3>Paso 1: Verificar que las PCs son accesibles</h3>
+  <p>Desde la PC donde corre el sistema (o desde cualquier PC de la red), abrir CMD y ejecutar:</p>
+  <pre>ping 192.168.1.10
+ping 192.168.1.20</pre>
+  <p><em>(Reemplaza con las IPs reales de cada PC)</em></p>
+  <p>Ambas deben responder. Si alguna no responde, verifica que esten en la misma red y que el firewall no bloquee.</p>
+
+  <h3>Paso 2: Configurar la Zebra ZT230</h3>
+  <ol>
+    <li>Ir al sistema - <strong>Configuracion - Impresoras</strong></li>
+    <li>Hacer clic en <strong>"Agregar impresora"</strong></li>
+    <li>Completar los datos de la tabla:</li>
+  </ol>
+
+  <table>
+    <thead><tr><th>Campo</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Nombre</strong></td><td><code>Zebra ZT230 - Rotulos</code></td></tr>
+      <tr><td><strong>Tipo de rotulo</strong></td><td><code>MEDIA_RES</code></td></tr>
+      <tr><td><strong>Marca</strong></td><td><code>ZEBRA</code></td></tr>
+      <tr><td><strong>Modelo</strong></td><td><code>ZT230</code></td></tr>
+      <tr><td><strong>Puerto</strong></td><td><code>RED</code></td></tr>
+      <tr><td><strong>Direccion IP</strong></td><td>La IP de la PC 1 (ej: <code>192.168.1.10</code>)</td></tr>
+      <tr><td><strong>Ancho etiqueta</strong></td><td><code>100</code> mm</td></tr>
+      <tr><td><strong>Alto etiqueta</strong></td><td><code>50</code> mm</td></tr>
+      <tr><td><strong>DPI</strong></td><td><code>203</code></td></tr>
+      <tr><td><strong>Activa</strong></td><td>Si</td></tr>
+      <tr><td><strong>Predeterminada</strong></td><td>Si (para tipo MEDIA_RES)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Paso 3: Configurar la Datamax Mark II 4206</h3>
+  <p>Agregar otra impresora con estos datos:</p>
+
+  <table>
+    <thead><tr><th>Campo</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Nombre</strong></td><td><code>Datamax 4206 - Cuartos</code></td></tr>
+      <tr><td><strong>Tipo de rotulo</strong></td><td><code>CUARTO</code></td></tr>
+      <tr><td><strong>Marca</strong></td><td><code>DATAMAX</code></td></tr>
+      <tr><td><strong>Modelo</strong></td><td><code>Mark II 4206</code></td></tr>
+      <tr><td><strong>Puerto</strong></td><td><code>RED</code></td></tr>
+      <tr><td><strong>Direccion IP</strong></td><td>La IP de la PC 2 (ej: <code>192.168.1.20</code>)</td></tr>
+      <tr><td><strong>Ancho etiqueta</strong></td><td><code>100</code> mm</td></tr>
+      <tr><td><strong>Alto etiqueta</strong></td><td><code>50</code> mm</td></tr>
+      <tr><td><strong>DPI</strong></td><td><code>203</code></td></tr>
+      <tr><td><strong>Activa</strong></td><td>Si</td></tr>
+      <tr><td><strong>Predeterminada</strong></td><td>Si (para tipo CUARTO)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Paso 4: Verificar las IPs de cada PC</h3>
+  <p>Si no sabes la IP de una PC, abrir CMD en esa PC y ejecutar:</p>
+  <pre>ipconfig</pre>
+  <p>Buscar la que dice "Adaptador de Ethernet" o "Adaptador de Wi-Fi" - "IPv4". Ejemplo: <code>192.168.1.10</code></p>
+</div>
+
+<!-- 6. IMPRIMIR PLANTILLAS -->
+<div class="section">
+  <h2>6. Imprimir plantillas</h2>
+
+  <h3>Imprimir una plantilla de Media Res (Zebra ZT230)</h3>
+  <ol>
+    <li>Ir a <strong>Configuracion - Rotulos</strong> (o Disenador de Etiquetas)</li>
+    <li>Seleccionar la plantilla de <strong>Media Res</strong></li>
+    <li>Verificar que el tipo de impresora sea <strong>ZEBRA</strong></li>
+    <li>Hacer clic en <strong>"Imprimir"</strong> o <strong>"Probar"</strong></li>
+    <li>El sistema envia el ZPL a <code>192.168.1.10:9100</code></li>
+    <li>El bridge de la PC 1 lo recibe y lo manda a la Zebra por USB</li>
+    <li>La etiqueta sale impresa</li>
+  </ol>
+
+  <h3>Imprimir una plantilla de Cuarto (Datamax 4206)</h3>
+  <ol>
+    <li>Seleccionar la plantilla de <strong>Cuarto</strong></li>
+    <li>Verificar que el tipo de impresora sea <strong>DATAMAX</strong></li>
+    <li>Al imprimir, el sistema envia DPL a <code>192.168.1.20:9100</code></li>
+    <li>El bridge de la PC 2 lo recibe y lo manda a la Datamax por USB</li>
+    <li>La etiqueta sale impresa</li>
+  </ol>
+
+  <h3>Desde los modulos de trabajo</h3>
+  <p>Cuando uses los modulos operativos (Ingreso a Cajon, Romaneo, etc.), el sistema automaticamente:</p>
+  <ol>
+    <li>Toma la plantilla asignada (Media Res, Cuarto, etc.)</li>
+    <li>Reemplaza las variables con los datos reales (tropa, garroon, peso, etc.)</li>
+    <li>Envia a la impresora predeterminada para ese tipo de rotulo</li>
+  </ol>
+</div>
+
+<!-- 7. SOLUCION DE PROBLEMAS -->
+<div class="section">
+  <h2>7. Solucion de problemas</h2>
+
+  <h3>"No imprime nada"</h3>
+  <ol>
+    <li><strong>El bridge esta corriendo?</strong> - La ventana negra de <code>start.bat</code> debe estar abierta. Si la cerraste, ejecuta <code>start.bat</code> de nuevo.</li>
+    <li><strong>La impresora esta encendida?</strong> - Verifica que la luz este prendida y que tenga papel/etiquetas cargadas.</li>
+    <li><strong>Funciona la prueba desde el panel web?</strong> - Abrir <code>http://localhost:9101</code> y hacer clic en "Imprimir prueba". Si aca funciona pero desde el sistema no, es problema de red. Si aca tampoco funciona, es problema de la impresora.</li>
+  </ol>
+
+  <h3>"Error al conectar" (desde el sistema)</h3>
+  <ol>
+    <li><strong>La IP es correcta?</strong> - Verifica la IP en el sistema vs la IP real de la PC. Ejecuta <code>ipconfig</code> en la PC para confirmar.</li>
+    <li><strong>Hay firewall bloqueando?</strong> - En la PC con el bridge: Windows Defender Firewall - Configuracion avanzada - Regla de entrada - Nueva regla - Puerto - TCP - <strong>9100</strong> - Permitir la conexion - Todas las redes - Nombre: "Printer Bridge". Hacer lo mismo para el puerto <strong>9101</strong>.</li>
+    <li><strong>Estan en la misma red?</strong> - Ejecuta <code>ping</code> desde la PC del sistema a la IP de la impresora.</li>
+  </ol>
+
+  <h3>"Puerto 9100 ya esta en uso"</h3>
+  <p>Ya hay algo escuchando en ese puerto. Ejecutar en CMD: <code>netstat -ano | findstr :9100</code>. Cerrar el programa que lo este usando o cambiar el puerto en <code>printer-config.json</code>.</p>
+
+  <h3>"No detecta la impresora" (en el panel web)</h3>
+  <p>Verifica que la impresora este en <strong>Panel de Control - Dispositivos e Impresoras</strong>. Si no aparece, instala el driver correspondiente.</p>
+
+  <h3>"La impresora arranca pero sale etiqueta en blanco"</h3>
+  <p>Probablemente es un problema de calor/densidad. En las plantillas ZPL, el comando <code>~SD</code> controla la densidad (0-30). Probar con <code>~SD15</code> o <code>~SD20</code> para mas oscuro.</p>
+
+  <h3>"La etiqueta sale cortada o mal alineada"</h3>
+  <p>Verifica que el <strong>ancho y alto</strong> de etiqueta en el sistema coincidan con el papel fisico. Ancho estandar: 100mm. Alto estandar: 50mm o 25mm.</p>
+</div>
+
+<!-- 8. SERVICIO WINDOWS -->
+<div class="section">
+  <h2>8. Servicio Windows (arranque automatico)</h2>
+  <p>Para que el bridge se inicie automaticamente con Windows (sin tener que ejecutar <code>start.bat</code> a mano):</p>
+
+  <h3>Instalar como servicio</h3>
+  <ol>
+    <li>Clic derecho en <code>install-service.bat</code> - <strong>"Ejecutar como administrador"</strong></li>
+    <li>Esperar a que termine</li>
+    <li>Listo, se inicia solo con Windows</li>
+  </ol>
+
+  <h3>Verificar que esta corriendo</h3>
+  <p>Abrir <strong>Servicios</strong> (Inicio - escribir "servicios" - Enter). Buscar <strong>"PrinterBridge"</strong>. Estado deberia ser <strong>"En ejecucion"</strong>.</p>
+
+  <h3>Comandos utiles</h3>
+  <pre>net stop PrinterBridge    Detener el servicio
+net start PrinterBridge   Iniciar el servicio</pre>
+
+  <h3>Desinstalar el servicio</h3>
+  <ol>
+    <li>Clic derecho en <code>uninstall-service.bat</code> - <strong>"Ejecutar como administrador"</strong></li>
+    <li>Esperar a que termine</li>
+  </ol>
+</div>
+
+<!-- CHECKLIST -->
+<div class="section">
+  <h2>Checklist final</h2>
+
+  <h3>PC 1 (Zebra ZT230)</h3>
+  <ul class="checklist">
+    <li>Node.js instalado</li>
+    <li>Zebra ZT230 instalada en Windows con driver</li>
+    <li>Archivos del printer-bridge copiados</li>
+    <li><code>install.bat</code> ejecutado (nombre de impresora correcto)</li>
+    <li><code>start.bat</code> corriendo (ventana negra abierta)</li>
+    <li>Prueba de impresion exitosa desde http://localhost:9101</li>
+    <li>IP anotada (ej: 192.168.1.10)</li>
+  </ul>
+
+  <h3>PC 2 (Datamax Mark II 4206)</h3>
+  <ul class="checklist">
+    <li>Node.js instalado</li>
+    <li>Datamax 4206 instalada en Windows con driver</li>
+    <li>Archivos del printer-bridge copiados</li>
+    <li><code>install.bat</code> ejecutado (nombre de impresora correcto)</li>
+    <li><code>start.bat</code> corriendo (ventana negra abierta)</li>
+    <li>Prueba de impresion exitosa desde http://localhost:9101</li>
+    <li>IP anotada (ej: 192.168.1.20)</li>
+  </ul>
+
+  <h3>Sistema Frigorifico</h3>
+  <ul class="checklist">
+    <li>Zebra ZT230 configurada (Configuracion - Impresoras - RED - IP PC1)</li>
+    <li>Datamax 4206 configurada (Configuracion - Impresoras - RED - IP PC2)</li>
+    <li>Plantillas asignadas (Media Res - Zebra, Cuarto - Datamax)</li>
+    <li>Firewall de Windows permitiendo puerto 9100 en ambas PCs</li>
+  </ul>
+
+  <div class="page-footer">
+    Documentacion preparada para Solemar Alimentaria - Sistema Frigorifico
+  </div>
+</div>
+
+</body>
+</html>
