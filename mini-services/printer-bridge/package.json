@@ -8,6 +8,6 @@
     "dev": "node --watch index.js"
   },
   "dependencies": {
-    "printer": "^0.4.6"
+    "printer": "^0.4.0"
   }
 }
