@@ -1,11 +1,14 @@
 <#
 .SYNOPSIS
-    Helper para enviar datos RAW a impresora Windows via Win32 API.
+    Helper para enviar datos RAW a impresora Windows via Win32 Spooler API.
     Usado por Printer Bridge (index.js).
 .PARAMETER PrinterName
     Nombre exacto de la impresora en Windows.
 .PARAMETER FilePath
     Path al archivo temporal con los datos a imprimir.
+.OUTPUTS
+    OK:1234        (exitos, 1234 bytes escritos)
+    ERROR:mensaje  (error con descripcion)
 #>
 param(
     [Parameter(Mandatory=$true)]
@@ -14,8 +17,9 @@ param(
     [string]$FilePath
 )
 
-# Cargar Win32 Spooler API
-$code = @'
+try {
+    # Cargar Win32 Spooler API
+    $code = @'
 using System;
 using System.Runtime.InteropServices;
 
@@ -49,14 +53,29 @@ public class WinSpool
 
     [DllImport("winspool.drv", SetLastError = true)]
     public static extern bool ClosePrinter(IntPtr hPrinter);
+
+    [DllImport("kernel32.dll")]
+    public static extern uint GetLastError();
 }
 '@
 
-Add-Type -TypeDefinition $code -Language CSharp
+    Add-Type -TypeDefinition $code -Language CSharp | Out-Null
 
-# Verificar archivo
+} catch {
+    Write-Output "ERROR:Cargando Win32 API: $_"
+    exit 1
+}
+
+# Verificar archivo existe
 if (-not (Test-Path $FilePath)) {
-    Write-Error "Archivo no encontrado: $FilePath"
+    Write-Output "ERROR:Archivo no encontrado: $FilePath"
+    exit 1
+}
+
+# Verificar tamaño
+$fileSize = (Get-Item $FilePath).Length
+if ($fileSize -eq 0) {
+    Write-Output "ERROR:Archivo vacio: $FilePath"
     exit 1
 }
 
@@ -67,9 +86,19 @@ $docInfo.pDatatype = "RAW"
 
 $hPrinter = [IntPtr]::Zero
 
-if (-not [WinSpool]::OpenPrinter($PrinterName, [ref]$hPrinter, [IntPtr]::Zero)) {
-    $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
-    Write-Error "No se pudo abrir la impresora '$PrinterName' (error $err). Verificá que el nombre sea exacto."
+# Abrir impresora
+$result = [WinSpool]::OpenPrinter($PrinterName, [ref]$hPrinter, [IntPtr]::Zero)
+if (-not $result) {
+    $errCode = [WinSpool]::GetLastError()
+    $errMsg = switch ($errCode) {
+        5    { "Acceso denegado. Ejecuta como Administrador." }
+        1801 { "Impresora '$PrinterName' no encontrada. Verifica el nombre exacto." }
+        3015 { "La impresora esta pausada." }
+        13   { "Permiso insuficiente." }
+        2    { "Impresora no encontrada." }
+        default { "Error de Windows $errCode al abrir impresora." }
+    }
+    Write-Output "ERROR:$errMsg (codigo: $errCode)"
     exit 1
 }
 
@@ -77,27 +106,42 @@ try {
     $data = [System.IO.File]::ReadAllBytes($FilePath)
     $written = 0
 
-    if (-not [WinSpool]::StartDocPrinter($hPrinter, 1, [ref]$docInfo)) {
-        Write-Error "StartDocPrinter falló"
+    # Iniciar documento de impresion
+    $result = [WinSpool]::StartDocPrinter($hPrinter, 1, [ref]$docInfo)
+    if (-not $result) {
+        $errCode = [WinSpool]::GetLastError()
+        Write-Output "ERROR:StartDocPrinter fallo (codigo: $errCode)"
         exit 1
     }
 
-    if (-not [WinSpool]::StartPagePrinter($hPrinter)) {
-        Write-Error "StartPagePrinter falló"
+    # Iniciar pagina
+    $result = [WinSpool]::StartPagePrinter($hPrinter)
+    if (-not $result) {
+        $errCode = [WinSpool]::GetLastError()
+        Write-Output "ERROR:StartPagePrinter fallo (codigo: $errCode)"
+        [WinSpool]::EndDocPrinter($hPrinter) | Out-Null
         exit 1
     }
 
-    if (-not [WinSpool]::WritePrinter($hPrinter, $data, $data.Length, [ref]$written)) {
-        Write-Error "WritePrinter falló"
+    # Escribir datos
+    $result = [WinSpool]::WritePrinter($hPrinter, $data, $data.Length, [ref]$written)
+    if (-not $result) {
+        $errCode = [WinSpool]::GetLastError()
+        Write-Output "ERROR:WritePrinter fallo (codigo: $errCode)"
+        [WinSpool]::EndPagePrinter($hPrinter) | Out-Null
+        [WinSpool]::EndDocPrinter($hPrinter) | Out-Null
         exit 1
     }
 
+    # Finalizar pagina y documento
     [WinSpool]::EndPagePrinter($hPrinter) | Out-Null
     [WinSpool]::EndDocPrinter($hPrinter) | Out-Null
 
     Write-Output "OK:$written"
-}
-finally {
+
+} catch {
+    Write-Output "ERROR:Excepcion: $($_.Exception.Message)"
+} finally {
     if ($hPrinter -ne [IntPtr]::Zero) {
         [WinSpool]::ClosePrinter($hPrinter) | Out-Null
     }
