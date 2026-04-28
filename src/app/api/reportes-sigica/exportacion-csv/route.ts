@@ -21,6 +21,53 @@ const TIPO_ANIMAL_SIGICA: Record<string, string> = {
   BURRO: 'BURRO',
 }
 
+// Reglas de clasificación SIGICA - combinaciones válidas tipoAnimal + denticion
+// MEJ: solo 2D (macho entero joven)
+// NT: 2D o 4D (novillito)
+// VQ: 2D o 4D (vaquillona)
+// VA: 6D o 8D (vaca)
+// TO: sin restricción (toro)
+// NO: sin restricción (novillo)
+const REGLAS_CLASIFICACION: Record<string, number[]> = {
+  MEJ: [2],
+  NT: [2, 4],
+  VQ: [2, 4],
+  VA: [6, 8],
+}
+
+// Descripciones legibles de las reglas
+const REGLAS_DESCRIPCION: Record<string, string> = {
+  MEJ: 'Solo 2D',
+  NT: 'Solo 2D o 4D',
+  VQ: 'Solo 2D o 4D',
+  VA: 'Solo 6D o 8D',
+  TO: 'Sin restricción',
+  NO: 'Sin restricción',
+}
+
+function validarClasificacion(denticion: string | null | undefined, tipoAnimal: string | null | undefined): {
+  valida: boolean
+  error?: string
+} {
+  if (!tipoAnimal || !denticion) return { valida: true }
+
+  const numDientes = parseInt(denticion.replace(/\D/g, ''), 10)
+  if (isNaN(numDientes)) return { valida: true }
+
+  const reglas = REGLAS_CLASIFICACION[tipoAnimal]
+  if (!reglas) return { valida: true } // TO, NO u otros sin restricción
+
+  if (!reglas.includes(numDientes)) {
+    const permitidos = reglas.map(d => `${d}D`).join(' o ')
+    return {
+      valida: false,
+      error: `${tipoAnimal} con ${numDientes}D es inválido. Permitido: ${permitidos}`
+    }
+  }
+
+  return { valida: true }
+}
+
 // Mapeo denticion -> prefijo SIGICA (ej: "2" -> "2D", "4" -> "4D")
 function denticionToPrefix(denticion: string | null | undefined): string {
   if (!denticion) return ''
@@ -38,6 +85,12 @@ function buildClasificacion(denticion: string | null | undefined, tipoAnimal: st
   return ''
 }
 
+// Obtener la regla descriptiva para un tipo de animal
+function getReglaDescripcion(tipoAnimal: string | null | undefined): string {
+  if (!tipoAnimal) return ''
+  return REGLAS_DESCRIPCION[tipoAnimal] || 'Sin restricción'
+}
+
 // GET /api/reportes-sigica/exportacion-csv?fecha=2026-04-22
 // Genera el CSV plano para importar a SIGICA
 export async function GET(request: NextRequest) {
@@ -47,14 +100,22 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const fecha = searchParams.get('fecha') // YYYY-MM-DD
-    const destino = searchParams.get('destino') || '106' // default: consumo interno
+    const destinoGlobal = searchParams.get('destino') || '106' // default: consumo interno
     const tropaIds = searchParams.get('tropaIds') // opcional: "165,166,167"
+    // destinoPorTropa: JSON string "{"165":"100","166":"106"}" (opcional, sobreescribe destinoGlobal)
+    const destinoPorTropaStr = searchParams.get('destinoPorTropa')
+    const destinoPorTropa: Record<string, string> = destinoPorTropaStr ? JSON.parse(destinoPorTropaStr) : {}
 
     if (!fecha) {
       return NextResponse.json(
         { success: false, error: 'Fecha de faena obligatoria (param: fecha, formato YYYY-MM-DD)' },
         { status: 400 }
       )
+    }
+
+    // Helper: obtener destino para una tropa
+    const getDestino = (tropaNum: number) => {
+      return destinoPorTropa[String(tropaNum)] || destinoGlobal
     }
 
     const operadorId = request.headers.get('x-operador-id')
@@ -133,14 +194,15 @@ export async function GET(request: NextRequest) {
       const periodo = String(fechaFaena.getFullYear())
       const clasificacion = buildClasificacion(rom.denticion, rom.tipoAnimal)
       const despiece = '2' // 1/2 res por defecto
+      const tropaDestino = getDestino(tropaNum)
 
       if (rom.mediasRes.length === 0) {
         // Sin medias res: usar pesoMediaIzq y pesoMediaDer del romaneo
         if (rom.pesoMediaIzq) {
-          filas.push([String(tropaNum), especie, fechaStr, periodo, clasificacion, despiece, String(rom.garron), String(rom.pesoMediaIzq), '', destino, '', '', ''])
+          filas.push([String(tropaNum), especie, fechaStr, periodo, clasificacion, despiece, String(rom.garron), String(rom.pesoMediaIzq), '', tropaDestino, '', '', ''])
         }
         if (rom.pesoMediaDer) {
-          filas.push([String(tropaNum), especie, fechaStr, periodo, clasificacion, despiece, String(rom.garron), String(rom.pesoMediaDer), '', destino, '', '', ''])
+          filas.push([String(tropaNum), especie, fechaStr, periodo, clasificacion, despiece, String(rom.garron), String(rom.pesoMediaDer), '', tropaDestino, '', '', ''])
         }
       } else {
         // Con medias res: usar los datos de cada media
@@ -156,7 +218,7 @@ export async function GET(request: NextRequest) {
             String(rom.garron),
             String(media.peso),
             camaraNum,
-            destino,
+            tropaDestino,
             '', '', ''
           ])
         }
@@ -207,7 +269,7 @@ export async function POST(request: NextRequest) {
     if (authError) return authError
 
     const body = await request.json()
-    const { fecha, destino, tropaIds } = body
+    const { fecha, destino, tropaIds, destinoPorTropa } = body
 
     if (!fecha) {
       return NextResponse.json(
@@ -273,27 +335,35 @@ export async function POST(request: NextRequest) {
       })
 
       const registros = romaneos.flatMap(rom => {
+        const clasif = buildClasificacion(rom.denticion, rom.tipoAnimal)
+        const validacion = validarClasificacion(rom.denticion, rom.tipoAnimal)
+        const tropaDestino = (destinoPorTropa && destinoPorTropa[String(tropa.numero)]) || destino || '106'
         return rom.mediasRes.map(media => ({
           tropa: tropa.numero,
           tropaCodigo: tropa.codigo,
           especie: tropa.especie,
           fecha: formatFecha(tropa.fechaFaena || rom.fecha),
           periodo: String((tropa.fechaFaena || rom.fecha).getFullYear()),
-          clasificacion: buildClasificacion(rom.denticion, rom.tipoAnimal),
+          clasificacion: clasif,
           despiece: '2',
           garon: rom.garron,
           kilos: media.peso,
           camara: extractCamaraNumber(media.camara?.nombre),
           camaraNombre: media.camara?.nombre || '-',
-          destino: destino || '106',
+          destino: tropaDestino,
           tipoAnimal: rom.tipoAnimal || '-',
           denticion: rom.denticion || '-',
+          clasificacionValida: validacion.valida,
+          clasificacionError: validacion.error || undefined,
         }))
       })
 
       // Si no hay medias pero sí hay pesos en el romaneo
       if (registros.length === 0) {
         romaneos.forEach(rom => {
+          const clasif = buildClasificacion(rom.denticion, rom.tipoAnimal)
+          const validacion = validarClasificacion(rom.denticion, rom.tipoAnimal)
+          const tropaDestino = (destinoPorTropa && destinoPorTropa[String(tropa.numero)]) || destino || '106'
           if (rom.pesoMediaIzq) {
             registros.push({
               tropa: tropa.numero,
@@ -301,15 +371,17 @@ export async function POST(request: NextRequest) {
               especie: tropa.especie,
               fecha: formatFecha(tropa.fechaFaena || rom.fecha),
               periodo: String((tropa.fechaFaena || rom.fecha).getFullYear()),
-              clasificacion: buildClasificacion(rom.denticion, rom.tipoAnimal),
+              clasificacion: clasif,
               despiece: '2',
               garon: rom.garron,
               kilos: rom.pesoMediaIzq,
               camara: '',
               camaraNombre: '-',
-              destino: destino || '106',
+              destino: tropaDestino,
               tipoAnimal: rom.tipoAnimal || '-',
               denticion: rom.denticion || '-',
+              clasificacionValida: validacion.valida,
+              clasificacionError: validacion.error || undefined,
             })
           }
           if (rom.pesoMediaDer) {
@@ -319,15 +391,17 @@ export async function POST(request: NextRequest) {
               especie: tropa.especie,
               fecha: formatFecha(tropa.fechaFaena || rom.fecha),
               periodo: String((tropa.fechaFaena || rom.fecha).getFullYear()),
-              clasificacion: buildClasificacion(rom.denticion, rom.tipoAnimal),
+              clasificacion: clasif,
               despiece: '2',
               garon: rom.garron,
               kilos: rom.pesoMediaDer,
               camara: '',
               camaraNombre: '-',
-              destino: destino || '106',
+              destino: tropaDestino,
               tipoAnimal: rom.tipoAnimal || '-',
               denticion: rom.denticion || '-',
+              clasificacionValida: validacion.valida,
+              clasificacionError: validacion.error || undefined,
             })
           }
         })
@@ -348,6 +422,7 @@ export async function POST(request: NextRequest) {
     const todosRegistros = tropasConResumen.flatMap(t => t.registros)
     const totalMedias = todosRegistros.length
     const totalKg = todosRegistros.reduce((sum, r) => sum + (r.kilos || 0), 0)
+    const registrosInvalidos = todosRegistros.filter(r => !r.clasificacionValida)
 
     return NextResponse.json({
       success: true,
@@ -355,7 +430,9 @@ export async function POST(request: NextRequest) {
         tropas: tropasConResumen,
         registros: todosRegistros,
         totalMedias,
-        totalKg: Math.round(totalKg * 10) / 10
+        totalKg: Math.round(totalKg * 10) / 10,
+        clasificacionesInvalidas: registrosInvalidos.length,
+        reglasClasificacion: REGLAS_DESCRIPCION,
       }
     })
   } catch (error) {

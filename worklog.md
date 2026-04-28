@@ -1,5 +1,58 @@
 
 ---
+Task ID: SIGICA-EXPORT-1
+Agent: main
+Task: Mejoras en Exportación SIGICA - validación de clasificación y destino por tropa
+
+Work Log:
+
+#### 1. Reglas de Clasificación Agregadas
+**Archivo:** `src/app/api/reportes-sigica/exportacion-csv/route.ts`
+- Nuevas constantes `REGLAS_CLASIFICACION` con combinaciones válidas:
+  - MEJ: solo 2D (macho entero joven)
+  - NT: solo 2D o 4D (novillito)
+  - VQ: solo 2D o 4D (vaquillona)
+  - VA: solo 6D o 8D (vaca)
+  - TO y NO: sin restricción
+- Nueva función `validarClasificacion()` que retorna `{ valida: boolean, error?: string }`
+- Nuevas constantes `REGLAS_DESCRIPCION` para mostrar reglas en la UI
+
+#### 2. Destino por Tropa Individual
+**API (GET y POST):**
+- Nuevo parámetro `destinoPorTropa` (JSON string) que sobreescribe el destino global
+- En GET: `?destinoPorTropa={"165":"100","166":"106"}`
+- En POST: body `{ destinoPorTropa: { "165": "100" } }`
+- Helper `getDestino(tropaNum)` resuelve el destino correcto
+
+**POST Preview:**
+- Cada registro ahora incluye `clasificacionValida` y `clasificacionError`
+- Response incluye `clasificacionesInvalidas` (count) y `reglasClasificacion` (descriptions)
+
+#### 3. Componente UI Actualizado
+**Archivo:** `src/components/exportacion-sigica/index.tsx`
+- Selector de destino individual por tropa (dropdown en cada fila)
+- Estado `destinoPorTropa` para sobreescribir destino global
+- Alerta amarilla cuando hay clasificaciones inválidas
+- Tarjeta de resumen "Con advertencia" (roja) cuando hay errores
+- Vista previa: filas inválidas marcadas en rojo con ícono de advertencia
+- Tabla "Detalle de Advertencias" con tipo, dentición y error por registro
+- Info box con reglas de clasificación visibles
+- `useMemo` para filtrado eficiente de registros
+
+#### 4. Verificación
+- TypeScript: sin errores en archivos modificados
+- Lint: limpio
+
+Stage Summary:
+- **Validación de clasificación SIGICA implementada** ✅
+- **Destino individual por tropa** ✅
+- **Alertas visuales para clasificaciones inválidas** ✅
+- **Reglas mostradas en la UI** ✅
+- **Archivos modificados:**
+  - `src/app/api/reportes-sigica/exportacion-csv/route.ts`
+  - `src/components/exportacion-sigica/index.tsx`
+
+---
 Task ID: MEJORAS-1-11
 Agent: main
 Task: Implementar 11 mejoras UX de personalización y reportes + fix overlay gris
