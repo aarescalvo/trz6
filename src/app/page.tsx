@@ -183,7 +183,6 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'vbRomaneo', label: 'VB Romaneo', icon: FileText, permiso: 'puedeRomaneo' },
       { id: 'movimientoCamaras', label: 'Movimiento de Cámaras', icon: RefreshCw, permiso: 'puedeStock' },
       { id: 'expedicionUnificada', label: 'Expedición', icon: Truck, permiso: 'puedeStock', permisoAlt: 'puedeExpedicionC2' },
-      { id: 'despachos', label: 'Despachos', icon: Truck, permiso: 'puedeStock' },
     ]
   },
   // 3. CICLO II
@@ -194,6 +193,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'cuarteo', label: 'Cuarteo', icon: Scissors, permiso: 'puedeCuarteo' },
       { id: 'ingresoDesposteUnificado', label: 'Ingreso a Desposte', icon: Package, permiso: 'puedeDesposte' },
       { id: 'produccionUnificada', label: 'Producción / Empaque', icon: Scissors, permiso: 'puedeDesposte', permisoAlt: 'puedeEmpaque' },
+      { id: 'despachos', label: 'Despachos', icon: Truck, permiso: 'puedeStock' },
       { id: 'c2Subproductos', label: 'Subproductos C2', icon: Package, permiso: 'puedeDesposte' },
       { id: 'c2Pallets', label: 'Pallets C2', icon: Package, permiso: 'puedeExpedicionC2' },
       { id: 'c2Rendimiento', label: 'Rendimiento C2', icon: TrendingUp, permiso: 'puedeReportes' },
