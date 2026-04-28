@@ -37,6 +37,7 @@ import ExpedicionUnificada from '@/components/expedicion-unificada'
 import StockUnificada from '@/components/stock-unificada'
 import { CuerosModule } from '@/components/cueros'
 import { ReportesSenasaModule } from '@/components/reportes-senasa'
+import { ExportacionSIGICAModule } from '@/components/exportacion-sigica'
 import { FacturacionModule } from '@/components/facturacion'
 import { PreciosPage as PreciosModule } from '@/modules/facturacion/components/PreciosPage'
 import { ConfigRotulosModule } from '@/components/config-rotulos'
@@ -69,6 +70,7 @@ import { ReportesGerencialesModule } from '@/modules-pending/reportes-gerenciale
 import { ControlVencimientosModule } from '@/modules-pending/control-vencimientos'
 import { AlertasStockModule } from '@/modules-pending/alertas-stock'
 import { HistorialPreciosModule } from '@/modules-pending/historial-precios'
+import { ExportacionSIGICAModule } from '@/components/exportacion-sigica'
 
 // Lucide icons
 import { 
@@ -76,7 +78,7 @@ import {
   Warehouse, FileText, Settings, Calendar, LogOut, Lock, Users,
   Loader2, Search, RefreshCw, BoxSelect, Barcode,
   ChevronDown, ChevronRight, LayoutDashboard, Wifi, WifiOff, CloudUpload, DollarSign,
-  AlertTriangle, Clock, Activity, PanelLeftClose, PanelLeftOpen
+  AlertTriangle, Clock, Activity, PanelLeftClose, PanelLeftOpen, FileSpreadsheet
 } from 'lucide-react'
 
 // Resilience imports
@@ -136,7 +138,7 @@ interface Stats {
   enCamara: number
 }
 
-type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'calidadPh' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA'
+type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'calidadPh' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA' | 'exportacionSIGICA'
 
 // Navigation item
 interface NavItem {
@@ -242,6 +244,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'busquedaFiltro', label: 'Búsqueda por Filtro', icon: Search, permiso: 'puedeReportes' },
       { id: 'reportesSenasa', label: 'Reportes SENASA', icon: FileText, permiso: 'puedeReportes' },
       { id: 'reportesSIGICA', label: 'Reportes SIGICA', icon: FileText, permiso: 'puedeReportes' },
+      { id: 'exportacionSIGICA', label: 'Exportacion SIGICA', icon: FileSpreadsheet, permiso: 'puedeReportes' },
       { id: 'reportesGerenciales', label: 'Reportes Gerenciales', icon: TrendingUp, permiso: 'puedeReportes' },
       { id: 'controlVencimientos', label: 'Control Vencimientos', icon: AlertTriangle, permiso: 'puedeStock' },
       { id: 'dashboardEjecutivo', label: 'Dashboard Ejecutivo', icon: LayoutDashboard, permiso: 'puedeReportes' },
@@ -1090,6 +1093,8 @@ export default function FrigorificoApp() {
         return wrapModule('historialPrecios', <HistorialPreciosModule operador={operador} />)
       case 'reportesSIGICA':
         return wrapModule('reportesSIGICA', <ReportesSenasaModule operador={operador} />)
+      case 'exportacionSIGICA':
+        return wrapModule('exportacionSIGICA', <ExportacionSIGICAModule operador={operador} />)
       default:
         return wrapModule('pesajeCamiones', <PesajeCamionesModule operador={operador as any} onTropaCreada={fetchTropas} />)
     }
