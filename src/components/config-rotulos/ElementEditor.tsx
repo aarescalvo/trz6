@@ -216,7 +216,9 @@ export function ElementEditor({
                   v.id.includes('CODIGO') || 
                   v.id.includes('GARRON') || 
                   v.id.includes('TROPA') ||
-                  v.id.includes('CUIT')
+                  v.id.includes('CUIT') ||
+                  v.id.includes('NUMERO') ||
+                  v.id.includes('CARAVANA')
                 ).map(v => (
                   <SelectItem key={v.id} value={v.id}>
                     {v.nombre}
@@ -239,6 +241,8 @@ export function ElementEditor({
                 <SelectContent>
                   <SelectItem value="CODE128">Code 128</SelectItem>
                   <SelectItem value="CODE39">Code 39</SelectItem>
+                  <SelectItem value="ITF14">ITF-14 (Interleaved 2of5)</SelectItem>
+                  <SelectItem value="I25">Interleaved 2 of 5</SelectItem>
                   <SelectItem value="EAN13">EAN-13</SelectItem>
                   <SelectItem value="EAN8">EAN-8</SelectItem>
                   <SelectItem value="UPC">UPC-A</SelectItem>

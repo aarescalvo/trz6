@@ -27,8 +27,11 @@ import { ElementEditor } from './ElementEditor'
 
 // Variables disponibles
 const VARIABLES_DISPONIBLES = [
-  { id: 'NUMERO', nombre: 'Número de Animal', ejemplo: '15' },
+  { id: 'NUMERO', nombre: 'Número de Animal (interno)', ejemplo: '15' },
+  { id: 'NUMERO_ANIMAL', nombre: 'N° Animal dentro de la Tropa', ejemplo: '015' },
   { id: 'TROPA', nombre: 'Código de Tropa', ejemplo: 'B 2026 0012' },
+  { id: 'TROPA_CODIGO', nombre: 'Código Tropa (sin espacios)', ejemplo: 'B20260012' },
+  { id: 'NUMERO_CARAVANA', nombre: 'N° Caravana / Arete', ejemplo: '1234567890' },
   { id: 'TIPO', nombre: 'Tipo de Animal', ejemplo: 'VA' },
   { id: 'PESO', nombre: 'Peso', ejemplo: '452' },
   { id: 'CODIGO', nombre: 'Código Completo', ejemplo: 'B20260012-015' },
@@ -464,6 +467,49 @@ export function EditorRotulosFullScreen({ rotuloInicial, onGuardar, onVolver }: 
                   <ZoomIn className="w-3 h-3" />
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Ayuda ITF Datamax */}
+          <Card className="border shadow-sm bg-blue-50/50">
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+                <Barcode className="w-3 h-3" />
+                Código ITF Datamax
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-2 space-y-1.5">
+              <p className="text-[10px] text-blue-600 leading-tight">
+                Para conformar el código de barras ITF con los datos del animal usá estas variables:
+              </p>
+              <div className="bg-white rounded p-1.5 space-y-1 border border-blue-100">
+                <div className="text-[10px]">
+                  <span className="text-stone-500">Tropa:</span>{' '}
+                  <code className="text-amber-600 font-mono">{'{{TROPA_CODIGO}}'}</code>
+                </div>
+                <div className="text-[10px]">
+                  <span className="text-stone-500">N° Animal:</span>{' '}
+                  <code className="text-amber-600 font-mono">{'{{NUMERO_ANIMAL}}'}</code>
+                </div>
+                <div className="text-[10px]">
+                  <span className="text-stone-500">Caravana:</span>{' '}
+                  <code className="text-amber-600 font-mono">{'{{NUMERO_CARAVANA}}'}</code>
+                </div>
+              </div>
+              <p className="text-[10px] text-blue-600 leading-tight font-medium">
+                Formato sugerido ITF-14:
+              </p>
+              <div className="bg-white rounded p-1.5 border border-blue-100">
+                <code className="text-[9px] font-mono text-stone-700 break-all">
+                  TROPA_CODIGO + NUMERO_ANIMAL + NUMERO_CARAVANA
+                </code>
+                <p className="text-[9px] text-stone-400 mt-0.5">
+                  Ej: B20260001 + 015 + 1234567890
+                </p>
+              </div>
+              <p className="text-[10px] text-blue-500 leading-tight">
+                Seleccioná tipo <strong>ITF-14</strong> o <strong>Interleaved 2of5</strong> en las propiedades del código de barras.
+              </p>
             </CardContent>
           </Card>
 

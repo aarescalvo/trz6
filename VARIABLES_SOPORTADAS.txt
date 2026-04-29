@@ -6,9 +6,10 @@
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
 | `{{NUMERO}}` | Número de animal dentro de la tropa | 15 |
-| `{{NUMERO_ANIMAL}}` | Número de animal (alias) | 15 |
+| `{{NUMERO_ANIMAL}}` | N° animal dentro de la tropa (3 dígitos) | 015 |
 | `{{TROPA}}` | Código de tropa completo | B 2026 0001 |
-| `{{TROPA_CODIGO}}` | Código simplificado de tropa | B0001 |
+| `{{TROPA_CODIGO}}` | Código simplificado de tropa (sin espacios) | B20260001 |
+| `{{NUMERO_CARAVANA}}` | Número de caravana / arete del animal | 1234567890 |
 | `{{GARRON}}` | Número de garrón | 0001 |
 | `{{GARRON_NUM}}` | Número de garrón sin ceros | 1 |
 | `{{TIPO}}` | Tipo de animal | VA, TO, NO, VQ, MEJ, NT |
@@ -163,6 +164,39 @@
 | `{{RENDERING}}` | Tipo de rendering | GRASA |
 | `{{RENDERING_PESO}}` | Peso de rendering | 150.5 |
 | `{{TIPO_RENDERING}}` | Tipo específico | GRASA, DESPERDICIOS, FONDO_DIGESTOR |
+
+---
+
+## Código ITF para Datamax
+
+### Cómo conformar el código de barras ITF
+Para rótulos ITF de Datamax, el código de barras se arma combinando:
+
+| Dato | Variable | Ejemplo |
+|------|----------|--------|
+| Tropa (sin espacios) | `{{TROPA_CODIGO}}` | B20260001 |
+| N° animal en tropa | `{{NUMERO_ANIMAL}}` | 015 |
+| N° caravana/arete | `{{NUMERO_CARAVANA}}` | 1234567890 |
+
+**Formato sugerido ITF-14:**
+```
+TROPA_CODIGO + NUMERO_ANIMAL + NUMERO_CARAVANA
+```
+**Ejemplo:** `B202600010151234567890`
+
+**Tipos de código de barras disponibles:**
+- `ITF-14` — Interleaved 2 of 5 con 14 dígitos (estándar para cajas/tropas)
+- `Interleaved 2 of 5` — I25 genérico (longitud variable, solo dígitos)
+- `Code 128` — Alfanumérico, soporta cualquier carácter
+
+### Para Datamax (DPL) con ITF
+```dpl
+<STX><ESC>A<ETX>
+<STX><ESC>H0080;0160;1;001;0001;0001<ETX>
+<STX><ESC>b001;0050;001;040;025;ITF;B;B;N;NN;Y<ETX>
+<STX>{TROPA_CODIGO}{NUMERO_ANIMAL}{NUMERO_CARAVANA}<ETX>
+<STX><ETB><ETX>
+```
 
 ---
 
