@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
   // Permitir requests cross-origin en desarrollo (red local, IP dinámica)
   allowedDevOrigins: ['http://192.168.1.153:3000'],
   experimental: {
