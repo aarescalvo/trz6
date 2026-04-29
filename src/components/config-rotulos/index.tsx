@@ -1152,12 +1152,12 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
               <Input
                 ref={fileInputRef}
                 type="file"
-                accept=".zpl,.prn,.nlbl,.lbl,.dpl,.txt"
+                accept=".zpl,.prn,.nlbl,.lbl,.dpl,.nrx,.itf,.txt"
                 onChange={handleFileSelect}
                 className="mt-1"
               />
               <p className="text-xs text-stone-500 mt-1">
-                Zebra: .zpl, .prn, .nlbl, .lbl | Datamax: .dpl
+                Zebra: .zpl, .prn, .nlbl, .lbl | Datamax: .dpl, .itf | Nettira: .nrx
               </p>
             </div>
 
