@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
+  // Permitir requests cross-origin en desarrollo (red local, IP dinámica)
+  allowedDevOrigins: ['http://192.168.1.153:3000'],
   experimental: {
     serverActions: {
       allowedOrigins: getAllowedOrigins(),

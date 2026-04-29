@@ -72,9 +72,11 @@ function isOriginAllowed(request: NextRequest): boolean {
     }
   }
 
-  // En desarrollo, siempre permitir localhost
+  // En desarrollo, siempre permitir localhost y cualquier IP local
   if (process.env.NODE_ENV === 'development') {
     allowedHosts.push('localhost:3000', 'localhost:3001', '127.0.0.1:3000', '127.0.0.1:3001')
+    // Permitir cualquier host en desarrollo (red local, IP dinámica, etc.)
+    if (host) allowedHosts.push(host)
   }
 
   // Si no hay Origin ni Referer, verificar si el Host coincide
