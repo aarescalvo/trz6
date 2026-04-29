@@ -74,6 +74,27 @@ interface VariableDetectada {
   descripcion: string
 }
 
+// Función para determinar si el contenido de un archivo es texto legible
+function esContenidoTexto(texto: string): boolean {
+  if (!texto || texto.length === 0) return false
+  // Si el archivo empieza con comandos DPL, ZPL, o tiene texto ASCII legible
+  const tieneComandosImpresora = /^\s*(<STX>|\\x02|<ESC>|\\x1b|ESC |\\^XA|\\^FO|\\^FW)/i.test(texto)
+  // Verificar que la mayoría de los bytes son ASCII imprimible o comunes de DPL/ZPL
+  let caracteresLegibles = 0
+  const muestra = texto.substring(0, 500)
+  for (let i = 0; i < muestra.length; i++) {
+    const code = muestra.charCodeAt(i)
+    // ASCII imprimible (32-126), tab (9), newline (10), carriage return (13)
+    // Caracteres especiales DPL: STX(2), ESC(27), ETX(3), CAN(5), ETB(23), FS(28)
+    if ((code >= 32 && code <= 126) || [2, 3, 5, 9, 10, 13, 23, 27, 28].includes(code)) {
+      caracteresLegibles++
+    }
+  }
+  const porcentajeLegible = caracteresLegibles / Math.max(muestra.length, 1)
+  // Si más del 85% es legible O tiene comandos de impresora reconocidos
+  return porcentajeLegible > 0.85 || tieneComandosImpresora
+}
+
 interface Rotulo {
   id: string
   nombre: string
@@ -420,9 +441,13 @@ OPCIÓN 2 - Exportar ZPL:
       setTipoImpresora('DATAMAX')
       setModeloImpresora('MARK_II')
       setDpi(203)
-    } else if (extension === 'nrx' || extension === 'itf') {
+    } else if (extension === 'nrx' || extension === 'nlbl' || extension === 'lbl') {
       setTipoImpresora('NETTIRA')
       setModeloImpresora('NTE-200')
+      setDpi(203)
+    } else if (extension === 'itf') {
+      setTipoImpresora('DATAMAX')
+      setModeloImpresora('MARK_II')
       setDpi(203)
     } else {
       setTipoImpresora('ZEBRA')
@@ -432,8 +457,15 @@ OPCIÓN 2 - Exportar ZPL:
 
     setArchivo(file)
     
-    // Para archivos .nlbl, .lbl y .nrx, son binarios propietarios
-    if (extension === 'nlbl' || extension === 'lbl' || extension === 'nrx' || extension === 'itf') {
+    // Intentar leer como texto primero (para DPL, ZPL, ITF texto plano)
+    const textoRaw = await file.text()
+    const esTextoLegible = esContenidoTexto(textoRaw)
+    
+    // Para archivos .nlbl, .lbl, .nrx son SIEMPRE binarios propietarios
+    // Para .itf y .prn: intentar como texto primero
+    const siempreBinario = extension === 'nlbl' || extension === 'lbl' || extension === 'nrx'
+    
+    if (siempreBinario || !esTextoLegible) {
       // Leer como buffer binario para enviar directo a impresora
       const buffer = await file.arrayBuffer()
       setArchivoBinario(buffer)
@@ -461,9 +493,9 @@ OPCIÓN 2 - Exportar ZPL:
         // Ignorar errores de decode
       }
       
-      const esNettira = extension === 'nrx' || extension === 'itf'
-      const formatoNombre = esNettira ? 'NETTIRA LABEL DESIGNER' : 'ZEBRA DESIGNER'
-      const impresoraNombre = esNettira ? 'Datamax/Nettira' : 'Zebra'
+      const esNettira = extension === 'nrx' || extension === 'nlbl' || extension === 'lbl'
+      const formatoNombre = esNettira ? 'NETTIRA LABEL DESIGNER' : (extension === 'itf' ? 'DATAMAX ITF' : 'ZEBRA DESIGNER')
+      const impresoraNombre = esNettira ? 'Datamax/Nettira' : (extension === 'itf' ? 'Datamax' : 'Zebra')
 
       setContenidoArchivo(`╔══════════════════════════════════════════════════════════════╗
 ║     ARCHIVO ${formatoNombre} - ${extension.toUpperCase().padEnd(12)}          ║
@@ -509,15 +541,20 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
 ✅ IMPRESIÓN DIRECTA: Configure la IP de la impresora y 
    use "Imprimir Prueba" para enviar el archivo directamente.`)
       setVariablesDetectadas([])
-      toast.info(esNettira ? 'Archivo Nettira Label Designer detectado. Se enviará directo a impresora.' : 'Archivo Zebra Designer detectado. Se enviará directo a impresora.')
+      const msgBinario = esNettira 
+        ? 'Archivo Nettira Label Designer detectado. Se enviará directo a impresora.' 
+        : extension === 'itf'
+          ? 'Archivo ITF binario detectado. Se enviará directo a impresora Datamax.'
+          : 'Archivo Zebra Designer detectado. Se enviará directo a impresora.'
+      toast.info(msgBinario)
     } else {
-      // Archivos de texto plano (zpl, prn, dpl, txt)
-      const contenido = await file.text()
-      setContenidoArchivo(contenido)
+      // Archivos de texto plano (zpl, prn, dpl, txt, itf texto)
+      setContenidoArchivo(textoRaw)
       setEsBinario(false)
       setArchivoBinario(null)
       
-      const variables = detectarVariables(contenido, extension === 'dpl' ? 'DATAMAX' : 'ZEBRA')
+      const tipoImpVar = (extension === 'dpl' || extension === 'itf') ? 'DATAMAX' : 'ZEBRA'
+      const variables = detectarVariables(textoRaw, tipoImpVar)
       setVariablesDetectadas(variables)
     }
     
@@ -547,8 +584,11 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
       'FECHA_VENC': { campo: 'fechaVencimiento', descripcion: 'Fecha vencimiento' },
       'VENCIMIENTO': { campo: 'fechaVencimiento', descripcion: 'Fecha vencimiento' },
       'TROPA': { campo: 'tropa', descripcion: 'Código de tropa' },
+      'TROPA_CODIGO': { campo: 'tropa_codigo', descripcion: 'Código tropa (sin espacios)' },
       'GARRON': { campo: 'garron', descripcion: 'Número de garrón' },
       'NUMERO': { campo: 'numeroAnimal', descripcion: 'Número de animal' },
+      'NUMERO_ANIMAL': { campo: 'numero_animal', descripcion: 'N° animal dentro de la tropa' },
+      'NUMERO_CARAVANA': { campo: 'numero_caravana', descripcion: 'N° caravana / arete' },
       'PESO': { campo: 'peso', descripcion: 'Peso (kg)' },
       'KG': { campo: 'peso', descripcion: 'Peso (kg)' },
       'LADO': { campo: 'ladoMedia', descripcion: 'Lado (IZQ/DER)' },
@@ -561,6 +601,7 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
       'LOTE': { campo: 'lote', descripcion: 'Número de lote' },
       'CODIGO_BARRAS': { campo: 'codigoBarras', descripcion: 'Código de barras' },
       'CODIGO_EAN128': { campo: 'codigoEAN128', descripcion: 'Código EAN-128 (GS1)' },
+      'CODIGO_ITF': { campo: 'codigo_itf', descripcion: 'Código ITF (Tropa+N°Animal+Caravana)' },
       // --- Establecimiento ---
       'ESTABLECIMIENTO': { campo: 'establecimiento', descripcion: 'Establecimiento' },
       'NRO_ESTABLECIMIENTO': { campo: 'nroEstablecimiento', descripcion: 'N° Establecimiento' },
