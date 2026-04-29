@@ -70,7 +70,6 @@ import { ReportesGerencialesModule } from '@/modules-pending/reportes-gerenciale
 import { ControlVencimientosModule } from '@/modules-pending/control-vencimientos'
 import { AlertasStockModule } from '@/modules-pending/alertas-stock'
 import { HistorialPreciosModule } from '@/modules-pending/historial-precios'
-import { ExportacionSIGICAModule } from '@/components/exportacion-sigica'
 
 // Lucide icons
 import { 
