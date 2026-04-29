@@ -143,26 +143,87 @@ export function ConfigRotulosModule({ operador, modoEditor: modoEditorProp, onVo
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Datos de prueba para previsualización
+  // Datos de prueba para previsualización (completos para Zebra y Datamax)
   const datosPrueba: Record<string, string> = {
+    // --- Datos de Faena ---
     'FECHA': '17/03/2026',
     'FECHA_FAENA': '17/03/2026',
     'FECHA_VENC': '16/04/2026',
+    'VENCIMIENTO': '16/04/2026',
     'TROPA': 'B 2026 0001',
     'GARRON': '0001',
-    'PESO': '125.50',
+    'NUMERO': '0015',
+    'PESO': '125.5',
+    'KG': '125.5',
+    'LADO': 'IZQ',
+    'SIGLA': 'A',
+    'CLASIFICACION': 'A',
     'PRODUCTO': 'MEDIA RES',
+    'TIPO': 'VA',
+    'RAZA': 'ANGUS',
+    'CODIGO': 'B20260001-015',
+    'LOTE': 'L2026001',
+    'CODIGO_BARRAS': 'B20260001-0001-IZQ-A',
+    'CODIGO_EAN128': '(10)B20260001(21)0015(3100)00125',
+    // --- Datos de Establecimiento ---
     'ESTABLECIMIENTO': 'FRIGORIFICO EJEMPLO',
     'NRO_ESTABLECIMIENTO': '3986',
-    'USUARIO_FAENA': 'JUAN PEREZ',
     'CUIT': '20-12345678-9',
     'MATRICULA': 'MAT-001234',
-    'CODIGO_BARRAS': '1234567890123',
-    'LOTE': 'L2026001',
-    'LADO': 'I',
-    'SIGLA': 'A',
+    // --- Datos de Usuario Faena / Cliente ---
+    'USUARIO_FAENA': 'JUAN PEREZ',
+    'NOMBRE_CLIENTE': 'Ganadera El Trébol',
+    'CUIT_CLIENTE': '20-87654321-0',
+    'MATRICULA_CLIENTE': 'MAT-987654',
+    // --- Datos de Productor ---
+    'PRODUCTOR': 'Juan García',
+    'CUIT_PRODUCTOR': '23-12345678-1',
+    // --- Conservación ---
     'DIAS_CONSUMO': '30',
     'TEMP_MAX': '5°C',
+    // --- SENASA ---
+    'NRO_SENASA': '3986',
+    // --- Logos (se reemplazan por imagen GRF al imprimir) ---
+    'LOGO_SOLEMAR': '[IMG:LOGO_SOLEMAR]',
+    'LOGO_SENASA': '[IMG:LOGO_SENASA]',
+  }
+
+  // Descripción legible de cada variable (para el cuadro de referencia)
+  const descripcionVariable: Record<string, string> = {
+    'FECHA': 'Fecha de faena',
+    'FECHA_FAENA': 'Fecha de faena',
+    'FECHA_VENC': 'Fecha vencimiento',
+    'VENCIMIENTO': 'Fecha vencimiento',
+    'TROPA': 'Código de tropa',
+    'GARRON': 'Número de garrón',
+    'NUMERO': 'Número de animal',
+    'PESO': 'Peso (kg)',
+    'KG': 'Peso (kg)',
+    'LADO': 'Lado (IZQ/DER)',
+    'SIGLA': 'Sigla del cuarto (A/T/D)',
+    'CLASIFICACION': 'Clasificación del cuarto',
+    'PRODUCTO': 'Nombre del producto',
+    'TIPO': 'Tipo de animal (VA, NO, etc.)',
+    'RAZA': 'Raza del animal',
+    'CODIGO': 'Código completo',
+    'LOTE': 'Número de lote',
+    'CODIGO_BARRAS': 'Código de barras',
+    'CODIGO_EAN128': 'Código EAN-128 (GS1)',
+    'ESTABLECIMIENTO': 'Establecimiento',
+    'NRO_ESTABLECIMIENTO': 'N° Establecimiento',
+    'CUIT': 'CUIT establecimiento',
+    'MATRICULA': 'Matrícula establecimiento',
+    'USUARIO_FAENA': 'Usuario de faena',
+    'NOMBRE_CLIENTE': 'Nombre del cliente',
+    'CUIT_CLIENTE': 'CUIT del cliente',
+    'MATRICULA_CLIENTE': 'Matrícula del cliente',
+    'PRODUCTOR': 'Nombre del productor',
+    'CUIT_PRODUCTOR': 'CUIT del productor',
+    'DIAS_CONSUMO': 'Días de consumo',
+    'TEMP_MAX': 'Temperatura máxima',
+    'NRO_SENASA': 'N° SENASA',
+    'LOGO_SOLEMAR': 'Logo Solemar (imagen)',
+    'LOGO_SENASA': 'Logo SENASA (imagen)',
   }
 
   // Cargar rótulos
@@ -187,16 +248,28 @@ export function ConfigRotulosModule({ operador, modoEditor: modoEditorProp, onVo
     cargarRotulos()
   }, [])
 
-  // Procesar ZPL con datos de prueba
-  const procesarZplConDatos = (contenido: string, datos: Record<string, string>): string => {
+  // Procesar ZPL/DPL con datos de prueba (soporta ambos formatos)
+  const procesarZplConDatos = (contenido: string, datos: Record<string, string>, tipoImpresora?: string): string => {
     let resultado = contenido
-    // Reemplazar variables {{VAR}}
-    Object.entries(datos).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi')
-      resultado = resultado.replace(regex, value)
-    })
-    // Limpiar variables no reemplazadas
-    resultado = resultado.replace(/\{\{[A-Z_0-9]+\}\}/g, '---')
+    const isDatamax = tipoImpresora === 'DATAMAX' || tipoImpresora === 'NETTIRA'
+
+    if (isDatamax) {
+      // Datamax: reemplazar {VAR} (simple llave)
+      Object.entries(datos).forEach(([key, value]) => {
+        const regex = new RegExp(`(?<!\\{)\\{${key}\\}(?!\\})`, 'g')
+        resultado = resultado.replace(regex, value)
+      })
+      // Limpiar variables no reemplazadas
+      resultado = resultado.replace(/(?<!\{)\{[A-Z_0-9]+\}(?!\})/g, '---')
+    } else {
+      // Zebra: reemplazar {{VAR}}
+      Object.entries(datos).forEach(([key, value]) => {
+        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi')
+        resultado = resultado.replace(regex, value)
+      })
+      // Limpiar variables no reemplazadas
+      resultado = resultado.replace(/\\{\\{[A-Z_0-9]+\\}\\}/g, '---')
+    }
     return resultado
   }
 
@@ -236,7 +309,7 @@ OPCIÓN 2 - Exportar ZPL:
    para enviar el archivo directamente.`)
     } else {
       // Para archivos ZPL/DPL, procesar con datos de prueba
-      const procesado = procesarZplConDatos(rotulo.contenido, datosPrueba)
+      const procesado = procesarZplConDatos(rotulo.contenido, datosPrueba, rotulo.tipoImpresora)
       setPreviewProcesado(procesado)
     }
     
@@ -460,24 +533,47 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
     }
 
     const mapeoCampos: Record<string, { campo: string; descripcion: string }> = {
+      // --- Datos de Faena ---
       'FECHA': { campo: 'fechaFaena', descripcion: 'Fecha de faena' },
       'FECHA_FAENA': { campo: 'fechaFaena', descripcion: 'Fecha de faena' },
       'FECHA_VENC': { campo: 'fechaVencimiento', descripcion: 'Fecha vencimiento' },
+      'VENCIMIENTO': { campo: 'fechaVencimiento', descripcion: 'Fecha vencimiento' },
       'TROPA': { campo: 'tropa', descripcion: 'Código de tropa' },
       'GARRON': { campo: 'garron', descripcion: 'Número de garrón' },
-      'PESO': { campo: 'peso', descripcion: 'Peso' },
+      'NUMERO': { campo: 'numeroAnimal', descripcion: 'Número de animal' },
+      'PESO': { campo: 'peso', descripcion: 'Peso (kg)' },
+      'KG': { campo: 'peso', descripcion: 'Peso (kg)' },
+      'LADO': { campo: 'ladoMedia', descripcion: 'Lado (IZQ/DER)' },
+      'SIGLA': { campo: 'siglaMedia', descripcion: 'Sigla del cuarto (A/T/D)' },
+      'CLASIFICACION': { campo: 'clasificacion', descripcion: 'Clasificación del cuarto' },
       'PRODUCTO': { campo: 'nombreProducto', descripcion: 'Nombre del producto' },
+      'TIPO': { campo: 'tipoAnimal', descripcion: 'Tipo de animal (VA, NO, etc.)' },
+      'RAZA': { campo: 'raza', descripcion: 'Raza del animal' },
+      'CODIGO': { campo: 'codigo', descripcion: 'Código completo' },
+      'LOTE': { campo: 'lote', descripcion: 'Número de lote' },
+      'CODIGO_BARRAS': { campo: 'codigoBarras', descripcion: 'Código de barras' },
+      'CODIGO_EAN128': { campo: 'codigoEAN128', descripcion: 'Código EAN-128 (GS1)' },
+      // --- Establecimiento ---
       'ESTABLECIMIENTO': { campo: 'establecimiento', descripcion: 'Establecimiento' },
       'NRO_ESTABLECIMIENTO': { campo: 'nroEstablecimiento', descripcion: 'N° Establecimiento' },
+      'CUIT': { campo: 'cuit', descripcion: 'CUIT establecimiento' },
+      'MATRICULA': { campo: 'matricula', descripcion: 'Matrícula establecimiento' },
+      // --- Usuario Faena / Cliente ---
       'USUARIO_FAENA': { campo: 'nombreUsuarioFaena', descripcion: 'Usuario de faena' },
-      'CUIT': { campo: 'cuit', descripcion: 'CUIT' },
-      'MATRICULA': { campo: 'matricula', descripcion: 'Matrícula' },
-      'CODIGO_BARRAS': { campo: 'codigoBarras', descripcion: 'Código de barras' },
-      'LOTE': { campo: 'lote', descripcion: 'Número de lote' },
-      'LADO': { campo: 'ladoMedia', descripcion: 'Lado (I/D)' },
-      'SIGLA': { campo: 'siglaMedia', descripcion: 'Sigla' },
+      'NOMBRE_CLIENTE': { campo: 'nombreCliente', descripcion: 'Nombre del cliente' },
+      'CUIT_CLIENTE': { campo: 'cuitCliente', descripcion: 'CUIT del cliente' },
+      'MATRICULA_CLIENTE': { campo: 'matriculaCliente', descripcion: 'Matrícula del cliente' },
+      // --- Productor ---
+      'PRODUCTOR': { campo: 'nombreProductor', descripcion: 'Nombre del productor' },
+      'CUIT_PRODUCTOR': { campo: 'cuitProductor', descripcion: 'CUIT del productor' },
+      // --- Conservación ---
       'DIAS_CONSUMO': { campo: 'diasConsumo', descripcion: 'Días de consumo' },
       'TEMP_MAX': { campo: 'temperaturaMax', descripcion: 'Temperatura máxima' },
+      // --- SENASA ---
+      'NRO_SENASA': { campo: 'nroSenasa', descripcion: 'N° SENASA' },
+      // --- Logos ---
+      'LOGO_SOLEMAR': { campo: 'logoSolemar', descripcion: 'Logo Solemar (imagen GRF)' },
+      'LOGO_SENASA': { campo: 'logoSenasa', descripcion: 'Logo SENASA (imagen GRF)' },
     }
 
     encontradas.forEach(variable => {
@@ -682,14 +778,17 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
     }
   }
 
-  // Insertar variable en el cursor
+  // Insertar variable en el cursor (usa formato correcto según tipo de impresora)
   const insertarVariable = (variable: string) => {
-    const formato = `{{${variable}}}`
+    const tipo = rotuloSeleccionado?.tipoImpresora || 'ZEBRA'
+    const formato = tipo === 'DATAMAX' || tipo === 'NETTIRA'
+      ? `{${variable}}`
+      : `{{${variable}}}`
     setEditandoContenido(prev => prev + formato)
   }
 
   // Vista previa en tiempo real del contenido editado
-  const previewEdicion = procesarZplConDatos(editandoContenido, datosPrueba)
+  const previewEdicion = procesarZplConDatos(editandoContenido, datosPrueba, rotuloSeleccionado?.tipoImpresora)
 
   // Reset formulario
   const resetForm = () => {
@@ -1286,30 +1385,42 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
           ) : (
             /* Vista normal para archivos de texto */
             <div className="grid grid-cols-2 gap-4">
-            {/* Panel izquierdo - Datos de prueba */}
+            {/* Panel izquierdo - Variables disponibles */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Variable className="w-4 h-4" />
-                Datos de Prueba
+                Variables Disponibles
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  {rotuloSeleccionado?.tipoImpresora === 'DATAMAX' ? 'DPL {VAR}' : 'ZPL {{VAR}}'}
+                </Badge>
               </Label>
-              <ScrollArea className="h-[300px] border rounded-md p-3 bg-stone-50">
-                <div className="space-y-2">
-                  {Object.entries(datosPrueba).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2 text-sm">
-                      <code className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs min-w-[100px]">
-                        {`{{${key}}}`}
-                      </code>
-                      <span className="text-stone-400">→</span>
-                      <span className="text-stone-700 font-medium">{value}</span>
-                    </div>
-                  ))}
+              <ScrollArea className="h-[400px] border rounded-md p-3 bg-stone-50">
+                <div className="space-y-1">
+                  {Object.entries(datosPrueba).map(([key, value]) => {
+                    const isDatamax = rotuloSeleccionado?.tipoImpresora === 'DATAMAX' || rotuloSeleccionado?.tipoImpresora === 'NETTIRA'
+                    const formatoVar = isDatamax ? `{${key}}` : `{{${key}}}`
+                    const desc = descripcionVariable[key] || ''
+                    const isLogo = key.startsWith('LOGO_')
+                    return (
+                      <div key={key} className="flex items-center gap-2 text-sm">
+                        <code className={`px-2 py-0.5 rounded text-xs font-mono min-w-[120px] ${isLogo ? 'bg-purple-100 text-purple-700' : isDatamax ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {formatoVar}
+                        </code>
+                        <span className="text-stone-400">→</span>
+                        <div className="flex flex-col">
+                          <span className="text-stone-700 font-medium text-xs">{desc}</span>
+                          <span className="text-stone-400 text-[10px]">ej: {value}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </ScrollArea>
               
               <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                 <p className="text-xs text-amber-700">
-                  <strong>Nota:</strong> Los datos de prueba se reemplazarán por valores reales 
-                  al imprimir desde los módulos de producción (Romaneo, Pesaje, etc.)
+                  <strong>Zebra (ZPL):</strong> formato <code className="bg-white px-1 rounded">{'{{VARIABLE}}'}</code> con doble llave.<br/>
+                  <strong>Datamax (DPL/ITF):</strong> formato <code className="bg-white px-1 rounded">{'{VARIABLE}'}</code> con llave simple.
                 </p>
               </div>
             </div>
@@ -1425,26 +1536,35 @@ OPCIÓN 3 - Exportar desde Zebra Designer:
               <Label className="flex items-center gap-2">
                 <Variable className="w-4 h-4" />
                 Variables Disponibles
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  {rotuloSeleccionado?.tipoImpresora === 'DATAMAX' ? 'DPL {VAR}' : 'ZPL {{VAR}}'}
+                </Badge>
               </Label>
               <ScrollArea className="h-[400px] border rounded-md p-2 bg-stone-50">
                 <div className="space-y-1">
-                  {Object.entries(datosPrueba).map(([key, value]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => insertarVariable(key)}
-                      className="w-full text-left p-2 rounded hover:bg-amber-100 transition-colors group"
-                    >
-                      <code className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded group-hover:bg-amber-200">
-                        {`{{${key}}}`}
-                      </code>
-                      <span className="text-xs text-stone-500 ml-2">{value}</span>
-                    </button>
-                  ))}
+                  {Object.entries(datosPrueba).map(([key, value]) => {
+                    const isDatamax = rotuloSeleccionado?.tipoImpresora === 'DATAMAX' || rotuloSeleccionado?.tipoImpresora === 'NETTIRA'
+                    const formatoVar = isDatamax ? `{${key}}` : `{{${key}}}`
+                    const desc = descripcionVariable[key] || value
+                    const isLogo = key.startsWith('LOGO_')
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => insertarVariable(key)}
+                        className={`w-full text-left p-2 rounded transition-colors group ${isLogo ? 'hover:bg-purple-100' : 'hover:bg-amber-100'}`}
+                      >
+                        <code className={`text-xs px-1.5 py-0.5 rounded group-hover:opacity-80 ${isLogo ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {formatoVar}
+                        </code>
+                        <span className="text-xs text-stone-500 ml-2">{desc}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </ScrollArea>
               <p className="text-xs text-stone-500">
-                Click en una variable para insertarla
+                Click en una variable para insertarla en el editor
               </p>
             </div>
 
