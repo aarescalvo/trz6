@@ -46,6 +46,7 @@ const VARIABLES_DISPONIBLES = [
   { id: 'USUARIO_FAENA', nombre: 'Usuario Faena', ejemplo: 'Juan Pérez' },
   { id: 'MATRICULA', nombre: 'Matrícula', ejemplo: '12345' },
   { id: 'CODIGO_BARRAS', nombre: 'Código de Barras', ejemplo: 'B202600120151' },
+  { id: 'CODIGO_ITF', nombre: 'Código ITF (Tropa+N°Animal+Caravana)', ejemplo: 'B202600010151234567890' },
   { id: 'CUIT', nombre: 'CUIT', ejemplo: '20-12345678-9' },
   { id: 'ESTABLECIMIENTO', nombre: 'Establecimiento', ejemplo: 'FRIGORIFICO' },
 ]
@@ -480,7 +481,16 @@ export function EditorRotulosFullScreen({ rotuloInicial, onGuardar, onVolver }: 
             </CardHeader>
             <CardContent className="p-2 space-y-1.5">
               <p className="text-[10px] text-blue-600 leading-tight">
-                Para conformar el código de barras ITF con los datos del animal usá estas variables:
+                Para el código de barras ITF usá la variable compuesta:
+              </p>
+              <div className="bg-green-50 border border-green-200 rounded p-1.5">
+                <code className="text-green-700 font-mono font-bold">{'{{CODIGO_ITF}}'}</code>
+                <p className="text-[9px] text-green-600 mt-0.5">
+                  = Tropa + N°Animal + Caravana (automático)
+                </p>
+              </div>
+              <p className="text-[10px] text-blue-600 leading-tight">
+                O armalo con variables individuales:
               </p>
               <div className="bg-white rounded p-1.5 space-y-1 border border-blue-100">
                 <div className="text-[10px]">
@@ -495,17 +505,6 @@ export function EditorRotulosFullScreen({ rotuloInicial, onGuardar, onVolver }: 
                   <span className="text-stone-500">Caravana:</span>{' '}
                   <code className="text-amber-600 font-mono">{'{{NUMERO_CARAVANA}}'}</code>
                 </div>
-              </div>
-              <p className="text-[10px] text-blue-600 leading-tight font-medium">
-                Formato sugerido ITF-14:
-              </p>
-              <div className="bg-white rounded p-1.5 border border-blue-100">
-                <code className="text-[9px] font-mono text-stone-700 break-all">
-                  TROPA_CODIGO + NUMERO_ANIMAL + NUMERO_CARAVANA
-                </code>
-                <p className="text-[9px] text-stone-400 mt-0.5">
-                  Ej: B20260001 + 015 + 1234567890
-                </p>
               </div>
               <p className="text-[10px] text-blue-500 leading-tight">
                 Seleccioná tipo <strong>ITF-14</strong> o <strong>Interleaved 2of5</strong> en las propiedades del código de barras.

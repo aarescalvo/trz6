@@ -203,6 +203,20 @@ function reemplazarVariables(contenido: string, datos: Record<string, any>, tipo
     return String(valor)
   })
 
+  // Variables compuestas: se resuelven DESPUÉS del reemplazo individual
+  // CODIGO_ITF = TROPA_CODIGO + NUMERO_ANIMAL + NUMERO_CARAVANA
+  const tropaCodigo = datos['tropa_codigo'] || datos['TROPA_CODIGO'] || ''
+  const numeroAnimal = datos['numero_animal'] || datos['NUMERO_ANIMAL'] || ''
+  const numeroCaravana = datos['numero_caravana'] || datos['NUMERO_CARAVANA'] || ''
+  const codigoItf = String(tropaCodigo) + String(numeroAnimal) + String(numeroCaravana)
+
+  // Reemplazar CODIGO_ITF (formato Datamax {CODIGO_ITF} o Zebra {{CODIGO_ITF}})
+  if (tipoImpresora === 'DATAMAX' || tipoImpresora === 'NETTIRA') {
+    resultado = resultado.replace(/\{CODIGO_ITF\}/g, codigoItf)
+  } else {
+    resultado = resultado.replace(/\{\{CODIGO_ITF\}\}/g, codigoItf)
+  }
+
   return resultado
 }
 
@@ -293,11 +307,16 @@ function generarDatosPrueba(diasConsumo: number): Record<string, any> {
     
     // Tropa y animal
     tropa: 'B0001',
-    tropa_codigo: 'B 2026 0001',
+    tropa_codigo: 'B20260001',
     garron: '001',
     numero_garron: '001',
     correlativo: '0001',
     lote: 'L2026001',
+    numero_animal: '015',
+    numero: '015',
+    numero_caravana: '1234567890',
+    caravana: '1234567890',
+    codigo_itf: 'B202600010151234567890',
     
     // Pesos
     peso: '125.50',

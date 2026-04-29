@@ -167,6 +167,7 @@ export function ConfigRotulosModule({ operador, modoEditor: modoEditorProp, onVo
     'CODIGO': 'B20260001-015',
     'LOTE': 'L2026001',
     'CODIGO_BARRAS': 'B20260001-0001-IZQ-A',
+    'CODIGO_ITF': 'B202600010151234567890',
     'CODIGO_EAN128': '(10)B20260001(21)0015(3100)00125',
     // --- Datos de Establecimiento ---
     'ESTABLECIMIENTO': 'FRIGORIFICO EJEMPLO',
@@ -214,6 +215,7 @@ export function ConfigRotulosModule({ operador, modoEditor: modoEditorProp, onVo
     'CODIGO': 'Código completo',
     'LOTE': 'Número de lote',
     'CODIGO_BARRAS': 'Código de barras',
+    'CODIGO_ITF': 'Código ITF (Tropa+N°Animal+Caravana)',
     'CODIGO_EAN128': 'Código EAN-128 (GS1)',
     'ESTABLECIMIENTO': 'Establecimiento',
     'NRO_ESTABLECIMIENTO': 'N° Establecimiento',

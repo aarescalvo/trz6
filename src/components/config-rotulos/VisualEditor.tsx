@@ -49,6 +49,7 @@ const VARIABLES_DISPONIBLES = [
   { id: 'USUARIO_FAENA', nombre: 'Usuario Faena', ejemplo: 'Juan Pérez' },
   { id: 'MATRICULA', nombre: 'Matrícula', ejemplo: '12345' },
   { id: 'CODIGO_BARRAS', nombre: 'Código de Barras', ejemplo: 'B202600120151' },
+  { id: 'CODIGO_ITF', nombre: 'Código ITF (Tropa+N°Animal+Caravana)', ejemplo: 'B202600010151234567890' },
   { id: 'CUIT', nombre: 'CUIT', ejemplo: '20-12345678-9' },
   { id: 'ESTABLECIMIENTO', nombre: 'Establecimiento', ejemplo: 'FRIGORIFICO' },
 ]
