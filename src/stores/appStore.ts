@@ -63,6 +63,10 @@ interface AppState {
   // Stats (cached)
   stats: { tropasActivas: number; enPesaje: number; pesajesHoy: number; enCamara: number }
   setStats: (stats: AppState['stats']) => void
+
+  // Persisted navigation (survives reload)
+  lastPage: string
+  setLastPage: (page: string) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -102,15 +106,19 @@ export const useAppStore = create<AppState>()(
       // Stats
       stats: { tropasActivas: 0, enPesaje: 0, pesajesHoy: 0, enCamara: 0 },
       setStats: (stats) => set({ stats }),
+
+      // Persisted navigation
+      lastPage: 'dashboard',
+      setLastPage: (page) => set({ lastPage: page }),
     }),
     {
       name: 'solemar-app-store',
       partialize: (state) => ({
         operador: state.operador,
-        currentPage: state.currentPage,
+        lastPage: state.lastPage,
         expandedGroups: state.expandedGroups,
         expandedSubGroups: state.expandedSubGroups,
-        // NOT persisting dirtyModules or stats - they're transient
+        // NOT persisting dirtyModules, stats, or currentPage - they're transient
       }),
     }
   )

@@ -85,6 +85,7 @@ import {
 
 // Resilience imports
 import { useOfflineStore } from '@/stores/offlineStore'
+import { useAppStore } from '@/stores/appStore'
 
 // Types
 interface Operador {
@@ -609,7 +610,22 @@ function DashboardContent({ operador, setCurrentPage, stats, tropas, actividadRe
 export default function FrigorificoApp() {
   const [operador, setOperador] = useState<Operador | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard')
+  // Persist navigation: use zustand store to survive page reloads
+  const persistedPage = useAppStore((s) => s.lastPage)
+  const setPersistedPage = useAppStore((s) => s.setLastPage)
+  const [currentPage, setCurrentPageState] = useState<Page>('dashboard')
+  const setCurrentPage = (page: Page) => {
+    setCurrentPageState(page)
+    setPersistedPage(page)
+  }
+  // Restore last page from store on mount
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    if (persistedPage && persistedPage !== 'dashboard') {
+      setCurrentPageState(persistedPage as Page)
+    }
+    setHydrated(true)
+  }, [])
   const [tropas, setTropas] = useState<Tropa[]>([])
   const [stats, setStats] = useState<Stats>({ tropasActivas: 0, enPesaje: 0, pesajesHoy: 0, enCamara: 0 })
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['CICLO I', 'Subproductos'])
@@ -626,14 +642,13 @@ export default function FrigorificoApp() {
   const [loggingIn, setLoggingIn] = useState(false)
 
   // Check for existing session via JWT cookie (no more localStorage)
-  // Also sets up periodic session keep-alive (refresh token every 30 min)
+  // Also sets up periodic session keep-alive (refresh token every 10 min)
   useEffect(() => {
     let refreshInterval: ReturnType<typeof setInterval> | null = null
     let mounted = true
 
     const validateSession = async () => {
       try {
-        // The GET /api/auth endpoint now reads the JWT from httpOnly cookie
         const res = await fetch('/api/auth')
         const data = await res.json()
         if (mounted && data.success && data.data) {
@@ -648,15 +663,20 @@ export default function FrigorificoApp() {
       if (mounted) setLoading(false)
     }
 
-    // Refresh session token silently (every 30 minutes)
+    // Refresh session token silently (every 10 minutes for reliability)
     const refreshSession = async () => {
       try {
         const res = await fetch('/api/auth', { method: 'PATCH' })
-        const data = await res.json()
-        if (mounted && !data.success && res.status === 401) {
-          // Session expired during refresh - logout
-          setOperador(null)
+        if (!mounted) return
+        if (res.ok) {
+          // Session refreshed successfully, update operador data
+          const data = await res.json()
+          if (data.success && data.data) {
+            setOperador(data.data)
+          }
         }
+        // If 401, DON'T logout immediately — the token might have just expired
+        // between refresh cycles. The visibility handler will retry.
       } catch {
         // Network error during refresh - ignore, will retry next interval
       }
@@ -664,8 +684,8 @@ export default function FrigorificoApp() {
 
     validateSession()
 
-    // Start keep-alive interval (30 minutes)
-    refreshInterval = setInterval(refreshSession, 30 * 60 * 1000)
+    // Start keep-alive interval (every 10 minutes)
+    refreshInterval = setInterval(refreshSession, 10 * 60 * 1000)
 
     return () => {
       mounted = false
@@ -692,26 +712,55 @@ export default function FrigorificoApp() {
   }, [])
 
   // Re-validate session when user returns to the tab (visibility change)
-  // This catches expired sessions after the browser tab was inactive
+  // Uses grace period: retries once before forcing logout
   useEffect(() => {
-    const handleVisibility = () => {
+    let mounted = true
+
+    const handleVisibility = async () => {
       if (document.visibilityState === 'visible' && operador) {
-        // Silently refresh the token when user comes back
-        fetch('/api/auth', { method: 'PATCH' })
-          .then(res => {
-            if (res.status === 401) {
-              // Session expired while tab was inactive
-              setOperador(null)
+        try {
+          // Attempt to silently refresh the token
+          const res = await fetch('/api/auth', { method: 'PATCH' })
+          if (!mounted) return
+
+          if (res.ok) {
+            // Session refreshed successfully
+            const data = await res.json()
+            if (data.success && data.data) {
+              setOperador(data.data)
             }
-          })
-          .catch(() => {
-            // Network error - ignore
-          })
+          } else if (res.status === 401) {
+            // Token expired — but DON'T logout immediately.
+            // This can happen due to a server restart or brief network issue.
+            // Only logout if the user was explicitly logged out (no cookie at all).
+            // The periodic refresh will handle true expirations gracefully.
+            // Just try once more after a short delay.
+            setTimeout(async () => {
+              if (!mounted) return
+              try {
+                const retryRes = await fetch('/api/auth')
+                if (!mounted) return
+                if (retryRes.status === 401) {
+                  // Confirmed: session is truly gone (cookie cleared by server or expired)
+                  setOperador(null)
+                }
+                // If retry succeeded, the session was restored (e.g. server restart recovered)
+              } catch {
+                // Network error on retry - keep operator logged in, try again later
+              }
+            }, 3000)
+          }
+        } catch {
+          // Network error - keep operator logged in, don't disrupt their work
+        }
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+    return () => {
+      mounted = false
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [operador])
 
   const fetchTropas = async () => {
@@ -792,7 +841,8 @@ export default function FrigorificoApp() {
       // Ignore logout errors
     }
     setOperador(null)
-    setCurrentPage('pesajeCamiones')
+    setCurrentPageState('pesajeCamiones' as Page)
+    setPersistedPage('pesajeCamiones')
   }
 
   // Check if user has permission (ADMINISTRADOR has all permissions automatically)
