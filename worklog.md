@@ -5367,3 +5367,20 @@ Stage Summary:
 - Rama activa: master (local y remoto)
 - Repo limpio: solo rama master en GitHub
 - HEAD: master
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Corregir links rotos de descarga de Win7 SP1 y KB2999226
+
+Work Log:
+- Microsoft borró las páginas oficiales: id=5842 (SP1) e id=48234 (KB2999226 x86)
+- SP1: actualizado a LegacyUpdate.net (mirror comunitario con instaladores originales)
+- KB2999226 x64: link directo Microsoft aún funcional (download.microsoft.com)
+- KB2999226 x86: Microsoft lo borró, redirigido a Windows Update Catalog
+- Actualizados: src/components/printer-bridge-guide.tsx, mini-services/printer-bridge/python/README.md
+- Recomendación para 32-bit: Convenience Rollup KB3125574 (incluye KB2999226)
+
+Stage Summary:
+- Commit: ccdd8a6 — fix: actualizar links rotos de Win7 SP1 y KB2999226
+- Rama: master
