@@ -5335,3 +5335,18 @@ Stage Summary:
 - Features: Download links with copy buttons, code blocks with copy, info/warning/danger/success boxes, troubleshooting FAQ, technical summary
 - Accessible from sidebar: Configuración → Instalar Printer Bridge
 - Requires `puedeConfiguracion` permission (ADMINISTRADOR has all by default)
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Push cambios a GitHub
+
+Work Log:
+- Verificado git status: cambios ya commitados (auto-commit) en commit 5b465ae
+- Push exitoso a origin main: https://github.com/aarescalvo/trz6
+- Archivos subidos: printer-bridge-guide.tsx, page.tsx (edición), worklog.md
+- Actualizado worklog con registro del push
+
+Stage Summary:
+- Código en GitHub: rama main, repo aarescalvo/trz6
+- Commits pushados: incluye Printer Bridge v3.0/v3.1 + guía de instalación en-app
