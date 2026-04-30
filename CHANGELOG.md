@@ -1,5 +1,26 @@
 # Changelog - Sistema Frigorífico
 
+## [3.18.1] - 2026-04-30
+
+### Agregado
+- **Printer Bridge v3.0 (Python)**: Nuevo bridge TCP→USB para Windows 7
+  - Compatible con Python 3.8.10 (última versión para Windows 7)
+  - Usa `win32print` (pywin32) para impresión RAW directa a impresora USB
+  - Servidor TCP puerto 9100: recibe ZPL/DPL desde TrazAlan
+  - Servidor HTTP puerto 9101: panel web de control, diagnóstico, prueba de impresión
+  - Detección automática de formato (ZPL vs DPL vs RAW)
+  - Etiqueta de prueba DPL nativa para Datamax Mark II
+  - Etiqueta de prueba ZPL para Zebra
+  - Scripts de instalación: install.bat, start.bat, install-service.bat, uninstall-service.bat
+  - Servicio Windows para auto-inicio con el sistema
+  - Documentación completa con solución de problemas
+  - Ubicación: `mini-services/printer-bridge/python/`
+
+### Arquitectura
+```
+TrazAlan → TCP :9100 → Python Bridge → win32print → USB Datamax Mark II
+```
+
 ## [3.17.0] - 2026-04-20
 
 ### Agregado - Mejoras UX (20 items)
