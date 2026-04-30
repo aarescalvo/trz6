@@ -5350,3 +5350,20 @@ Work Log:
 Stage Summary:
 - Código en GitHub: rama main, repo aarescalvo/trz6
 - Commits pushados: incluye Printer Bridge v3.0/v3.1 + guía de instalación en-app
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Migrar rama main a master (estándar del usuario)
+
+Work Log:
+- Fusionado main en master (fast-forward, 2 commits)
+- Push master a GitHub
+- Eliminada rama main remota
+- Renombrada rama local main → master
+- Rama push-master eliminada
+
+Stage Summary:
+- Rama activa: master (local y remoto)
+- Repo limpio: solo rama master en GitHub
+- HEAD: master
