@@ -37,6 +37,7 @@ import ExpedicionUnificada from '@/components/expedicion-unificada'
 import StockUnificada from '@/components/stock-unificada'
 import { CuerosModule } from '@/components/cueros'
 import { ReportesSenasaModule } from '@/components/reportes-senasa'
+import { ReportesSIGICAModule } from '@/components/reportes-sigica'
 import { ExportacionSIGICAModule } from '@/components/exportacion-sigica'
 import { FacturacionModule } from '@/components/facturacion'
 import { PreciosPage as PreciosModule } from '@/modules/facturacion/components/PreciosPage'
@@ -1091,7 +1092,7 @@ export default function FrigorificoApp() {
       case 'historialPrecios':
         return wrapModule('historialPrecios', <HistorialPreciosModule operador={operador} />)
       case 'reportesSIGICA':
-        return wrapModule('reportesSIGICA', <ReportesSenasaModule operador={operador} />)
+        return wrapModule('reportesSIGICA', <ReportesSIGICAModule operador={operador} />)
       case 'exportacionSIGICA':
         return wrapModule('exportacionSIGICA', <ExportacionSIGICAModule operador={operador} />)
       default:
