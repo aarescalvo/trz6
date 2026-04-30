@@ -87,7 +87,7 @@ export function useOffline() {
     }
 
     updateStatus()
-    const interval = setInterval(updateStatus, 30000) // Cada 30 segundos
+    const interval = setInterval(updateStatus, 300000) // Cada 5 minutos (reducido de 30s para menos re-renders)
 
     return () => clearInterval(interval)
   }, [])

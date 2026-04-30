@@ -129,13 +129,13 @@ function isOriginAllowed(request: NextRequest): boolean {
 }
 
 function getRateLimitType(pathname: string, method: string): RateLimitType {
-  // Auth routes: only apply strict limits to mutating methods (POST/PUT/DELETE/PATCH)
-  // GET /api/auth is just session validation and should NOT consume the login rate limit
+  // Auth routes: only apply strict limits to actual login attempts (POST/PUT/DELETE)
+  // GET and PATCH are session validation/refresh and should NOT consume the login rate limit
   if (pathname.startsWith('/api/auth')) {
-    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
       return 'AUTH_LOGIN'
     }
-    // Session validation GETs use general limit (much more lenient)
+    // Session validation (GET) and refresh (PATCH) use general limit (much more lenient)
     return 'API_GENERAL'
   }
   // Write operations get lower limits

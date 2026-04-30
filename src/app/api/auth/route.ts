@@ -361,6 +361,81 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH - Refresh session token (renew JWT without re-authentication)
+// Called periodically by the client to keep the session alive
+export async function PATCH(request: NextRequest) {
+  try {
+    const cookieConfig = getSessionCookieConfig()
+    const token = request.cookies.get(cookieConfig.name)?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'No hay sesión activa' },
+        { status: 401 }
+      )
+    }
+
+    const payload = await verifySessionToken(token)
+    if (!payload) {
+      // Token expired or invalid - clear cookie
+      const logoutConfig = getLogoutCookieConfig()
+      const response = NextResponse.json(
+        { success: false, error: 'Sesión expirada' },
+        { status: 401 }
+      )
+      response.cookies.set(logoutConfig.name, '', logoutConfig.options)
+      return response
+    }
+
+    // Verify operator still exists and is active
+    const operador = await db.operador.findUnique({
+      where: { id: payload.operadorId }
+    })
+
+    if (!operador || !operador.activo) {
+      const logoutConfig = getLogoutCookieConfig()
+      const response = NextResponse.json(
+        { success: false, error: 'Operador inactivo' },
+        { status: 401 }
+      )
+      response.cookies.set(logoutConfig.name, '', logoutConfig.options)
+      return response
+    }
+
+    // Issue a new JWT token with fresh expiration
+    const permisos = buildPermisos(operador)
+    const newToken = await createSessionToken({
+      operadorId: operador.id,
+      nombre: operador.nombre,
+      usuario: operador.usuario,
+      rol: operador.rol,
+      permisos
+    })
+
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        id: operador.id,
+        nombre: operador.nombre,
+        usuario: operador.usuario,
+        rol: operador.rol,
+        email: operador.email,
+        permisos
+      }
+    })
+    // Set new token cookie (replaces the old one)
+    response.cookies.set(cookieConfig.name, newToken, cookieConfig.options)
+
+    return response
+  } catch (error) {
+    logger.error('Error refreshing session', error)
+    return NextResponse.json(
+      { success: false, error: 'Error de servidor' },
+      { status: 500 }
+    )
+  }
+}
+
 // DELETE - Logout (clear JWT cookie)
 export async function DELETE(request: NextRequest) {
   const ip = getClientIP(request)

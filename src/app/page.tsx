@@ -623,21 +623,51 @@ export default function FrigorificoApp() {
   const [loggingIn, setLoggingIn] = useState(false)
 
   // Check for existing session via JWT cookie (no more localStorage)
+  // Also sets up periodic session keep-alive (refresh token every 30 min)
   useEffect(() => {
+    let refreshInterval: ReturnType<typeof setInterval> | null = null
+    let mounted = true
+
     const validateSession = async () => {
       try {
         // The GET /api/auth endpoint now reads the JWT from httpOnly cookie
         const res = await fetch('/api/auth')
         const data = await res.json()
-        if (data.success && data.data) {
+        if (mounted && data.success && data.data) {
           setOperador(data.data)
+        } else if (mounted && res.status === 401) {
+          // Token expired or invalid - clear operador to show login
+          setOperador(null)
         }
       } catch {
-        // No valid session cookie
+        // Network error - don't logout, just keep current state
       }
-      setLoading(false)
+      if (mounted) setLoading(false)
     }
+
+    // Refresh session token silently (every 30 minutes)
+    const refreshSession = async () => {
+      try {
+        const res = await fetch('/api/auth', { method: 'PATCH' })
+        const data = await res.json()
+        if (mounted && !data.success && res.status === 401) {
+          // Session expired during refresh - logout
+          setOperador(null)
+        }
+      } catch {
+        // Network error during refresh - ignore, will retry next interval
+      }
+    }
+
     validateSession()
+
+    // Start keep-alive interval (30 minutes)
+    refreshInterval = setInterval(refreshSession, 30 * 60 * 1000)
+
+    return () => {
+      mounted = false
+      if (refreshInterval) clearInterval(refreshInterval)
+    }
   }, [])
 
   // Fetch data
@@ -657,6 +687,29 @@ export default function FrigorificoApp() {
     window.addEventListener('production-mode-change', handleProductionMode as EventListener)
     return () => window.removeEventListener('production-mode-change', handleProductionMode as EventListener)
   }, [])
+
+  // Re-validate session when user returns to the tab (visibility change)
+  // This catches expired sessions after the browser tab was inactive
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && operador) {
+        // Silently refresh the token when user comes back
+        fetch('/api/auth', { method: 'PATCH' })
+          .then(res => {
+            if (res.status === 401) {
+              // Session expired while tab was inactive
+              setOperador(null)
+            }
+          })
+          .catch(() => {
+            // Network error - ignore
+          })
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [operador])
 
   const fetchTropas = async () => {
     try {
