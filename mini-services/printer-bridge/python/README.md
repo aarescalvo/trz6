@@ -24,18 +24,22 @@ Ejecute `setup-prep.bat` para ver que falta exactamente.
 
 ### Instalar Service Pack 1
 
-- **Opcion A:** Windows Update → Buscar actualizaciones → Instalar todo → Reiniciar
-- **Opcion B:** Descarga directa: https://www.microsoft.com/es-es/download/details.aspx?id=5842
+**NOTA:** Microsoft borró los links oficiales de descarga. Usar estas alternativas:
+
+- **Opcion A (Recomendada):** LegacyUpdate.net (sitio comunitario que mantiene los instaladores):
+  - https://legacyupdate.net/download-center/download/5842/windows-7-and-windows-server-2008-r2-sp1-kb976932
   - 32-bit: `windows6.1-KB976932-X86.exe`
-  - 64-bit: `windows6.1-KB976932-X64.exe`
+  - 64-bit: `windows6.1-KB976932-X64.exe` (elegir en la página)
+- **Opcion B:** Windows Update → Buscar actualizaciones → Instalar todo → Reiniciar (puede no funcionar si Win7 está muy desactualizado)
 
 ### Instalar KB2999226 (Universal C Runtime)
 
-- **Opcion A:** Windows Update (suele aparecer despues de SP1)
-- **Opcion B:** Descarga directa: https://www.microsoft.com/es-es/download/details.aspx?id=48234
-  - 32-bit: `Windows6.1-KB2999226-x86.msu`
-  - 64-bit: `Windows6.1-KB2999226-x64.msu`
-- **Opcion C (Recomendada):** Instalar el Convenience Rollup KB3125574 que incluye KB2999226 y muchas mas actualizaciones
+- **Opcion A (64-bit):** Descarga directa desde Microsoft:
+  - https://download.microsoft.com/download/1/1/5/11565A9A-EA09-4F0A-A57E-520D5D138140/Windows6.1-KB2999226-x64.msu
+- **Opcion B (32-bit):** Microsoft borró el link x86. Usar Windows Update Catalog:
+  - https://www.catalog.update.microsoft.com/Search.aspx?q=KB2999226
+  - Buscar KB2999226, filtrar por x86, agregar al carrito y descargar
+- **Opcion C (Recomendada para 32-bit):** Instalar el Convenience Rollup KB3125574 que incluye KB2999226 y muchas mas actualizaciones
   - https://support.microsoft.com/es-es/kb/3125574
 
 ## Instalacion

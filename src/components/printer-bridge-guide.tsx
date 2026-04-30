@@ -298,18 +298,20 @@ export function PrinterBridgeGuide() {
                 </h4>
                 <div className="space-y-2 ml-6">
                   <p className="text-sm text-stone-600">
-                    <strong>Opción A — Windows Update:</strong> Ir a Inicio → Windows Update → Buscar actualizaciones → Instalar todo → Reiniciar
-                  </p>
-                  <p className="text-sm text-stone-600">
-                    <strong>Opción B — Descarga directa:</strong>
+                    <strong>Opción A — LegacyUpdate.net (recomendado):</strong> Microsoft borró los links oficiales. Usá este sitio comunitario que tiene los instaladores:
                   </p>
                   <DownloadLink
-                    url="https://www.microsoft.com/es-es/download/details.aspx?id=5842"
-                    label="Windows 7 SP1 (32-bit: windows6.1-KB976932-X86.exe)"
-                    size="~90 MB"
+                    url="https://legacyupdate.net/download-center/download/5842/windows-7-and-windows-server-2008-r2-sp1-kb976932"
+                    label="Windows 7 SP1 (32-bit) — LegacyUpdate.net"
+                    size="~537 MB"
                   />
-                  <p className="text-xs text-stone-400 ml-6 mt-1">
-                    Si la PC es 64-bit, buscá &quot;windows6.1-KB976932-X64.exe&quot; en la misma página.
+                  <DownloadLink
+                    url="https://legacyupdate.net/download-center/download/5842/windows-7-and-windows-server-2008-r2-sp1-kb976932"
+                    label="Windows 7 SP1 (64-bit) — mismo link, elegir X64 en la página"
+                    size="~903 MB"
+                  />
+                  <p className="text-sm text-stone-600">
+                    <strong>Opción B — Windows Update:</strong> Ir a Inicio → Windows Update → Buscar actualizaciones → Instalar todo → Reiniciar (puede que no funcione si Win7 está muy desactualizado)
                   </p>
                 </div>
               </div>
@@ -323,21 +325,22 @@ export function PrinterBridgeGuide() {
                 </h4>
                 <div className="space-y-2 ml-6">
                   <p className="text-sm text-stone-600">
-                    <strong>Opción A — Windows Update:</strong> Suele aparecer después de instalar SP1
-                  </p>
-                  <p className="text-sm text-stone-600">
-                    <strong>Opción B — Descarga directa:</strong>
+                    <strong>Opción A — Descarga directa (64-bit):</strong>
                   </p>
                   <DownloadLink
-                    url="https://www.microsoft.com/es-es/download/details.aspx?id=48234"
-                    label="KB2999226 (32-bit: Windows6.1-KB2999226-x86.msu)"
-                    size="~12 MB"
+                    url="https://download.microsoft.com/download/1/1/5/11565A9A-EA09-4F0A-A57E-520D5D138140/Windows6.1-KB2999226-x64.msu"
+                    label="KB2999226 (64-bit: Windows6.1-KB2999226-x64.msu) — Directo Microsoft"
+                    size="~1 MB"
                   />
-                  <p className="text-xs text-stone-400 ml-6 mt-1">
-                    Si la PC es 64-bit, buscá &quot;Windows6.1-KB2999226-x64.msu&quot; en la misma página.
+                  <p className="text-sm text-stone-600">
+                    <strong>Opción B — Si la PC es 32-bit:</strong> Microsoft borró el link del instalador x86. Usá:
                   </p>
+                  <DownloadLink
+                    url="https://www.catalog.update.microsoft.com/Search.aspx?q=KB2999226"
+                    label="Windows Update Catalog — buscá KB2999226, filtrá por x86"
+                  />
                   <InfoBox type="info">
-                    <p><strong>Recomendado:</strong> Instalar el <em>Convenience Rollup KB3125574</em> que incluye KB2999226 y muchas más actualizaciones en un solo paquete.</p>
+                    <p><strong>Alternativa recomendada para 32-bit:</strong> Instalar el <em>Convenience Rollup KB3125574</em> que incluye KB2999226 y muchas más actualizaciones en un solo paquete. Descargalo desde LegacyUpdate.net o Windows Update.</p>
                   </InfoBox>
                 </div>
               </div>
