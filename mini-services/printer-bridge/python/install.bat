@@ -1,5 +1,7 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
+setlocal EnableDelayedExpansion
+
 title Printer Bridge v3.0 - Instalador Python - Solemar Alimentaria
 echo ============================================================
 echo   PRINTER BRIDGE v3.0 (PYTHON) - Solemar Alimentaria
@@ -7,21 +9,138 @@ echo   Instalador para Windows 7
 echo ============================================================
 echo.
 
-:: Verificar Python
+:: ============================================================
+:: PASO 1: Verificar Windows 7 Service Pack 1
+:: ============================================================
+echo [1/6] Verificando Windows 7 Service Pack 1...
+
+ver | findstr /i "6.1" >nul
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo [ERROR] Este instalador es para Windows 7.
+    echo         Sistema detectado:
+    ver
+    echo.
+    echo         El Printer Bridge requiere Windows 7 SP1 o superior.
+    pause
+    exit /b 1
+)
+
+reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion" /v CSDVersion 2>nul | findstr /i "Service Pack 1" >nul
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo ============================================================
+    echo   ERROR: Windows 7 Service Pack 1 NO ESTA INSTALADO
+    echo ============================================================
+    echo.
+    echo   Python 3.8.10 REQUIERE Service Pack 1 para instalarse.
+    echo.
+    echo   Para instalar SP1:
+    echo   1. Abri "Windows Update" (Inicio ^> Todos los programas ^> Windows Update)
+    echo   2. Hace clic en "Buscar actualizaciones"
+    echo   3. Instala TODAS las actualizaciones disponibles
+    echo   4. Reinicia la PC
+    echo   5. Vuelve a ejecutar este instalador
+    echo.
+    echo   Si Windows Update no funciona, descarga SP1 manualmente:
+    echo   https://www.microsoft.com/es-es/download/details.aspx?id=5842
+    echo.
+    echo   Despues de SP1, ejecuta setup-prep.bat para verificar
+    echo   que todos los prerequisitos estan OK.
+    echo ============================================================
+    echo.
+    pause
+    exit /b 1
+)
+echo       OK: Service Pack 1 instalado.
+
+:: ============================================================
+:: PASO 2: Verificar KB2999226 (Universal C Runtime)
+:: ============================================================
+echo.
+echo [2/6] Verificando KB2999226 (Universal C Runtime)...
+
+set KB_FOUND=0
+for /f "tokens=*" %%a in ('wmic qfe get HotFixID 2^>nul ^| findstr /i "KB2999226"') do (
+    set KB_FOUND=1
+)
+
+if "%KB_FOUND%"=="0" (
+    echo.
+    echo ============================================================
+    echo   ADVERTENCIA: KB2999226 no encontrado
+    echo ============================================================
+    echo.
+    echo   Este parche es necesario para que Python 3.8+ funcione.
+    echo   (Universal C Runtime Update para Windows 7 SP1)
+    echo.
+    echo   Opcion A - Via Windows Update:
+    echo     Buscar actualizaciones e instalar KB2999226
+    echo     (suele aparecer despues de instalar SP1)
+    echo.
+    echo   Opcion B - Descarga directa:
+    echo     https://www.microsoft.com/es-es/download/details.aspx?id=48234
+    echo     Buscar: Windows6.1-KB2999226-x86.msu (32-bit)
+    echo             Windows6.1-KB2999226-x64.msu (64-bit)
+    echo.
+    echo   Opcion C - Paquete acumulativo (recomendado):
+    echo     Instalar el Convenience Rollup KB3125574 que incluye KB2999226
+    echo     https://support.microsoft.com/es-es/kb/3125574
+    echo     o buscar en: https://catalog.update.microsoft.com
+    echo     Buscar: KB3125574
+    echo.
+    echo ============================================================
+    echo.
+    echo   Desea continuar de todos modos? El setup de Python puede fallar.
+    echo.
+    set /p CONTINUE="   Continuar? (s/N): "
+    if /i not "!CONTINUE!"=="s" (
+        echo.
+        echo   Instalacion cancelada. Instale los prerequisitos y vuelva a ejecutar.
+        echo   Tambien puede ejecutar setup-prep.bat para ver estado completo.
+        echo.
+        pause
+        exit /b 1
+    )
+    echo       Continuando sin KB2999226...
+) else (
+    echo       OK: KB2999226 instalado.
+)
+
+:: ============================================================
+:: PASO 3: Verificar Python
+:: ============================================================
+echo.
+echo [3/6] Verificando Python 3.8...
+
 where python >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Python no esta instalado.
+    echo.
+    echo ============================================================
+    echo   ERROR: Python no esta instalado
+    echo ============================================================
     echo.
     echo   Windows 7 requiere Python 3.8.10 (ultima version compatible).
     echo.
     echo   PASOS PARA INSTALAR:
     echo   1. Desde otra PC con internet, descarga:
-    echo      https://www.python.org/ftp/python/3.8.10/python-3.8.10.exe
+    echo      https://www.python.org/ftp/python/3.8.10/
+    echo.
+    echo      Si Windows 7 es 32-bit: python-3.8.10.exe
+    echo      Si Windows 7 es 64-bit: python-3.8.10-amd64.exe
+    echo.
     echo   2. Copia el archivo a esta PC (pendrive, red, etc.)
     echo   3. Ejecuta python-3.8.10.exe
     echo   4. IMPORTANTE: Marca "Add Python 3.8 to PATH" en el instalador
     echo   5. Click en "Install Now"
     echo   6. Cuando termine, volve a ejecutar este install.bat
+    echo.
+    echo   Si el setup de Python falla con error de C Runtime:
+    echo   - Instale primero Windows 7 SP1 (ver arriba)
+    echo   - Instale KB2999226 (ver arriba)
+    echo   - Reinicie la PC e intente de nuevo
+    echo.
+    echo ============================================================
     echo.
     pause
     exit /b 1
@@ -29,9 +148,8 @@ if %ERRORLEVEL% neq 0 (
 
 :: Verificar version de Python (3.8+)
 for /f "tokens=2" %%v in ('python --version 2^>^&1') do set PYVER=%%v
-echo [OK] Python encontrado: %PYVER%
+echo       Python encontrado: %PYVER%
 
-:: Verificar que sea 3.8+
 python -c "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)" 2>nul
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -42,19 +160,29 @@ if %ERRORLEVEL% neq 0 (
     pause
     exit /b 1
 )
+
+:: Aviso si es 3.9+ (puede tener problemas en Win7)
+python -c "import sys; sys.exit(1 if sys.version_info >= (3, 9) else 0)" 2>nul
+if %ERRORLEVEL% equ 0 (
+    echo.
+    echo   [AVISO] Python %PYVER% puede no ser completamente compatible con Windows 7.
+    echo            Se recomienda Python 3.8.10.
+    echo.
+)
 echo.
 
-:: Verificar pywin32
+:: ============================================================
+:: PASO 4: Verificar pywin32
+:: ============================================================
+echo [4/6] Verificando pywin32...
+
 python -c "import win32print; print('OK: pywin32 instalado')" 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo [INFO] pywin32 no esta instalado. Instalando...
-    echo.
+    echo       pywin32 no esta instalado. Instalando...
 
-    :: Intentar instalar con pip
     pip install pywin32 2>nul
 
     if %ERRORLEVEL% neq 0 (
-        :: Intentar con python -m pip
         python -m pip install pywin32 2>nul
 
         if %ERRORLEVEL% neq 0 (
@@ -76,38 +204,45 @@ if %ERRORLEVEL% neq 0 (
         )
     )
 
-    :: Verificar que se instalo
     python -c "import win32print; print('OK: pywin32 instalado correctamente')" 2>nul
     if %ERRORLEVEL% neq 0 (
         echo [ERROR] pywin32 no se pudo verificar. Intenta reiniciar.
         pause
         exit /b 1
     )
+) else (
+    echo       OK: pywin32 instalado.
 )
 echo.
 
-:: Crear carpeta
+:: ============================================================
+:: PASO 5: Copiar archivos
+:: ============================================================
+echo [5/6] Copiando archivos...
+
 set INSTALL_DIR=C:\SolemarAlimentaria\printer-bridge
-echo Instalando en: %INSTALL_DIR%
-echo.
 
 if not exist "C:\SolemarAlimentaria" mkdir "C:\SolemarAlimentaria"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if not exist "%INSTALL_DIR%\temp" mkdir "%INSTALL_DIR%\temp"
 
-:: Copiar archivos
-echo Copiando archivos...
 copy /Y "%~dp0index.py" "%INSTALL_DIR%\index.py" >nul 2>&1
 copy /Y "%~dp0requirements.txt" "%INSTALL_DIR%\requirements.txt" >nul 2>&1
 copy /Y "%~dp0start.bat" "%INSTALL_DIR%\start.bat" >nul 2>&1
-echo [OK] Archivos copiados.
+copy /Y "%~dp0install-service.bat" "%INSTALL_DIR%\install-service.bat" >nul 2>&1
+copy /Y "%~dp0uninstall-service.bat" "%INSTALL_DIR%\uninstall-service.bat" >nul 2>&1
+copy /Y "%~dp0setup-prep.bat" "%INSTALL_DIR%\setup-prep.bat" >nul 2>&1
+copy /Y "%~dp0README.md" "%INSTALL_DIR%\README.md" >nul 2>&1
+copy /Y "%~dp0INSTRUCTIVO-INSTALACION.md" "%INSTALL_DIR%\INSTRUCTIVO-INSTALACION.md" >nul 2>&1
+echo       Archivos copiados a %INSTALL_DIR%
 echo.
 
-:: Mostrar impresoras detectadas
-echo ============================================================
-echo   IMPRESORAS DETECTADAS
-echo ============================================================
+:: ============================================================
+:: PASO 6: Mostrar impresoras y configurar
+:: ============================================================
+echo [6/6] Detectando impresoras...
 echo.
+
 python -c "
 import sys
 try:
@@ -150,26 +285,25 @@ echo.
 echo [OK] Configuracion guardada.
 echo.
 
+:: ============================================================
 :: Firewall
-echo ============================================================
-echo   CONFIGURACION DEL FIREWALL
-echo ============================================================
-echo.
+:: ============================================================
+echo Configurando firewall...
 
 netsh advfirewall firewall show rule name="Printer Bridge TCP 9100" >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     netsh advfirewall firewall add rule name="Printer Bridge TCP 9100" dir=in action=allow protocol=TCP localport=9100 >nul 2>&1
-    echo [OK] Puerto TCP 9100 abierto.
+    echo       Puerto TCP 9100 abierto.
 ) else (
-    echo [OK] Puerto TCP 9100 ya estaba abierto.
+    echo       Puerto TCP 9100 ya estaba abierto.
 )
 
 netsh advfirewall firewall show rule name="Printer Bridge TCP 9101" >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     netsh advfirewall firewall add rule name="Printer Bridge TCP 9101" dir=in action=allow protocol=TCP localport=9101 >nul 2>&1
-    echo [OK] Puerto HTTP 9101 abierto.
+    echo       Puerto HTTP 9101 abierto.
 ) else (
-    echo [OK] Puerto HTTP 9101 ya estaba abierto.
+    echo       Puerto HTTP 9101 ya estaba abierto.
 )
 echo.
 

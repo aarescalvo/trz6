@@ -7,10 +7,36 @@ a una impresora Datamax Mark II conectada por USB en una PC con Windows 7.
 
 ## Requisitos
 
-- Windows 7 (32-bit o 64-bit)
+- **Windows 7 Service Pack 1** (OBLIGATORIO - Python no se instala sin SP1)
+- **KB2999226** (Universal C Runtime - necesario para Python 3.8+)
 - Python 3.8.10 (ultima version compatible con Windows 7)
 - pywin32 (para comunicarse con la impresora via Win32 API)
 - Impresora Datamax Mark II conectada por USB e instalada en Windows
+
+## Preparacion de Windows 7 (PRIMERO)
+
+**IMPORTANTE:** Antes de instalar Python, asegurese de tener SP1 y KB2999226.
+Si el setup de Python muestra "setup failed", faltan estos prerequisitos.
+
+### Paso 0: Ejecutar diagnostico
+
+Ejecute `setup-prep.bat` para ver que falta exactamente.
+
+### Instalar Service Pack 1
+
+- **Opcion A:** Windows Update → Buscar actualizaciones → Instalar todo → Reiniciar
+- **Opcion B:** Descarga directa: https://www.microsoft.com/es-es/download/details.aspx?id=5842
+  - 32-bit: `windows6.1-KB976932-X86.exe`
+  - 64-bit: `windows6.1-KB976932-X64.exe`
+
+### Instalar KB2999226 (Universal C Runtime)
+
+- **Opcion A:** Windows Update (suele aparecer despues de SP1)
+- **Opcion B:** Descarga directa: https://www.microsoft.com/es-es/download/details.aspx?id=48234
+  - 32-bit: `Windows6.1-KB2999226-x86.msu`
+  - 64-bit: `Windows6.1-KB2999226-x64.msu`
+- **Opcion C (Recomendada):** Instalar el Convenience Rollup KB3125574 que incluye KB2999226 y muchas mas actualizaciones
+  - https://support.microsoft.com/es-es/kb/3125574
 
 ## Instalacion
 
@@ -19,11 +45,18 @@ a una impresora Datamax Mark II conectada por USB en una PC con Windows 7.
 Windows 7 NO soporta versiones modernas de Python.
 
 **Desde otra PC con internet:**
-1. Descarga: https://www.python.org/ftp/python/3.8.10/python-3.8.10.exe
-2. Copia el archivo a la PC de pesaje (pendrive, red, etc.)
-3. Ejecuta python-3.8.10.exe
-4. **IMPORTANTE**: Marca "Add Python 3.8 to PATH"
-5. Click "Install Now"
+1. Descarga: https://www.python.org/ftp/python/3.8.10/
+2. Si Win7 es 32-bit: `python-3.8.10.exe`
+   Si Win7 es 64-bit: `python-3.8.10-amd64.exe`
+3. Copia el archivo a la PC de pesaje (pendrive, red, etc.)
+4. Ejecuta python-3.8.10.exe
+5. **IMPORTANTE**: Marca "Add Python 3.8 to PATH"
+6. Click "Install Now"
+
+**Si el setup falla con "setup failed":**
+- Verifique que tiene SP1 instalado (ver arriba)
+- Verifique que tiene KB2999226 instalado (ver arriba)
+- Reinicie la PC e intente de nuevo
 
 ### 2. Instalar pywin32
 
@@ -42,7 +75,8 @@ Si la PC NO tiene internet:
 
 1. Copia todos los archivos a la PC de pesaje
 2. Click derecho en `install.bat` → "Ejecutar como Administrador"
-3. Selecciona la impresora Datamax cuando te lo pida
+3. El instalador verificara automaticamente SP1, KB2999226, Python y pywin32
+4. Selecciona la impresora Datamax cuando te lo pida
 
 ### 4. Iniciar el bridge
 
@@ -101,6 +135,11 @@ Para desinstalar: ejecuta `uninstall-service.bat` como Administrador
 
 ## Solucion de Problemas
 
+### "setup failed" al instalar Python
+- Falta Windows 7 Service Pack 1 o KB2999226
+- Ejecute `setup-prep.bat` para diagnosticar
+- Ver seccion "Preparacion de Windows 7" arriba
+
 ### "pywin32 no esta instalado"
 - Ejecuta: `pip install pywin32`
 - Si no hay internet, descarga el .exe desde otra PC
@@ -125,9 +164,11 @@ Para desinstalar: ejecuta `uninstall-service.bat` como Administrador
 | Archivo | Descripcion |
 |---------|-------------|
 | index.py | Servidor principal (TCP + HTTP) |
-| install.bat | Instalador automatico |
+| install.bat | Instalador automatico (verifica SP1, KB2999226, Python) |
+| setup-prep.bat | Diagnostico de prerequisitos (ejecutar primero) |
 | start.bat | Inicio manual |
 | install-service.bat | Configurar como servicio Windows |
 | uninstall-service.bat | Quitar servicio Windows |
 | requirements.txt | Dependencia Python |
 | printer-config.json | Configuracion (se crea al instalar) |
+| INSTRUCTIVO-INSTALACION.md | Instructivo detallado de instalacion |
