@@ -69,6 +69,7 @@ import { RotulosMejorasModule } from '@/modules-pending/rotulos-mejoras'
 import { DashboardEjecutivoModule } from '@/modules-pending/dashboard-ejecutivo'
 import { ReportesGerencialesModule } from '@/modules-pending/reportes-gerenciales'
 import { ControlVencimientosModule } from '@/modules-pending/control-vencimientos'
+import { PrinterBridgeGuide } from '@/components/printer-bridge-guide'
 import { AlertasStockModule } from '@/modules-pending/alertas-stock'
 import { HistorialPreciosModule } from '@/modules-pending/historial-precios'
 
@@ -78,7 +79,8 @@ import {
   Warehouse, FileText, Settings, Calendar, LogOut, Lock, Users,
   Loader2, Search, RefreshCw, BoxSelect, Barcode,
   ChevronDown, ChevronRight, LayoutDashboard, Wifi, WifiOff, CloudUpload, DollarSign,
-  AlertTriangle, Clock, Activity, PanelLeftClose, PanelLeftOpen, FileSpreadsheet
+  AlertTriangle, Clock, Activity, PanelLeftClose, PanelLeftOpen, FileSpreadsheet,
+  Printer
 } from 'lucide-react'
 
 // Resilience imports
@@ -138,7 +140,7 @@ interface Stats {
   enCamara: number
 }
 
-type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'calidadPh' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA' | 'exportacionSIGICA'
+type Page = 'dashboard' | 'pesajeCamiones' | 'pesajeIndividual' | 'movimientoHacienda' | 'listaFaena' | 'ingresoCajon' | 'romaneo' | 'vbRomaneo' | 'movimientoCamaras' | 'expedicionUnificada' | 'despachos' | 'cuarteo' | 'ingresoDesposteUnificado' | 'movimientosDespostada' | 'cortesDespostada' | 'produccionUnificada' | 'menudencias' | 'cueros' | 'grasa' | 'desperdicios' | 'fondoDigestor' | 'stockUnificada' | 'stocksCorrales' | 'planilla01' | 'rindesTropa' | 'busquedaFiltro' | 'reportesSenasa' | 'facturacion' | 'precios' | 'insumos' | 'stocksInsumos' | 'configRotulos' | 'editorRotulos' | 'configInsumos' | 'configUsuarios' | 'configCodigobarras' | 'configBalanzas' | 'configOperadores' | 'configProductos' | 'configSubproductos' | 'configListadoInsumos' | 'configCondicionesEmbalaje' | 'configTiposProducto' | 'configC2Rubros' | 'configC2TiposCuarto' | 'configC2ProductosDesposte' | 'configC2BOM' | 'c2Subproductos' | 'c2Pallets' | 'c2Rendimiento' | 'c2Degradacion' | 'c2Reportes' | 'calidadRegistroUsuarios' | 'calidadPh' | 'reportes' | 'configuracion' | 'auditoriaOperador' | 'rotulosMejoras' | 'dashboardEjecutivo' | 'reportesGerenciales' | 'controlVencimientos' | 'alertasStock' | 'historialPrecios' | 'reportesSIGICA' | 'exportacionSIGICA' | 'printerBridgeGuide'
 
 // Navigation item
 interface NavItem {
@@ -282,6 +284,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'configListadoInsumos', label: 'Listado de Insumos', icon: ClipboardList, permiso: 'puedeConfiguracion' },
       { id: 'configCondicionesEmbalaje', label: 'Condiciones de Embalaje', icon: Package, permiso: 'puedeConfiguracion' },
       { id: 'configTiposProducto', label: 'Tipos de Producto', icon: Tag, permiso: 'puedeConfiguracion' },
+      { id: 'printerBridgeGuide', label: 'Instalar Printer Bridge', icon: Printer, permiso: 'puedeConfiguracion' },
     ]
   },
   // 8. Calidad
@@ -1148,6 +1151,8 @@ export default function FrigorificoApp() {
         return wrapModule('reportesSIGICA', <ReportesSIGICAModule operador={operador} />)
       case 'exportacionSIGICA':
         return wrapModule('exportacionSIGICA', <ExportacionSIGICAModule operador={operador} />)
+      case 'printerBridgeGuide':
+        return <PrinterBridgeGuide />
       default:
         return wrapModule('pesajeCamiones', <PesajeCamionesModule operador={operador as any} onTropaCreada={fetchTropas} />)
     }

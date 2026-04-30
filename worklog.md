@@ -5310,3 +5310,28 @@ Stage Summary:
 - **Commit**: 8a26818
 - **Push**: exitoso a GitHub
 - **Pre-existentes pendientes**: 181 TS Decimal + 347 lint React 19 (~41 hallazgos menores)
+---
+Task ID: 1
+Agent: Main Agent
+Task: Create in-app Printer Bridge installation guide (Spanish step-by-step)
+
+Work Log:
+- Read existing INSTRUCTIVO-INSTALACION.md and README.md for printer bridge v3.0/v3.1
+- Analyzed page.tsx structure (1388+ lines monolithic SPA) to understand navigation, Page type, and switch rendering
+- Created `/home/z/my-project/src/components/printer-bridge-guide.tsx` — comprehensive step-by-step installation guide component
+- Integrated component into page.tsx:
+  - Added `Printer` icon import from lucide-react
+  - Added `PrinterBridgeGuide` import
+  - Added `'printerBridgeGuide'` to Page type union
+  - Added navigation item in Configuración group: "Instalar Printer Bridge" with Printer icon
+  - Added switch case rendering `<PrinterBridgeGuide />`
+- Installed missing `jspdf-autotable` dependency (pre-existing issue blocking compilation)
+- Verified app compiles successfully (GET / 200)
+
+Stage Summary:
+- Created `src/components/printer-bridge-guide.tsx` — 600+ lines React component
+- Guide includes: 9 interactive steps with progress tracking, checkboxes, expandable sections
+- Covers: Windows 7 SP1 + KB2999226 prerequisites, Python 3.8.10 install, pywin32, Datamax verification, install.bat execution, bridge testing, TrazAlan configuration, final test, optional auto-start
+- Features: Download links with copy buttons, code blocks with copy, info/warning/danger/success boxes, troubleshooting FAQ, technical summary
+- Accessible from sidebar: Configuración → Instalar Printer Bridge
+- Requires `puedeConfiguracion` permission (ADMINISTRADOR has all by default)
