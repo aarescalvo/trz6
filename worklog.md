@@ -5384,3 +5384,22 @@ Work Log:
 Stage Summary:
 - Commit: ccdd8a6 — fix: actualizar links rotos de Win7 SP1 y KB2999226
 - Rama: master
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix page refresh/redirect involuntario durante operación
+
+Work Log:
+- Investigación completa del código: encontrados 6 hallazgos (2 críticos, 2 altos, 1 medio, 1 bajo)
+- Fix 1: Persistir currentPage en zustand store (antes era useState local, se perdía al recargar)
+- Fix 2: JWT expiry 8h → 24h (cubre turnos completos de producción)
+- Fix 3: Keep-alive cada 30min → cada 10min (renueva token más seguido)
+- Fix 4: Keep-alive ya no fuerza logout si falla (solo reintenta silenciosamente)
+- Fix 5: Visibility change con grace period (reintenta después de 3s antes de forzar logout)
+- Fix 6: Errores de red NUNCA cierran sesión
+
+Stage Summary:
+- Commit: f100b06 — fix: evitar refresh/redireccion involuntaria durante operacion
+- Archivos: src/app/page.tsx, src/stores/appStore.ts, src/lib/jwt.ts
+- Rama: master
