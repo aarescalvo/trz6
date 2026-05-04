@@ -5403,3 +5403,18 @@ Stage Summary:
 - Commit: f100b06 — fix: evitar refresh/redireccion involuntaria durante operacion
 - Archivos: src/app/page.tsx, src/stores/appStore.ts, src/lib/jwt.ts
 - Rama: master
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Mejorar restauración de página al recargar (sin flash al dashboard)
+
+Work Log:
+- Reemplacé el useEffect de hidratación por un initializer function en useState
+- Ahora currentPage se inicializa directamente desde lastPage del zustand store
+- Eliminado: estado hydrated innecesario y useEffect extra
+- Resultado: sin parpadeo/flash al dashboard al recargar la página
+
+Stage Summary:
+- Commit: a088e3c — fix: inicializar currentPage desde store persistido
+- Rama: master
