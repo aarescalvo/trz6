@@ -613,19 +613,18 @@ export default function FrigorificoApp() {
   // Persist navigation: use zustand store to survive page reloads
   const persistedPage = useAppStore((s) => s.lastPage)
   const setPersistedPage = useAppStore((s) => s.setLastPage)
-  const [currentPage, setCurrentPageState] = useState<Page>('dashboard')
+  // Initialize currentPage from persisted store (no flash to dashboard)
+  const [currentPage, setCurrentPageState] = useState<Page>(() => {
+    const saved = persistedPage
+    if (saved && saved !== 'dashboard') {
+      return saved as Page
+    }
+    return 'dashboard'
+  })
   const setCurrentPage = (page: Page) => {
     setCurrentPageState(page)
     setPersistedPage(page)
   }
-  // Restore last page from store on mount
-  const [hydrated, setHydrated] = useState(false)
-  useEffect(() => {
-    if (persistedPage && persistedPage !== 'dashboard') {
-      setCurrentPageState(persistedPage as Page)
-    }
-    setHydrated(true)
-  }, [])
   const [tropas, setTropas] = useState<Tropa[]>([])
   const [stats, setStats] = useState<Stats>({ tropasActivas: 0, enPesaje: 0, pesajesHoy: 0, enCamara: 0 })
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['CICLO I', 'Subproductos'])
